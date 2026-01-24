@@ -22,7 +22,7 @@ app.post('/api/authen', async (req, res) => {
         const apiUrl = 'http://websrv01.dci.daikin.co.jp/BudgetCharts/BudgetRestService/api/authen';
         const response = await axios.get(apiUrl, {
             params: { username, password },
-            timeout: 5000 // 5 second timeout
+            timeout: 10000 // 10 second timeout
         });
 
         // Check if API returns valid data
@@ -44,20 +44,6 @@ app.post('/api/authen', async (req, res) => {
         }
     } catch (error) {
         console.error('AD Auth Error:', error.message);
-
-        // If API is unreachable, check for demo credentials
-        if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND') {
-            // Demo fallback for development
-            if (username === 'admin' && password === '1234') {
-                return res.json({ success: true, user: { username: 'admin', role: 'Staff', name: 'System Admin' } });
-            }
-            if (username === 'user' && password === '1234') {
-                return res.json({ success: true, user: { username: 'user', role: 'User', name: 'General User' } });
-            }
-            if (username === 'natthawut.y' && password === '1234') {
-                return res.json({ success: true, user: { username: 'natthawut.y', role: 'Staff', name: 'Natthawut Y.' } });
-            }
-        }
 
         // If API returned an error response (like 401)
         if (error.response) {
@@ -380,13 +366,12 @@ const startServer = async () => {
         await connectDB();
         app.listen(PORT, () => {
             console.log(`🚀 Server running on http://localhost:${PORT}`);
+            console.log('✅ Connected to SQL Server database');
         });
     } catch (err) {
-        console.error('Failed to connect to database:', err.message);
-        console.log('⚠️  Starting in MOCK mode...');
-
-        // Start mock server instead
-        import('./server-mock.js');
+        console.error('❌ Failed to start server:', err.message);
+        console.error('   Please check your database connection settings in .env file');
+        process.exit(1);
     }
 };
 
