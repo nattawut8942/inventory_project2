@@ -1,13 +1,16 @@
 // MOCK SERVER - Fallback when database is not available
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
+import express from 'express';
+import cors from 'cors';
+import axios from 'axios';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// --- ADMIN USERS LIST ---
+const ADMIN_USERS = ['natthawut.y', 'admin'];
 
 // --- MOCK DATA ---
 const DEVICE_TYPES = [
@@ -46,12 +49,40 @@ let nextTransId = 1;
 app.post('/api/authen', async (req, res) => {
     const { username, password } = req.body;
 
-    // Demo credentials
+    try {
+        // Try AD API first
+        const apiUrl = 'http://websrv01.dci.daikin.co.jp/BudgetCharts/BudgetRestService/api/authen';
+        const response = await axios.get(apiUrl, {
+            params: { username, password },
+            timeout: 5000
+        });
+
+        if (response.data && response.status === 200) {
+            const isAdmin = ADMIN_USERS.includes(username.toLowerCase());
+            const role = isAdmin ? 'Staff' : 'User';
+
+            return res.json({
+                success: true,
+                user: {
+                    username,
+                    role,
+                    name: response.data.name || response.data.empname || username
+                }
+            });
+        }
+    } catch (error) {
+        console.log('AD API not available, using demo mode');
+    }
+
+    // Demo fallback
     if (username === 'admin' && password === '1234') {
         return res.json({ success: true, user: { username: 'admin', role: 'Staff', name: 'System Admin' } });
     }
     if (username === 'user' && password === '1234') {
         return res.json({ success: true, user: { username: 'user', role: 'User', name: 'General User' } });
+    }
+    if (username === 'natthawut.y' && password === '1234') {
+        return res.json({ success: true, user: { username: 'natthawut.y', role: 'Staff', name: 'Natthawut Y.' } });
     }
 
     res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -186,7 +217,12 @@ app.get('/api/forecast', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`🔶 MOCK Server running on http://localhost:${PORT}`);
-    console.log('   (No database connected - using in-memory data)');
+    console.log('   (No database - using in-memory data)');
+    console.log('');
+    console.log('   Demo accounts:');
+    console.log('   - admin / 1234 (Staff)');
+    console.log('   - user / 1234 (User)');
+    console.log('   - natthawut.y / 1234 (Staff/Admin)');
 });
 
-module.exports = app;
+export default app;

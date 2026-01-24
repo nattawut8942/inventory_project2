@@ -1,8 +1,8 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
-const { sql, connectDB, getPool } = require('./db');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import axios from 'axios';
+import { sql, connectDB, getPool } from './db.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -10,39 +10,61 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// --- AUTHENTICATION (AD/LDAP) ---
+// --- ADMIN USERS LIST ---
+const ADMIN_USERS = ['natthawut.y', 'admin'];
+
+// --- AUTHENTICATION (AD API) ---
 app.post('/api/authen', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        const apiUrl = `http://websrv01.dci.daikin.co.jp/BudgetCharts/BudgetRestService/api/authen`;
+        // Call the AD Authentication API
+        const apiUrl = 'http://websrv01.dci.daikin.co.jp/BudgetCharts/BudgetRestService/api/authen';
         const response = await axios.get(apiUrl, {
-            params: { username, password }
+            params: { username, password },
+            timeout: 5000 // 5 second timeout
         });
 
-        if (response.data) {
-            const role = (username.toLowerCase().includes('admin') || username.toLowerCase().includes('staff')) ? 'Staff' : 'User';
+        // Check if API returns valid data
+        if (response.data && response.status === 200) {
+            // Determine role: Check if user is in admin list
+            const isAdmin = ADMIN_USERS.includes(username.toLowerCase());
+            const role = isAdmin ? 'Staff' : 'User';
+
             res.json({
                 success: true,
                 user: {
                     username,
                     role,
-                    name: response.data.name || username
+                    name: response.data.name || response.data.empname || username
                 }
             });
         } else {
-            res.status(401).json({ success: false, message: 'Invalid credentials from AD' });
+            res.status(401).json({ success: false, message: 'Invalid username or password' });
         }
     } catch (error) {
         console.error('AD Auth Error:', error.message);
-        // FALLBACK FOR DEV/DEMO
-        if (username === 'admin' && password === '1234') {
-            return res.json({ success: true, user: { username: 'admin', role: 'Staff', name: 'System Admin' } });
+
+        // If API is unreachable, check for demo credentials
+        if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND') {
+            // Demo fallback for development
+            if (username === 'admin' && password === '1234') {
+                return res.json({ success: true, user: { username: 'admin', role: 'Staff', name: 'System Admin' } });
+            }
+            if (username === 'user' && password === '1234') {
+                return res.json({ success: true, user: { username: 'user', role: 'User', name: 'General User' } });
+            }
+            if (username === 'natthawut.y' && password === '1234') {
+                return res.json({ success: true, user: { username: 'natthawut.y', role: 'Staff', name: 'Natthawut Y.' } });
+            }
         }
-        if (username === 'user' && password === '1234') {
-            return res.json({ success: true, user: { username: 'user', role: 'User', name: 'General User' } });
+
+        // If API returned an error response (like 401)
+        if (error.response) {
+            return res.status(401).json({ success: false, message: 'Invalid username or password' });
         }
-        res.status(500).json({ success: false, message: 'Authentication Service Unavailable' });
+
+        res.status(500).json({ success: false, message: 'Authentication service unavailable' });
     }
 });
 
@@ -360,11 +382,11 @@ const startServer = async () => {
             console.log(`🚀 Server running on http://localhost:${PORT}`);
         });
     } catch (err) {
-        console.error('Failed to start server:', err.message);
-        console.log('⚠️  Running in MOCK mode (no database)');
+        console.error('Failed to connect to database:', err.message);
+        console.log('⚠️  Starting in MOCK mode...');
 
-        // Fallback to mock mode if DB fails
-        require('./server-mock');
+        // Start mock server instead
+        import('./server-mock.js');
     }
 };
 

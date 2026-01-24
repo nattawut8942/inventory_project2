@@ -1,4 +1,4 @@
-const sql = require('mssql');
+import sql from 'mssql';
 
 // Database Configuration from Environment Variables
 const config = {
@@ -30,7 +30,7 @@ if (process.env.DB_TRUSTED_CONNECTION === 'true') {
 let pool = null;
 
 // Connect to Database
-const connectDB = async () => {
+export const connectDB = async () => {
     try {
         if (pool) {
             return pool;
@@ -45,7 +45,7 @@ const connectDB = async () => {
 };
 
 // Get connection pool
-const getPool = () => {
+export const getPool = () => {
     if (!pool) {
         throw new Error('Database not connected. Call connectDB() first.');
     }
@@ -53,7 +53,7 @@ const getPool = () => {
 };
 
 // Close connection
-const closeDB = async () => {
+export const closeDB = async () => {
     if (pool) {
         await pool.close();
         pool = null;
@@ -61,9 +61,5 @@ const closeDB = async () => {
     }
 };
 
-module.exports = {
-    sql,
-    connectDB,
-    getPool,
-    closeDB
-};
+export { sql };
+export default { sql, connectDB, getPool, closeDB };
