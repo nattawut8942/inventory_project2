@@ -1,0 +1,61 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+
+const API_BASE = 'http://localhost:3001/api';
+
+const DataContext = createContext(null);
+
+export const useData = () => useContext(DataContext);
+
+export const DataProvider = ({ children }) => {
+    const { user } = useAuth();
+    const [products, setProducts] = useState([]);
+    const [purchaseOrders, setPurchaseOrders] = useState([]);
+    const [invoices, setInvoices] = useState([]);
+    const [transactions, setTransactions] = useState([]);
+    const [deviceTypes, setDeviceTypes] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    const fetchData = async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const [prodRes, poRes, invRes, transRes, typeRes] = await Promise.all([
+                fetch(`${API_BASE}/products`),
+                fetch(`${API_BASE}/pos`),
+                fetch(`${API_BASE}/invoices`),
+                fetch(`${API_BASE}/transactions`),
+                fetch(`${API_BASE}/types`)
+            ]);
+            setProducts(await prodRes.json());
+            setPurchaseOrders(await poRes.json());
+            setInvoices(await invRes.json());
+            setTransactions(await transRes.json());
+            setDeviceTypes(await typeRes.json());
+        } catch (err) {
+            console.error("Failed to fetch data", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (user) {
+            fetchData();
+        }
+    }, [user]);
+
+    return (
+        <DataContext.Provider value={{
+            products,
+            purchaseOrders,
+            invoices,
+            transactions,
+            deviceTypes,
+            loading,
+            refreshData: fetchData
+        }}>
+            {children}
+        </DataContext.Provider>
+    );
+};
