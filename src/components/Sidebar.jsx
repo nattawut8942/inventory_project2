@@ -9,7 +9,8 @@ import {
     ArrowDownToLine,
     ArrowUpFromLine,
     History,
-    Database
+    Database,
+    FileSpreadsheet
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -66,6 +67,7 @@ const Sidebar = () => {
                 </div>
                 <SidebarItem icon={ArrowUpFromLine} label="Withdraw Items" to="/withdraw" />
                 <SidebarItem icon={History} label="History Log" to="/history" />
+                <SidebarItem icon={FileSpreadsheet} label="Export Reports" to="/reports" />
             </nav>
 
             <div className="pt-6 border-t border-gray-900">

@@ -16,10 +16,11 @@ import ReceivePage from './pages/ReceivePage';
 import WithdrawPage from './pages/WithdrawPage';
 import HistoryPage from './pages/HistoryPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
+import ReportPage from './pages/ReportPage';
 
 // App Routes Component
 const AppRoutes = () => {
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated } = useAuth();
 
     return (
         <Routes>
@@ -42,6 +43,7 @@ const AppRoutes = () => {
                 <Route path="inventory" element={<InventoryPage />} />
                 <Route path="withdraw" element={<WithdrawPage />} />
                 <Route path="history" element={<HistoryPage />} />
+                <Route path="reports" element={<ReportPage />} />
 
                 {/* Staff Only Routes */}
                 <Route
