@@ -27,6 +27,51 @@ const InventoryPage = () => {
         }
     };
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+
+    const isAdmin = user?.role === 'Staff';
+
+    const getIcon = (type) => {
+        switch (type) {
+            case 'Monitor': return Monitor;
+            case 'Network': return Network;
+            case 'Asset': return Archive;
+            case 'Stock': return Database;
+            default: return Package;
+        }
+    };
+
+    const filteredProducts = products.filter(p =>
+        p.ProductName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+
+        try {
+            await fetch(`${API_BASE}/products/${editItem.ProductID}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Object.fromEntries(fd))
+            });
+            setEditItem(null);
+            refreshData();
+        } catch (err) {
+            alert('Failed to update');
+        }
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
+            setShowDeleteConfirm(null);
+            refreshData();
+        } catch (err) {
+            alert('Failed to delete');
+        }
+    };
+
     return (
         <div className="space-y-6 animate-in slide-in-from-bottom-5">
             <div className="flex justify-between items-center">
