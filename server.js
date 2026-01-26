@@ -425,15 +425,23 @@ app.post('/api/receive', async (req, res) => {
                                 finalProductID = prodRes.recordset[0].ProductID;
                             } else {
                                 // Create New Product
+                                // First ensure 'Stock' type exists to prevent FK violation
+                                await new sql.Request(transaction).query(`
+                                        IF NOT EXISTS (SELECT 1 FROM dbo.Stock_DeviceTypes WHERE TypeId = 'Stock')
+                                        BEGIN
+                                            INSERT INTO dbo.Stock_DeviceTypes (TypeId, Label) VALUES ('Stock', 'Consumable Stock')
+                                        END
+                                    `);
+
                                 const createRes = await new sql.Request(transaction)
                                     .input('ProductName', sql.NVarChar, detail.ItemName)
                                     .input('Qty', sql.Int, qty) // Initial Stock
                                     .input('UnitCost', sql.Decimal(18, 2), detail.UnitCost || 0)
                                     .query(`
-                                    INSERT INTO dbo.Stock_Products (ProductName, DeviceType, CurrentStock, LastPrice, MinStock, IsActive)
-                                    VALUES (@ProductName, 'Stock', 0, @UnitCost, 0, 1); -- Start 0 stock, we add below
-                                    SELECT SCOPE_IDENTITY() AS NewID;
-                                `);
+                                        INSERT INTO dbo.Stock_Products (ProductName, DeviceType, CurrentStock, LastPrice, MinStock, IsActive)
+                                        VALUES (@ProductName, 'Stock', 0, @UnitCost, 0, 1); -- Start 0 stock, we add below
+                                        SELECT SCOPE_IDENTITY() AS NewID;
+                                    `);
                                 finalProductID = createRes.recordset[0].NewID;
                             }
 
