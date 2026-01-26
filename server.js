@@ -354,120 +354,129 @@ app.get('/api/stock/history/:id', async (req, res) => {
         console.error('Get History Error:', err);
         res.status(500).json({ error: 'Database error' });
     }
+});
 
-
-    // --- INVOICES ---
-    app.get('/api/invoices', async (req, res) => {
-        try {
-            const pool = getPool();
-            const result = await pool.request().query(`
+// --- INVOICES ---
+app.get('/api/invoices', async (req, res) => {
+    try {
+        const pool = getPool();
+        const result = await pool.request().query(`
             SELECT InvoiceID, InvoiceNo, PO_ID, ReceiveDate, ReceivedBy
             FROM dbo.Stock_Invoices
             ORDER BY ReceiveDate DESC
         `);
-            res.json(result.recordset);
-        } catch (err) {
-            console.error('Get Invoices Error:', err);
-            res.status(500).json({ error: 'Database error' });
-        }
-    });
+        res.json(result.recordset);
+    } catch (err) {
+        console.error('Get Invoices Error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
 
-    // Receive Goods (Inbound from PO)
-    app.post('/api/receive', async (req, res) => {
-        const { PO_ID, InvoiceNo, ItemsReceived, UserID } = req.body;
+// Receive Goods (Inbound from PO)
+app.post('/api/receive', async (req, res) => {
+    const { PO_ID, InvoiceNo, ItemsReceived, UserID } = req.body;
+    console.log('Receive Payload:', JSON.stringify(req.body, null, 2));
+
+    try {
+        const pool = getPool();
+        const transaction = new sql.Transaction(pool);
+        await transaction.begin();
 
         try {
-            const pool = getPool();
-            const transaction = new sql.Transaction(pool);
-            await transaction.begin();
-
-            try {
-                await new sql.Request(transaction)
-                    .input('InvoiceNo', sql.NVarChar, InvoiceNo)
-                    .input('PO_ID', sql.NVarChar, PO_ID)
-                    .input('ReceivedBy', sql.NVarChar, UserID)
-                    .query(`
+            // 1. Create Invoice Record
+            await new sql.Request(transaction)
+                .input('InvoiceNo', sql.NVarChar, InvoiceNo)
+                .input('PO_ID', sql.NVarChar, PO_ID)
+                .input('ReceivedBy', sql.NVarChar, UserID)
+                .query(`
                     INSERT INTO dbo.Stock_Invoices (InvoiceNo, PO_ID, ReceivedBy)
                     VALUES (@InvoiceNo, @PO_ID, @ReceivedBy)
                 `);
 
-                for (const item of ItemsReceived) {
-                    const qty = parseInt(item.Qty);
-                    if (qty <= 0) continue;
+            // 2. Process Each Item
+            for (const item of ItemsReceived) {
+                const qty = Number(item.Qty) || 0;
+                if (qty <= 0) continue;
 
-                    let finalProductID = item.ProductID;
+                let finalProductID = item.ProductID; // This might be null for manual items
 
-                    // Handle Manual Items (No ProductID originally) or items that need resolution
-                    if (!finalProductID && item.DetailID) {
-                        // Get Manual Entry Details
-                        const detRes = await new sql.Request(transaction)
-                            .input('DetailID', sql.Int, item.DetailID)
-                            .query('SELECT ItemName, UnitCost FROM dbo.Stock_PODetails WHERE DetailID = @DetailID');
+                // 2a. Handle Manual Items (No ProductID initially)
+                if (item.DetailID) {
+                    // Check DB for Detail Info
+                    const detRes = await new sql.Request(transaction)
+                        .input('DetailID', sql.Int, item.DetailID)
+                        .query('SELECT ItemName, UnitCost, ProductID FROM dbo.Stock_PODetails WHERE DetailID = @DetailID');
 
-                        const detail = detRes.recordset[0];
+                    const detail = detRes.recordset[0];
 
-                        if (detail && detail.ItemName) {
-                            // Check if Product exists by Name (Exact match)
+                    if (detail) {
+                        // If DB already has ProductID, use it (override client)
+                        if (detail.ProductID) {
+                            finalProductID = detail.ProductID;
+                        }
+                        // If NO ProductID, try to resolve by Name or Create New
+                        else if (!finalProductID && detail.ItemName) {
+                            // Try find by name in Products table
                             const prodRes = await new sql.Request(transaction)
                                 .input('ProductName', sql.NVarChar, detail.ItemName)
                                 .query('SELECT ProductID FROM dbo.Stock_Products WHERE ProductName = @ProductName');
 
                             if (prodRes.recordset.length > 0) {
-                                // PROD EXISTS: Use it
                                 finalProductID = prodRes.recordset[0].ProductID;
-
-                                // Update Stock
-                                await new sql.Request(transaction)
-                                    .input('ProductID', sql.Int, finalProductID)
-                                    .input('Qty', sql.Int, qty)
-                                    .input('UnitCost', sql.Decimal(18, 2), detail.UnitCost || 0)
-                                    .query('UPDATE dbo.Stock_Products SET CurrentStock = CurrentStock + @Qty, LastPrice = @UnitCost WHERE ProductID = @ProductID');
                             } else {
-                                // PROD NEW: Create it
+                                // Create New Product
                                 const createRes = await new sql.Request(transaction)
                                     .input('ProductName', sql.NVarChar, detail.ItemName)
-                                    .input('Qty', sql.Int, qty)
+                                    .input('Qty', sql.Int, qty) // Initial Stock
                                     .input('UnitCost', sql.Decimal(18, 2), detail.UnitCost || 0)
                                     .query(`
                                     INSERT INTO dbo.Stock_Products (ProductName, DeviceType, CurrentStock, LastPrice, MinStock, IsActive)
-                                    VALUES (@ProductName, 'Stock', @Qty, @UnitCost, 0, 1);
+                                    VALUES (@ProductName, 'Stock', 0, @UnitCost, 0, 1); -- Start 0 stock, we add below
                                     SELECT SCOPE_IDENTITY() AS NewID;
                                 `);
                                 finalProductID = createRes.recordset[0].NewID;
                             }
 
-                            // Link PO Detail to this ProductID for future reference
+                            // Link PO Detail to this new/found ProductID
                             await new sql.Request(transaction)
                                 .input('DetailID', sql.Int, item.DetailID)
                                 .input('ProductID', sql.Int, finalProductID)
                                 .query('UPDATE dbo.Stock_PODetails SET ProductID = @ProductID WHERE DetailID = @DetailID');
                         }
-                    } else if (finalProductID) {
-                        // Standard Existing Item Update
-                        await new sql.Request(transaction)
-                            .input('ProductID', sql.Int, finalProductID)
-                            .input('Qty', sql.Int, qty)
-                            .query('UPDATE dbo.Stock_Products SET CurrentStock = CurrentStock + @Qty WHERE ProductID = @ProductID');
                     }
+                }
 
-                    // Update PO Detail Received Qty
-                    if (item.DetailID) {
-                        await new sql.Request(transaction)
-                            .input('DetailID', sql.Int, item.DetailID)
-                            .input('Qty', sql.Int, qty)
-                            .query('UPDATE dbo.Stock_PODetails SET QtyReceived = QtyReceived + @Qty WHERE DetailID = @DetailID');
-                    } else if (item.ProductID) {
-                        // Fallback
-                        await new sql.Request(transaction)
-                            .input('PO_ID', sql.NVarChar, PO_ID)
-                            .input('ProductID', sql.Int, item.ProductID)
-                            .input('Qty', sql.Int, qty)
-                            .query('UPDATE dbo.Stock_PODetails SET QtyReceived = QtyReceived + @Qty WHERE PO_ID = @PO_ID AND ProductID = @ProductID');
-                    }
+                // 2b. Validate Final Product ID
+                // If we absolutely cannot determine a ProductID, we cannot insert into Stock_Transactions (FK constraint).
+                // But for manual items without 'ItemName' in DB, this is an edge case.
 
-                    // Log Transaction
+                // 3. Update Stock Level (only if we have a valid ProductID)
+                if (finalProductID) {
                     await new sql.Request(transaction)
-                        .input('ProductID', sql.Int, finalProductID || null)
+                        .input('ProductID', sql.Int, finalProductID)
+                        .input('Qty', sql.Int, qty)
+                        .query('UPDATE dbo.Stock_Products SET CurrentStock = CurrentStock + @Qty WHERE ProductID = @ProductID');
+                }
+
+                // 4. Update PO Detail 'QtyReceived'
+                if (item.DetailID) {
+                    await new sql.Request(transaction)
+                        .input('DetailID', sql.Int, item.DetailID)
+                        .input('Qty', sql.Int, qty)
+                        .query('UPDATE dbo.Stock_PODetails SET QtyReceived = QtyReceived + @Qty WHERE DetailID = @DetailID');
+                } else if (item.ProductID) {
+                    // Fallback to update via ProductID and PO_ID if DetailID missing (should unlikely happen with new frontend)
+                    await new sql.Request(transaction)
+                        .input('PO_ID', sql.NVarChar, PO_ID)
+                        .input('ProductID', sql.Int, item.ProductID)
+                        .input('Qty', sql.Int, qty)
+                        .query('UPDATE dbo.Stock_PODetails SET QtyReceived = QtyReceived + @Qty WHERE PO_ID = @PO_ID AND ProductID = @ProductID');
+                }
+
+                // 5. Log Transaction (only if finalProductID exists)
+                if (finalProductID) {
+                    await new sql.Request(transaction)
+                        .input('ProductID', sql.Int, finalProductID)
                         .input('TransType', sql.VarChar, 'IN')
                         .input('Qty', sql.Int, qty)
                         .input('RefInfo', sql.NVarChar, `Invoice: ${InvoiceNo} (PO: ${PO_ID})`)
@@ -477,77 +486,80 @@ app.get('/api/stock/history/:id', async (req, res) => {
                         VALUES (@ProductID, @TransType, @Qty, @RefInfo, @UserID)
                     `);
                 }
-
-                const checkComplete = await new sql.Request(transaction)
-                    .input('PO_ID', sql.NVarChar, PO_ID)
-                    .query(`
-                    SELECT 
-                        CASE WHEN COUNT(*) = SUM(CASE WHEN QtyReceived >= QtyOrdered THEN 1 ELSE 0 END) 
-                             THEN 'Completed' ELSE 'Partial' END as NewStatus
-                    FROM dbo.Stock_PODetails
-                    WHERE PO_ID = @PO_ID
-                `);
-
-                const newStatus = checkComplete.recordset[0]?.NewStatus || 'Partial';
-
-                await new sql.Request(transaction)
-                    .input('PO_ID', sql.NVarChar, PO_ID)
-                    .input('Status', sql.NVarChar, newStatus)
-                    .query('UPDATE dbo.Stock_PurchaseOrders SET Status = @Status WHERE PO_ID = @PO_ID');
-
-                await transaction.commit();
-                res.json({ success: true, message: 'Received successfully' });
-            } catch (err) {
-                await transaction.rollback();
-                throw err;
             }
+
+            // 6. Update PO Status
+            const checkComplete = await new sql.Request(transaction)
+                .input('PO_ID', sql.NVarChar, PO_ID)
+                .query(`
+                SELECT 
+                    CASE WHEN COUNT(*) = SUM(CASE WHEN QtyReceived >= QtyOrdered THEN 1 ELSE 0 END) 
+                         THEN 'Completed' ELSE 'Partial' END as NewStatus
+                FROM dbo.Stock_PODetails
+                WHERE PO_ID = @PO_ID
+            `);
+
+            const newStatus = checkComplete.recordset[0]?.NewStatus || 'Partial';
+
+            await new sql.Request(transaction)
+                .input('PO_ID', sql.NVarChar, PO_ID)
+                .input('Status', sql.NVarChar, newStatus)
+                .query('UPDATE dbo.Stock_PurchaseOrders SET Status = @Status WHERE PO_ID = @PO_ID');
+
+            await transaction.commit();
+            res.json({ success: true, message: 'Received successfully' });
         } catch (err) {
-            console.error('Receive Error:', err);
-            res.status(500).json({ error: 'Failed to receive goods' });
+            console.error('Transaction Error:', err);
+            await transaction.rollback();
+            res.status(500).json({ error: 'Transaction failed', details: err.message });
         }
-    });
+    } catch (err) {
+        console.error('Receive Error:', err);
+        res.status(500).json({ error: 'Server error', details: err.message });
+    }
+});
 
-    // --- TRANSACTIONS ---
-    app.get('/api/transactions', async (req, res) => {
-        const { filter, startDate, endDate } = req.query;
+// --- TRANSACTIONS ---
+app.get('/api/transactions', async (req, res) => {
+    const { filter, startDate, endDate } = req.query;
 
-        try {
-            const pool = getPool();
-            const request = pool.request();
-            let query = `
+    try {
+        const pool = getPool();
+        const request = pool.request();
+        let query = `
             SELECT t.TransID, t.ProductID, p.ProductName, t.TransType, t.Qty, t.RefInfo, t.UserID, t.TransDate
             FROM dbo.Stock_Transactions t
             LEFT JOIN dbo.Stock_Products p ON t.ProductID = p.ProductID
             WHERE 1=1
         `;
 
-            if (filter === 'IN' || filter === 'OUT') {
-                query += ` AND t.TransType = '${filter}'`;
-            }
-            if (startDate) {
-                request.input('startDate', sql.DateTime, new Date(startDate));
-                query += ' AND t.TransDate >= @startDate';
-            }
-            if (endDate) {
-                request.input('endDate', sql.DateTime, new Date(endDate));
-                query += ' AND t.TransDate <= @endDate';
-            }
-
-            query += ' ORDER BY t.TransDate DESC';
-
-            const result = await request.query(query);
-            res.json(result.recordset);
-        } catch (err) {
-            console.error('Get Transactions Error:', err);
-            res.status(500).json({ error: 'Database error' });
+        if (filter === 'IN' || filter === 'OUT') {
+            query += ` AND t.TransType = '${filter}'`;
         }
-    });
+        if (startDate) {
+            request.input('startDate', sql.DateTime, new Date(startDate));
+            query += ' AND t.TransDate >= @startDate';
+        }
+        if (endDate) {
+            request.input('endDate', sql.DateTime, new Date(endDate));
+            query += ' AND t.TransDate <= @endDate';
+        }
 
-    // --- FORECAST ---
-    app.get('/api/forecast', async (req, res) => {
-        try {
-            const pool = getPool();
-            const result = await pool.request().query(`
+        query += ' ORDER BY t.TransDate DESC';
+
+        const result = await request.query(query);
+        res.json(result.recordset);
+    } catch (err) {
+        console.error('Get Transactions Error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// --- FORECAST ---
+app.get('/api/forecast', async (req, res) => {
+    try {
+        const pool = getPool();
+        const result = await pool.request().query(`
             SELECT 
                 ProductID, ProductName, DeviceType, MinStock, CurrentStock, LastPrice,
                 CASE WHEN CurrentStock < MinStock THEN MinStock - CurrentStock ELSE 0 END as Needed,
@@ -555,89 +567,89 @@ app.get('/api/stock/history/:id', async (req, res) => {
             FROM dbo.Stock_Products
             WHERE IsActive = 1 AND CurrentStock < MinStock
         `);
-            res.json(result.recordset);
-        } catch (err) {
-            console.error('Get Forecast Error:', err);
-            res.status(500).json({ error: 'Database error' });
-        }
-    });
+        res.json(result.recordset);
+    } catch (err) {
+        console.error('Get Forecast Error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
 
-    // --- EXPORT REPORT ---
-    app.get('/api/report/export', async (req, res) => {
-        const { types, startDate, endDate, format } = req.query;
-        // types = comma-separated: products,transactions,invoices,pos
+// --- EXPORT REPORT ---
+app.get('/api/report/export', async (req, res) => {
+    const { types, startDate, endDate, format } = req.query;
+    // types = comma-separated: products,transactions,invoices,pos
 
-        try {
-            const pool = getPool();
-            const dataTypes = types ? types.split(',') : ['products'];
-            const workbook = XLSX.utils.book_new();
+    try {
+        const pool = getPool();
+        const dataTypes = types ? types.split(',') : ['products'];
+        const workbook = XLSX.utils.book_new();
 
-            for (const dataType of dataTypes) {
-                let data = [];
-                const request = pool.request();
+        for (const dataType of dataTypes) {
+            let data = [];
+            const request = pool.request();
 
-                if (startDate) request.input('startDate', sql.DateTime, new Date(startDate));
-                if (endDate) request.input('endDate', sql.DateTime, new Date(endDate));
+            if (startDate) request.input('startDate', sql.DateTime, new Date(startDate));
+            if (endDate) request.input('endDate', sql.DateTime, new Date(endDate));
 
-                switch (dataType) {
-                    case 'products':
-                        const prodResult = await pool.request().query('SELECT * FROM dbo.Stock_Products WHERE IsActive = 1');
-                        data = prodResult.recordset;
-                        break;
-                    case 'transactions':
-                        let transQuery = `SELECT t.*, p.ProductName FROM dbo.Stock_Transactions t 
+            switch (dataType) {
+                case 'products':
+                    const prodResult = await pool.request().query('SELECT * FROM dbo.Stock_Products WHERE IsActive = 1');
+                    data = prodResult.recordset;
+                    break;
+                case 'transactions':
+                    let transQuery = `SELECT t.*, p.ProductName FROM dbo.Stock_Transactions t 
                                       LEFT JOIN dbo.Stock_Products p ON t.ProductID = p.ProductID WHERE 1=1`;
-                        if (startDate) transQuery += ' AND t.TransDate >= @startDate';
-                        if (endDate) transQuery += ' AND t.TransDate <= @endDate';
-                        const transResult = await request.query(transQuery);
-                        data = transResult.recordset;
-                        break;
-                    case 'invoices':
-                        let invQuery = 'SELECT * FROM dbo.Stock_Invoices WHERE 1=1';
-                        if (startDate) invQuery += ' AND ReceiveDate >= @startDate';
-                        if (endDate) invQuery += ' AND ReceiveDate <= @endDate';
-                        const invResult = await request.query(invQuery);
-                        data = invResult.recordset;
-                        break;
-                    case 'pos':
-                        let poQuery = 'SELECT * FROM dbo.Stock_PurchaseOrders WHERE 1=1';
-                        if (startDate) poQuery += ' AND RequestDate >= @startDate';
-                        if (endDate) poQuery += ' AND RequestDate <= @endDate';
-                        const poResult = await request.query(poQuery);
-                        data = poResult.recordset;
-                        break;
-                }
-
-                if (data.length > 0) {
-                    const ws = XLSX.utils.json_to_sheet(data);
-                    XLSX.utils.book_append_sheet(workbook, ws, dataType);
-                }
+                    if (startDate) transQuery += ' AND t.TransDate >= @startDate';
+                    if (endDate) transQuery += ' AND t.TransDate <= @endDate';
+                    const transResult = await request.query(transQuery);
+                    data = transResult.recordset;
+                    break;
+                case 'invoices':
+                    let invQuery = 'SELECT * FROM dbo.Stock_Invoices WHERE 1=1';
+                    if (startDate) invQuery += ' AND ReceiveDate >= @startDate';
+                    if (endDate) invQuery += ' AND ReceiveDate <= @endDate';
+                    const invResult = await request.query(invQuery);
+                    data = invResult.recordset;
+                    break;
+                case 'pos':
+                    let poQuery = 'SELECT * FROM dbo.Stock_PurchaseOrders WHERE 1=1';
+                    if (startDate) poQuery += ' AND RequestDate >= @startDate';
+                    if (endDate) poQuery += ' AND RequestDate <= @endDate';
+                    const poResult = await request.query(poQuery);
+                    data = poResult.recordset;
+                    break;
             }
 
-            const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
-            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Disposition', `attachment; filename=report_${Date.now()}.xlsx`);
-            res.send(buffer);
-        } catch (err) {
-            console.error('Export Error:', err);
-            res.status(500).json({ error: 'Failed to export report' });
+            if (data.length > 0) {
+                const ws = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(workbook, ws, dataType);
+            }
         }
-    });
 
-    // --- START SERVER ---
-    const startServer = async () => {
-        try {
-            await connectDB();
-            app.listen(PORT, () => {
-                console.log(`🚀 Server running on http://localhost:${PORT}`);
-                console.log('✅ Connected to SQL Server database');
-            });
-        } catch (err) {
-            console.error('❌ Failed to start server:', err.message);
-            console.error('   Please check your database connection settings in .env file');
-            process.exit(1);
-        }
-    };
+        const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-    startServer();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=report_${Date.now()}.xlsx`);
+        res.send(buffer);
+    } catch (err) {
+        console.error('Export Error:', err);
+        res.status(500).json({ error: 'Failed to export report' });
+    }
+});
+
+// --- START SERVER ---
+const startServer = async () => {
+    try {
+        await connectDB();
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running on http://localhost:${PORT}`);
+            console.log('✅ Connected to SQL Server database');
+        });
+    } catch (err) {
+        console.error('❌ Failed to start server:', err.message);
+        console.error('   Please check your database connection settings in .env file');
+        process.exit(1);
+    }
+};
+
+startServer();

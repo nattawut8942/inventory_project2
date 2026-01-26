@@ -18,9 +18,9 @@ const SidebarItem = ({ icon: Icon, label, to }) => (
     <NavLink
         to={to}
         className={({ isActive }) =>
-            `w-full flex items-center space-x-3 p-3 rounded-lg transition-all font-medium ${isActive
-                ? 'bg-white text-indigo-900 shadow-md'
-                : 'text-indigo-100/70 hover:bg-white/10 hover:text-white'
+            `w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-300 font-medium ${isActive
+                ? 'bg-white text-indigo-900 shadow-xl shadow-indigo-900/10 scale-105'
+                : 'text-indigo-100/70 hover:bg-white/10 hover:text-white hover:backdrop-blur-lg'
             }`
         }
     >
@@ -39,7 +39,7 @@ const Sidebar = () => {
     };
 
     return (
-        <aside className="w-64 bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-900 p-6 flex flex-col text-white shadow-xl relative z-20">
+        <aside className="w-72 bg-gradient-to-br from-indigo-900 via-slate-900 to-black p-6 flex flex-col text-white relative z-20 border-r border-white/5 shadow-2xl">
             <div className="flex items-center space-x-3 mb-10">
                 <div className="bg-white/10 p-2 rounded-lg border border-white/10 backdrop-blur-sm">
                     <Package className="text-white" size={20} />
