@@ -267,7 +267,7 @@ app.get('/api/pos', async (req, res) => {
             const detailsResult = await pool.request()
                 .input('PO_ID', sql.NVarChar, po.PO_ID)
                 .query(`
-                    SELECT d.DetailID, d.ProductID, p.ProductName, d.QtyOrdered, d.QtyReceived, d.UnitCost
+                    SELECT d.DetailID, d.ProductID, d.ItemName, p.ProductName, d.QtyOrdered, d.QtyReceived, d.UnitCost
                     FROM dbo.Stock_PODetails d
                     LEFT JOIN dbo.Stock_Products p ON d.ProductID = p.ProductID
                     WHERE d.PO_ID = @PO_ID
@@ -309,12 +309,13 @@ app.post('/api/pos', async (req, res) => {
             for (const item of Items) {
                 await new sql.Request(transaction)
                     .input('PO_ID', sql.NVarChar, PO_ID)
-                    .input('ProductID', sql.Int, item.ProductID)
+                    .input('ItemName', sql.NVarChar, item.ItemName || '')
+                    .input('ProductID', sql.Int, item.ProductID || null)
                     .input('QtyOrdered', sql.Int, item.QtyOrdered)
                     .input('UnitCost', sql.Decimal(18, 2), item.UnitCost || 0)
                     .query(`
-                        INSERT INTO dbo.Stock_PODetails (PO_ID, ProductID, QtyOrdered, QtyReceived, UnitCost)
-                        VALUES (@PO_ID, @ProductID, @QtyOrdered, 0, @UnitCost)
+                        INSERT INTO dbo.Stock_PODetails (PO_ID, ItemName, ProductID, QtyOrdered, QtyReceived, UnitCost)
+                        VALUES (@PO_ID, @ItemName, @ProductID, @QtyOrdered, 0, @UnitCost)
                     `);
             }
 

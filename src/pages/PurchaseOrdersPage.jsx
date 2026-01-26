@@ -6,10 +6,10 @@ import { useAuth } from '../context/AuthContext';
 const API_BASE = 'http://localhost:3001/api';
 
 const PurchaseOrdersPage = () => {
-    const { products, purchaseOrders, refreshData } = useData();
+    const { purchaseOrders, refreshData } = useData();
     const { user } = useAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [poItems, setPoItems] = useState([{ ProductID: '', QtyOrdered: 1, UnitCost: 0 }]);
+    const [poItems, setPoItems] = useState([{ ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
 
     const generatePONumber = () => {
         const now = new Date();
@@ -20,7 +20,7 @@ const PurchaseOrdersPage = () => {
     };
 
     const addItem = () => {
-        setPoItems([...poItems, { ProductID: '', QtyOrdered: 1, UnitCost: 0 }]);
+        setPoItems([...poItems, { ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
     };
 
     const removeItem = (index) => {
@@ -30,10 +30,6 @@ const PurchaseOrdersPage = () => {
     const updateItem = (index, field, value) => {
         const updated = [...poItems];
         updated[index][field] = value;
-        if (field === 'ProductID') {
-            const prod = products.find(p => p.ProductID === Number(value));
-            if (prod) updated[index].UnitCost = prod.LastPrice;
-        }
         setPoItems(updated);
     };
 
@@ -48,7 +44,7 @@ const PurchaseOrdersPage = () => {
             RequestedBy: user.username,
             Section: fd.get('Section'),
             Remark: fd.get('Remark'),
-            Items: poItems.filter(i => i.ProductID)
+            Items: poItems.filter(i => i.ItemName.trim() !== '')
         };
 
         try {
@@ -59,7 +55,7 @@ const PurchaseOrdersPage = () => {
             });
             if (res.ok) {
                 setIsModalOpen(false);
-                setPoItems([{ ProductID: '', QtyOrdered: 1, UnitCost: 0 }]);
+                setPoItems([{ ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
                 refreshData();
             } else {
                 alert('Failed to create PO');
@@ -67,6 +63,10 @@ const PurchaseOrdersPage = () => {
         } catch (err) {
             alert('Error creating PO');
         }
+    };
+
+    const getTotalAmount = () => {
+        return poItems.reduce((sum, item) => sum + (item.QtyOrdered * item.UnitCost), 0);
     };
 
     return (
@@ -97,7 +97,7 @@ const PurchaseOrdersPage = () => {
                         <div className="space-y-2 border-t border-gray-800 pt-4">
                             {po.Items?.map((item, idx) => (
                                 <div key={idx} className="flex justify-between text-xs">
-                                    <span className="text-gray-400">{item.ProductName || `Product #${item.ProductID}`}</span>
+                                    <span className="text-gray-400">{item.ItemName || item.ProductName || `Item #${idx + 1}`}</span>
                                     <span className="font-mono text-gray-300">{item.QtyReceived || 0} / {item.QtyOrdered}</span>
                                 </div>
                             ))}
@@ -129,50 +129,58 @@ const PurchaseOrdersPage = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase">PO Number</label>
-                                    <input name="PO_ID" defaultValue={generatePONumber()} className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1" required />
+                                    <input name="PO_ID" defaultValue={generatePONumber()} className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1 text-white" required />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase">Vendor Name</label>
-                                    <input name="VendorName" className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1" required placeholder="Supplier name" />
+                                    <input name="VendorName" className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1 text-white" required placeholder="Supplier name" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase">Due Date</label>
-                                    <input name="DueDate" type="date" className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1" />
+                                    <input name="DueDate" type="date" className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1 text-white" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase">Section</label>
-                                    <input name="Section" className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1" placeholder="IT, Admin, etc." />
+                                    <input name="Section" className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1 text-white" placeholder="IT, Admin, etc." />
                                 </div>
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase">Remark</label>
-                                <textarea name="Remark" className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1 h-20" placeholder="Additional notes..."></textarea>
+                                <textarea name="Remark" className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1 h-20 text-white" placeholder="Additional notes..."></textarea>
                             </div>
 
-                            {/* Items */}
+                            {/* Items - Manual Input */}
                             <div>
                                 <div className="flex justify-between items-center mb-3">
                                     <label className="text-[10px] font-bold text-gray-500 uppercase">Order Items</label>
-                                    <button type="button" onClick={addItem} className="text-xs text-indigo-400 hover:text-indigo-300">+ Add Item</button>
+                                    <button type="button" onClick={addItem} className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                                        <Plus size={14} /> Add Item
+                                    </button>
                                 </div>
-                                <div className="space-y-3">
+
+                                {/* Header */}
+                                <div className="grid grid-cols-12 gap-2 mb-2 px-3 text-[10px] text-gray-500 uppercase font-bold">
+                                    <div className="col-span-6">Item Description</div>
+                                    <div className="col-span-2 text-center">Qty</div>
+                                    <div className="col-span-3 text-center">Unit Cost (฿)</div>
+                                    <div className="col-span-1"></div>
+                                </div>
+
+                                <div className="space-y-2">
                                     {poItems.map((item, idx) => (
-                                        <div key={idx} className="flex gap-3 items-center bg-gray-900 p-3 rounded-xl border border-gray-800">
-                                            <select
-                                                value={item.ProductID}
-                                                onChange={(e) => updateItem(idx, 'ProductID', e.target.value)}
-                                                className="flex-1 bg-black border border-gray-700 p-2 rounded-lg text-sm"
-                                            >
-                                                <option value="">Select Product</option>
-                                                {products.map(p => (
-                                                    <option key={p.ProductID} value={p.ProductID}>{p.ProductName}</option>
-                                                ))}
-                                            </select>
+                                        <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-gray-900 p-3 rounded-xl border border-gray-800">
+                                            <input
+                                                type="text"
+                                                value={item.ItemName}
+                                                onChange={(e) => updateItem(idx, 'ItemName', e.target.value)}
+                                                className="col-span-6 bg-black border border-gray-700 p-2 rounded-lg text-sm text-white"
+                                                placeholder="Enter item name..."
+                                            />
                                             <input
                                                 type="number"
                                                 value={item.QtyOrdered}
                                                 onChange={(e) => updateItem(idx, 'QtyOrdered', Number(e.target.value))}
-                                                className="w-20 bg-black border border-gray-700 p-2 rounded-lg text-sm text-center"
+                                                className="col-span-2 bg-black border border-gray-700 p-2 rounded-lg text-sm text-center text-white"
                                                 placeholder="Qty"
                                                 min="1"
                                             />
@@ -180,21 +188,33 @@ const PurchaseOrdersPage = () => {
                                                 type="number"
                                                 value={item.UnitCost}
                                                 onChange={(e) => updateItem(idx, 'UnitCost', Number(e.target.value))}
-                                                className="w-28 bg-black border border-gray-700 p-2 rounded-lg text-sm text-center"
-                                                placeholder="Unit Cost"
+                                                className="col-span-3 bg-black border border-gray-700 p-2 rounded-lg text-sm text-center text-white"
+                                                placeholder="0.00"
                                                 step="0.01"
                                             />
-                                            {poItems.length > 1 && (
-                                                <button type="button" onClick={() => removeItem(idx)} className="text-red-500 p-1">
-                                                    <X size={16} />
-                                                </button>
-                                            )}
+                                            <div className="col-span-1 flex justify-center">
+                                                {poItems.length > 1 && (
+                                                    <button type="button" onClick={() => removeItem(idx)} className="text-red-500 hover:text-red-400 p-1">
+                                                        <X size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
+
+                                {/* Total */}
+                                <div className="mt-4 p-4 bg-gray-900/50 rounded-xl border border-gray-800 flex justify-between items-center">
+                                    <span className="text-gray-400 font-medium">Total Amount</span>
+                                    <span className="text-xl font-bold text-indigo-400 font-mono">
+                                        ฿{getTotalAmount().toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
                             </div>
 
-                            <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl">Create Purchase Order</button>
+                            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl transition-all">
+                                Create Purchase Order
+                            </button>
                         </form>
                     </div>
                 </div>
