@@ -226,28 +226,28 @@ const InventoryPage = () => {
             {/* HISTORY MODAL */}
             {historyItem && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white w-full max-w-2xl rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95">
-                        <div className="p-6 bg-slate-50 flex justify-between items-center rounded-t-3xl border-b border-slate-100">
+                    <div className="bg-white w-full max-w-2xl rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[85vh]">
+                        <div className="p-6 bg-slate-50 flex justify-between items-center border-b border-slate-100 shrink-0">
                             <div>
                                 <h3 className="font-bold text-lg text-slate-800">Stock History</h3>
                                 <p className="text-xs text-slate-500">{historyItem.ProductName}</p>
                             </div>
-                            <button onClick={() => setHistoryItem(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+                            <button onClick={() => setHistoryItem(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 transition-colors"><X size={20} /></button>
                         </div>
-                        <div className="max-h-[60vh] overflow-y-auto">
+                        <div className="overflow-y-auto p-0 scrollbar-thin">
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-white text-slate-500 text-[10px] uppercase sticky top-0 border-b border-slate-100 shadow-sm z-10">
                                     <tr>
-                                        <th className="p-4 bg-white">Date</th>
-                                        <th className="p-4 text-center bg-white">Qty</th>
-                                        <th className="p-4 bg-white">Source Ref</th>
-                                        <th className="p-4 bg-white">User</th>
+                                        <th className="p-4 bg-slate-50/80 backdrop-blur">Date</th>
+                                        <th className="p-4 text-center bg-slate-50/80 backdrop-blur">Qty</th>
+                                        <th className="p-4 bg-slate-50/80 backdrop-blur">Source Ref</th>
+                                        <th className="p-4 bg-slate-50/80 backdrop-blur">User</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {historyData.map((h, i) => (
-                                        <tr key={i} className="hover:bg-slate-50">
-                                            <td className="p-4 text-slate-500">{new Date(h.TransDate).toLocaleDateString()} {new Date(h.TransDate).toLocaleTimeString()}</td>
+                                        <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                            <td className="p-4 text-slate-500">{new Date(h.TransDate).toLocaleDateString()} <span className="text-xs text-slate-400">{new Date(h.TransDate).toLocaleTimeString()}</span></td>
                                             <td className="p-4 text-center font-bold text-emerald-600">+{h.Qty}</td>
                                             <td className="p-4 text-indigo-600 font-medium">{h.RefInfo}</td>
                                             <td className="p-4 text-xs text-slate-400">{h.UserID}</td>
@@ -259,6 +259,11 @@ const InventoryPage = () => {
                                 </tbody>
                             </table>
                         </div>
+                        <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0">
+                            <button onClick={() => setHistoryItem(null)} className="w-full bg-white border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm">
+                                Close History
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -269,34 +274,41 @@ const InventoryPage = () => {
                     <div className="bg-white w-full max-w-lg rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95">
                         <div className="p-6 bg-slate-50 flex justify-between items-center border-b border-slate-100">
                             <h3 className="font-bold text-lg text-slate-800">Edit Product</h3>
-                            <button onClick={() => setEditItem(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+                            <button onClick={() => setEditItem(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 transition-colors"><X size={20} /></button>
                         </div>
-                        <form onSubmit={handleUpdate} className="p-8 space-y-4">
+                        <form onSubmit={handleUpdate} className="p-6 space-y-5">
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase">Product Name</label>
-                                <input name="ProductName" defaultValue={editItem.ProductName} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 outline-none text-slate-800 focus:border-indigo-500" required />
+                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Product Name</label>
+                                <input name="ProductName" defaultValue={editItem.ProductName} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium" required />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Type</label>
-                                    <select name="DeviceType" defaultValue={editItem.DeviceType} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 focus:border-indigo-500">
+                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Type</label>
+                                    <select name="DeviceType" defaultValue={editItem.DeviceType} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500">
                                         {deviceTypes.map(t => <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Price</label>
-                                    <input name="LastPrice" type="number" step="0.01" defaultValue={editItem.LastPrice} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 focus:border-indigo-500" />
+                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Price (฿)</label>
+                                    <input name="LastPrice" type="number" step="0.01" defaultValue={editItem.LastPrice} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Current Stock</label>
-                                    <input name="CurrentStock" type="number" defaultValue={editItem.CurrentStock} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 focus:border-indigo-500" />
+                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Current Stock</label>
+                                    <input name="CurrentStock" type="number" defaultValue={editItem.CurrentStock} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Min Stock</label>
-                                    <input name="MinStock" type="number" defaultValue={editItem.MinStock} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 focus:border-indigo-500" />
+                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Min Stock</label>
+                                    <input name="MinStock" type="number" defaultValue={editItem.MinStock} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
                                 </div>
                             </div>
-                            <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl mt-4 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">Save Changes</button>
+                            <div className="flex gap-3 pt-2">
+                                <button type="button" onClick={() => setEditItem(null)} className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
+                                    Cancel
+                                </button>
+                                <button type="submit" className="flex-[2] bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+                                    Save Changes
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>

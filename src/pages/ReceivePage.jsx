@@ -195,12 +195,21 @@ const ReceivePage = () => {
                                     })}
                                 </div>
                             </div>
-                            <button
-                                type="submit"
-                                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 items-center justify-center flex gap-2"
-                            >
-                                <FileText size={18} /> CONFIRM RECEIPT
-                            </button>
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-4 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-[2] bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 items-center justify-center flex gap-2"
+                                >
+                                    <FileText size={18} /> CONFIRM RECEIPT
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>

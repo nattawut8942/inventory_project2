@@ -32,67 +32,82 @@ const ManualImportPage = () => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6 pt-10">
-            <div className="bg-gray-900/60 border border-gray-800 p-8 rounded-3xl shadow-2xl backdrop-blur-sm">
-                <h2 className="text-2xl font-black mb-2 flex items-center gap-3 text-white">
-                    <Plus className="text-indigo-500" /> Manual Import
+        <div className="max-w-2xl mx-auto space-y-6 pt-10 animate-in fade-in slide-in-from-bottom-5">
+            <div className="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl shadow-slate-200/50">
+                <h2 className="text-2xl font-black mb-2 flex items-center gap-3 text-slate-800">
+                    <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600">
+                        <Plus size={24} />
+                    </div>
+                    Manual Import
                 </h2>
-                <p className="text-gray-500 text-sm mb-8">Import legacy items manually without PO reference.</p>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                <p className="text-slate-500 text-sm mb-8 ml-14">Import legacy items manually without PO reference.</p>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-2 gap-5">
                         <div className="col-span-2">
-                            <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Product Name</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Product Name</label>
                             <input
                                 name="ProductName"
                                 required
-                                className="w-full bg-black/50 border border-gray-800 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-800 font-medium placeholder:text-slate-400"
                                 placeholder="e.g. Dell Monitor..."
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Type</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Type</label>
                             <select
                                 name="DeviceType"
-                                className="w-full bg-black/50 border border-gray-800 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-gray-300"
+                                className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                             >
                                 {deviceTypes.map(t => <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Price</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Price</label>
                             <input
                                 name="LastPrice"
                                 type="number"
                                 step="0.01"
                                 required
-                                className="w-full bg-black/50 border border-gray-800 p-3 rounded-xl outline-none"
+                                className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                 placeholder="0.00"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Current Stock</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Current Stock</label>
                             <input
                                 name="CurrentStock"
                                 type="number"
                                 required
-                                className="w-full bg-black/50 border border-gray-800 p-3 rounded-xl outline-none"
+                                className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                 placeholder="0"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Min. Alert</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Min. Alert</label>
                             <input
                                 name="MinStock"
                                 type="number"
                                 required
-                                className="w-full bg-black/50 border border-gray-800 p-3 rounded-xl outline-none"
+                                className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                 placeholder="0"
                             />
                         </div>
                     </div>
-                    <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl mt-4 transition-all">
-                        Confirm Import
-                    </button>
+                    <div className="flex gap-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => navigate(-1)}
+                            className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-4 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all hover:shadow-sm"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all hover:scale-[1.02]"
+                        >
+                            Confirm Import
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
