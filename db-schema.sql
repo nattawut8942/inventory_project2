@@ -13,7 +13,8 @@ CREATE TABLE dbo.Stock_Products (
     CurrentStock INT DEFAULT 0,
     LastPrice DECIMAL(18, 2) DEFAULT 0.00,
     UnitOfMeasure NVARCHAR(50) DEFAULT 'Pcs',
-    IsActive BIT DEFAULT 1
+    IsActive BIT DEFAULT 1,
+    ImageURL NVARCHAR(MAX) -- Added for product images
 );
 
 -- 3. Purchase Orders Table (PO)

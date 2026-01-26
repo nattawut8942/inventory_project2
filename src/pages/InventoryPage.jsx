@@ -45,15 +45,44 @@ const InventoryPage = () => {
         p.ProductName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleFileUpload = async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch(`${API_BASE}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            if (res.ok) {
+                const data = await res.json();
+                return data.path; // Return the uploaded file path
+            }
+        } catch (err) {
+            console.error('Upload failed', err);
+        }
+        return null;
+    };
+
     const handleUpdate = async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
+        const file = fd.get('imageFile');
+        let imageUrl = editItem.ImageURL;
+
+        if (file && file.size > 0) {
+            const uploadedPath = await handleFileUpload(file);
+            if (uploadedPath) imageUrl = uploadedPath;
+        }
+
+        const payload = Object.fromEntries(fd);
+        payload.ImageURL = imageUrl; // Append updated or existing ImageURL
 
         try {
             await fetch(`${API_BASE}/products/${editItem.ProductID}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(Object.fromEntries(fd))
+                body: JSON.stringify(payload)
             });
             setEditItem(null);
             refreshData();
@@ -110,7 +139,7 @@ const InventoryPage = () => {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-widest border-b border-slate-200">
                             <tr>
-                                <th className="p-4 pl-6">Device Name</th>
+                                <th className="p-4 pl-6">Product</th>
                                 <th className="p-4">Type</th>
                                 <th className="p-4">Unit Price</th>
                                 <th className="p-4 text-center">In Stock</th>
@@ -125,10 +154,20 @@ const InventoryPage = () => {
                                 const Icon = getIcon(p.DeviceType);
                                 return (
                                     <tr key={p.ProductID} className="hover:bg-slate-50 transition-colors">
-                                        <td className="p-4 pl-6 font-bold text-slate-700">{p.ProductName}</td>
+                                        <td className="p-4 pl-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                                                    {p.ImageURL ? (
+                                                        <img src={`http://localhost:3001${p.ImageURL}`} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Icon size={18} className="text-slate-400" />
+                                                    )}
+                                                </div>
+                                                <span className="font-bold text-slate-700">{p.ProductName}</span>
+                                            </div>
+                                        </td>
                                         <td className="p-4">
                                             <span className="flex items-center w-fit gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold border border-slate-200">
-                                                <Icon size={12} />
                                                 {p.DeviceType}
                                             </span>
                                         </td>
@@ -184,12 +223,15 @@ const InventoryPage = () => {
                         const Icon = getIcon(p.DeviceType);
                         const isLow = p.CurrentStock < p.MinStock;
                         return (
-                            <div key={p.ProductID} className={`bg-white border rounded-2xl p-5 transition-all hover:shadow-lg shadow-sm ${isLow ? 'border-red-100 ring-2 ring-red-50' : 'border-slate-200 hover:border-indigo-200'}`}>
+                            <div key={p.ProductID} className={`group bg-white border rounded-2xl p-5 transition-all hover:shadow-lg shadow-sm ${isLow ? 'border-red-100 ring-2 ring-red-50' : 'border-slate-200 hover:border-indigo-200'}`}>
                                 <div className="flex justify-between items-start mb-3">
-                                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold border border-slate-200">
-                                        <Icon size={12} />
-                                        {p.DeviceType}
-                                    </span>
+                                    <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                                        {p.ImageURL ? (
+                                            <img src={`http://localhost:3001${p.ImageURL}`} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                        ) : (
+                                            <Icon size={20} className="text-slate-400" />
+                                        )}
+                                    </div>
                                     <div className="flex gap-1">
                                         <button onClick={() => viewHistory(p)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">
                                             <Search size={14} />
@@ -206,7 +248,10 @@ const InventoryPage = () => {
                                         )}
                                     </div>
                                 </div>
-                                <h3 className="font-bold text-slate-800 text-sm mb-2 line-clamp-2 min-h-[2.5em]">{p.ProductName}</h3>
+                                <div className="mb-2">
+                                    <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500 mb-1">{p.DeviceType}</span>
+                                    <h3 className="font-bold text-slate-800 text-sm line-clamp-2 min-h-[2.5em]">{p.ProductName}</h3>
+                                </div>
                                 <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-50">
                                     <div>
                                         <p className="text-[10px] text-slate-400 uppercase font-bold">Price</p>
@@ -280,6 +325,19 @@ const InventoryPage = () => {
                             <div>
                                 <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Product Name</label>
                                 <input name="ProductName" defaultValue={editItem.ProductName} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium" required />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Product Image</label>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
+                                        {editItem.ImageURL ? (
+                                            <img src={`http://localhost:3001${editItem.ImageURL}`} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Package className="text-slate-400" />
+                                        )}
+                                    </div>
+                                    <input type="file" name="imageFile" accept="image/*" className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>

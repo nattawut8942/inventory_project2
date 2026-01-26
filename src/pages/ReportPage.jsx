@@ -62,46 +62,46 @@ const ReportPage = () => {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in">
+        <div className="space-y-6 animate-in slide-in-from-bottom-5">
             <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-black">Export Reports</h2>
+                <h2 className="text-3xl font-black text-slate-800">Export Reports</h2>
             </div>
 
             <div className="max-w-3xl mx-auto">
-                <div className="bg-gray-900/60 border border-gray-800 rounded-3xl p-8">
+                <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl shadow-slate-200/50">
                     {/* Header */}
                     <div className="flex items-center gap-4 mb-8">
-                        <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 flex items-center justify-center">
-                            <FileSpreadsheet size={28} className="text-indigo-400" />
+                        <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+                            <FileSpreadsheet size={28} className="text-indigo-600" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-xl">Generate Report</h3>
-                            <p className="text-gray-500 text-sm">Select data types and date range to export</p>
+                            <h3 className="font-bold text-xl text-slate-800">Generate Report</h3>
+                            <p className="text-slate-500 text-sm">Select data types and date range to export</p>
                         </div>
                     </div>
 
                     {/* Date Range */}
                     <div className="mb-8">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-2 mb-3">
+                        <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2 mb-3 tracking-wider">
                             <Calendar size={14} /> Date Range (Optional)
                         </label>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-xs text-gray-600 mb-1 block">Start Date</label>
+                                <label className="text-xs font-bold text-slate-600 mb-1 block">Start Date</label>
                                 <input
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full bg-black border border-gray-800 p-3 rounded-xl outline-none focus:border-indigo-500"
+                                    className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 text-slate-700 font-medium"
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-600 mb-1 block">End Date</label>
+                                <label className="text-xs font-bold text-slate-600 mb-1 block">End Date</label>
                                 <input
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full bg-black border border-gray-800 p-3 rounded-xl outline-none focus:border-indigo-500"
+                                    className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 text-slate-700 font-medium"
                                 />
                             </div>
                         </div>
@@ -109,7 +109,7 @@ const ReportPage = () => {
 
                     {/* Data Types Selection */}
                     <div className="mb-8">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase mb-3 block">Select Data to Export</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">Select Data to Export</label>
                         <div className="space-y-3">
                             {dataOptions.map(option => {
                                 const isSelected = selectedTypes.includes(option.id);
@@ -119,18 +119,20 @@ const ReportPage = () => {
                                         type="button"
                                         onClick={() => toggleType(option.id)}
                                         className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all ${isSelected
-                                                ? 'bg-indigo-600/10 border-indigo-600/30 text-white'
-                                                : 'bg-black/40 border-gray-800 text-gray-400 hover:border-gray-700'
+                                            ? 'bg-indigo-50 border-indigo-500/50 text-indigo-900 shadow-sm ring-1 ring-indigo-500/20'
+                                            : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-200 hover:bg-slate-50'
                                             }`}
                                     >
                                         {isSelected ? (
-                                            <CheckSquare size={20} className="text-indigo-400" />
+                                            <div className="bg-indigo-600 rounded-lg p-1">
+                                                <CheckSquare size={16} className="text-white" />
+                                            </div>
                                         ) : (
-                                            <Square size={20} className="text-gray-600" />
+                                            <Square size={24} className="text-slate-300" />
                                         )}
                                         <div className="flex-1">
-                                            <p className="font-bold text-sm">{option.label}</p>
-                                            <p className="text-xs text-gray-500">{option.description}</p>
+                                            <p className={`font-bold text-sm ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}>{option.label}</p>
+                                            <p className={`text-xs ${isSelected ? 'text-indigo-500/80' : 'text-slate-400'}`}>{option.description}</p>
                                         </div>
                                     </button>
                                 );
@@ -139,12 +141,12 @@ const ReportPage = () => {
                     </div>
 
                     {/* Summary */}
-                    <div className="bg-black/40 border border-gray-800 rounded-xl p-4 mb-6">
-                        <p className="text-xs text-gray-500 mb-2">Export Summary</p>
-                        <p className="text-sm text-white">
-                            <span className="font-bold text-indigo-400">{selectedTypes.length}</span> data type(s) selected
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6">
+                        <p className="text-xs text-slate-400 mb-2 font-bold uppercase tracking-wider">Export Summary</p>
+                        <p className="text-sm text-slate-600">
+                            <span className="font-bold text-indigo-600">{selectedTypes.length}</span> data type(s) selected
                             {startDate && endDate && (
-                                <span className="text-gray-500"> • Date range: {startDate} to {endDate}</span>
+                                <span className="text-slate-400"> • Range: {startDate} to {endDate}</span>
                             )}
                         </p>
                     </div>
@@ -153,7 +155,7 @@ const ReportPage = () => {
                     <button
                         onClick={handleExport}
                         disabled={isExporting || selectedTypes.length === 0}
-                        className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-800 disabled:text-gray-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-3 transition-all"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]"
                     >
                         {isExporting ? (
                             <>
