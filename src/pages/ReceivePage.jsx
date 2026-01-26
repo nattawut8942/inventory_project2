@@ -48,7 +48,7 @@ const ReceivePage = () => {
                             </div>
                             <div className="space-y-2 mb-6 border-t border-gray-800 pt-4">
                                 {po.Items.map(item => {
-                                    const prodName = products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Unknown Item';
+                                    const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Unknown Item';
                                     return (
                                         <div key={item.DetailID} className="flex justify-between text-xs">
                                             <span className="text-gray-400">{prodName}</span>

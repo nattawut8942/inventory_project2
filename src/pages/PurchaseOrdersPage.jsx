@@ -133,6 +133,10 @@ const PurchaseOrdersPage = () => {
                                     <input name="PO_ID" defaultValue={generatePONumber()} className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1 text-white" required />
                                 </div>
                                 <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">PR Ref No.</label>
+                                    <input name="PR_No" className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1 text-white" placeholder="PR-XXXXX" />
+                                </div>
+                                <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase">Vendor Name</label>
                                     <input name="VendorName" className="w-full bg-black border border-gray-800 p-3 rounded-xl mt-1 text-white" required placeholder="Supplier name" />
                                 </div>

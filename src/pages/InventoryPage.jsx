@@ -11,48 +11,19 @@ const InventoryPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [viewMode, setViewMode] = useState('list');
     const [editItem, setEditItem] = useState(null);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+    const [historyItem, setHistoryItem] = useState(null);
+    const [historyData, setHistoryData] = useState([]);
 
-    const isAdmin = user?.role === 'Staff';
-
-    const getIcon = (type) => {
-        switch (type) {
-            case 'Monitor': return Monitor;
-            case 'Network': return Network;
-            case 'Asset': return Archive;
-            case 'Stock': return Database;
-            default: return Package;
-        }
-    };
-
-    const filteredProducts = products.filter(p =>
-        p.ProductName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const handleUpdate = async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-
+    const viewHistory = async (product) => {
+        setHistoryItem(product);
         try {
-            await fetch(`${API_BASE}/products/${editItem.ProductID}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(Object.fromEntries(fd))
-            });
-            setEditItem(null);
-            refreshData();
+            const res = await fetch(`${API_BASE}/stock/history/${product.ProductID}`);
+            if (res.ok) {
+                const data = await res.json();
+                setHistoryData(data);
+            }
         } catch (err) {
-            alert('Failed to update');
-        }
-    };
-
-    const handleDelete = async (id) => {
-        try {
-            await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
-            setShowDeleteConfirm(null);
-            refreshData();
-        } catch (err) {
-            alert('Failed to delete');
+            console.error('Failed to fetch history');
         }
     };
 
@@ -100,6 +71,7 @@ const InventoryPage = () => {
                                 <th className="p-4 text-center">In Stock</th>
                                 <th className="p-4 text-center">Min</th>
                                 <th className="p-4">Status</th>
+                                <th className="p-4 text-center">History</th>
                                 {isAdmin && <th className="p-4 text-center">Actions</th>}
                             </tr>
                         </thead>
@@ -125,6 +97,11 @@ const InventoryPage = () => {
                                                 <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded border border-red-500/20">LOW STOCK</span> :
                                                 <span className="text-[10px] font-bold text-green-400 bg-green-500/10 px-2 py-1 rounded border border-green-500/20">NORMAL</span>
                                             }
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <button onClick={() => viewHistory(p)} className="text-gray-400 hover:text-indigo-400 transition-colors">
+                                                <Search size={16} />
+                                            </button>
                                         </td>
                                         {isAdmin && (
                                             <td className="p-4">
@@ -168,16 +145,21 @@ const InventoryPage = () => {
                                         <Icon size={12} />
                                         {p.DeviceType}
                                     </span>
-                                    {isAdmin && (
-                                        <div className="flex gap-1">
-                                            <button onClick={() => setEditItem(p)} className="p-1.5 text-gray-500 hover:text-indigo-400 rounded">
-                                                <Edit2 size={14} />
-                                            </button>
-                                            <button onClick={() => setShowDeleteConfirm(p.ProductID)} className="p-1.5 text-gray-500 hover:text-red-400 rounded">
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    )}
+                                    <div className="flex gap-1">
+                                        <button onClick={() => viewHistory(p)} className="p-1.5 text-gray-500 hover:text-indigo-400 rounded">
+                                            <Search size={14} />
+                                        </button>
+                                        {isAdmin && (
+                                            <>
+                                                <button onClick={() => setEditItem(p)} className="p-1.5 text-gray-500 hover:text-indigo-400 rounded">
+                                                    <Edit2 size={14} />
+                                                </button>
+                                                <button onClick={() => setShowDeleteConfirm(p.ProductID)} className="p-1.5 text-gray-500 hover:text-red-400 rounded">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                                 <h3 className="font-bold text-white text-sm mb-2 line-clamp-2">{p.ProductName}</h3>
                                 <div className="flex justify-between items-end mt-4">
@@ -193,6 +175,46 @@ const InventoryPage = () => {
                             </div>
                         );
                     })}
+                </div>
+            )}
+
+            {/* HISTORY MODAL */}
+            {historyItem && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-gray-950 w-full max-w-2xl rounded-3xl border border-gray-800 shadow-2xl overflow-hidden animate-in zoom-in-95">
+                        <div className="p-6 bg-gradient-to-r from-indigo-900 to-gray-900 flex justify-between items-center rounded-t-3xl">
+                            <div>
+                                <h3 className="font-bold text-lg text-white">Stock History</h3>
+                                <p className="text-xs text-indigo-300">{historyItem.ProductName}</p>
+                            </div>
+                            <button onClick={() => setHistoryItem(null)} className="text-gray-400 hover:text-white"><X size={20} /></button>
+                        </div>
+                        <div className="max-h-[60vh] overflow-y-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-black/50 text-gray-500 text-[10px] uppercase sticky top-0 backdrop-blur-md">
+                                    <tr>
+                                        <th className="p-4">Date</th>
+                                        <th className="p-4 text-center">Qty</th>
+                                        <th className="p-4">Source Ref</th>
+                                        <th className="p-4">User</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-800">
+                                    {historyData.map((h, i) => (
+                                        <tr key={i} className="hover:bg-gray-900/50">
+                                            <td className="p-4 text-gray-400">{new Date(h.TransDate).toLocaleDateString()} {new Date(h.TransDate).toLocaleTimeString()}</td>
+                                            <td className="p-4 text-center font-bold text-green-500">+{h.Qty}</td>
+                                            <td className="p-4 text-indigo-300">{h.RefInfo}</td>
+                                            <td className="p-4 text-xs text-gray-600">{h.UserID}</td>
+                                        </tr>
+                                    ))}
+                                    {historyData.length === 0 && (
+                                        <tr><td colSpan="4" className="p-8 text-center text-gray-600">No history available</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             )}
 

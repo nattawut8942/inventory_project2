@@ -19,6 +19,7 @@ CREATE TABLE dbo.Stock_Products (
 -- 3. Purchase Orders Table (PO)
 CREATE TABLE dbo.Stock_PurchaseOrders (
     PO_ID NVARCHAR(50) PRIMARY KEY, -- PO-2024-001
+    PR_No NVARCHAR(50), -- Link to Purchase Request
     VendorName NVARCHAR(255),
     RequestDate DATETIME DEFAULT GETDATE(),
     DueDate DATETIME,
