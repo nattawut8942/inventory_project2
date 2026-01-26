@@ -323,11 +323,16 @@ app.post('/api/pos', async (req, res) => {
             res.json({ success: true, PO_ID });
         } catch (err) {
             await transaction.rollback();
+            console.error('SQL Error details:', err);
             throw err;
         }
     } catch (err) {
         console.error('Create PO Error:', err);
-        res.status(500).json({ error: 'Failed to create PO' });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create PO',
+            details: err.message || err.toString()
+        });
     }
 });
 

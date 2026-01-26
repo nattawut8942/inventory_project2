@@ -58,10 +58,11 @@ const PurchaseOrdersPage = () => {
                 setPoItems([{ ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
                 refreshData();
             } else {
-                alert('Failed to create PO');
+                const data = await res.json();
+                alert(`Failed to create PO: ${data.details || 'Unknown error'}`);
             }
         } catch (err) {
-            alert('Error creating PO');
+            alert(`Error creating PO: ${err.message}`);
         }
     };
 
