@@ -40,7 +40,8 @@ CREATE TABLE dbo.Stock_PurchaseOrders (
 CREATE TABLE dbo.Stock_PODetails (
     DetailID INT IDENTITY(1,1) PRIMARY KEY,
     PO_ID NVARCHAR(50) FOREIGN KEY REFERENCES dbo.Stock_PurchaseOrders(PO_ID),
-    ProductID INT FOREIGN KEY REFERENCES dbo.Stock_Products(ProductID),
+    ItemName NVARCHAR(255), -- Added for manual entry support
+    ProductID INT FOREIGN KEY REFERENCES dbo.Stock_Products(ProductID), -- Nullable for manual items
     QtyOrdered INT NOT NULL,
     QtyReceived INT DEFAULT 0,
     UnitCost DECIMAL(18, 2),
