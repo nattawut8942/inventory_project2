@@ -121,8 +121,9 @@ const ReceivePage = () => {
                             e.preventDefault();
                             const fd = new FormData(e.target);
                             const items = activePo.Items.map(it => ({
+                                DetailID: it.DetailID, // Use DetailID for identification
                                 ProductID: it.ProductID,
-                                Qty: fd.get(`r-${it.ProductID}`)
+                                Qty: fd.get(`r-${it.DetailID}`) // Get qty by DetailID
                             })).filter(it => it.Qty > 0);
                             handleReceive(activePo.PO_ID, fd.get('inv'), items);
                         }} className="p-8 space-y-6">
@@ -139,10 +140,12 @@ const ReceivePage = () => {
                                 <label className="text-[10px] font-bold text-gray-500 uppercase">Confirm Quantities</label>
                                 {activePo.Items.map(item => {
                                     const rem = item.QtyOrdered - item.QtyReceived;
-                                    const prodName = products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Item';
+                                    // Handle itemName for manual or product name for stock items
+                                    const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Unknown Item';
+
                                     if (rem <= 0) return null;
                                     return (
-                                        <div key={item.ProductID} className="flex items-center gap-4 bg-gray-900 p-3 rounded-xl border border-gray-800">
+                                        <div key={item.DetailID} className="flex items-center gap-4 bg-gray-900 p-3 rounded-xl border border-gray-800">
                                             <div className="flex-1 text-xs">
                                                 <p className="font-bold text-gray-300">{prodName}</p>
                                                 <p className="text-gray-500 text-[10px]">Ordering: {item.QtyOrdered} | Received: {item.QtyReceived}</p>
@@ -150,7 +153,7 @@ const ReceivePage = () => {
                                             <div className="flex items-center gap-2">
                                                 <span className="text-[10px] text-gray-600">Receive:</span>
                                                 <input
-                                                    name={`r-${item.ProductID}`}
+                                                    name={`r-${item.DetailID}`} // Use DetailID for input name
                                                     type="number"
                                                     max={rem}
                                                     defaultValue={rem}

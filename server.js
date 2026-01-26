@@ -375,19 +375,33 @@ app.post('/api/receive', async (req, res) => {
                 const qty = parseInt(item.Qty);
                 if (qty <= 0) continue;
 
-                await new sql.Request(transaction)
-                    .input('ProductID', sql.Int, item.ProductID)
-                    .input('Qty', sql.Int, qty)
-                    .query('UPDATE dbo.Stock_Products SET CurrentStock = CurrentStock + @Qty WHERE ProductID = @ProductID');
+                // Update Stock Master (Only if ProductID exists)
+                if (item.ProductID) {
+                    await new sql.Request(transaction)
+                        .input('ProductID', sql.Int, item.ProductID)
+                        .input('Qty', sql.Int, qty)
+                        .query('UPDATE dbo.Stock_Products SET CurrentStock = CurrentStock + @Qty WHERE ProductID = @ProductID');
+                }
 
-                await new sql.Request(transaction)
-                    .input('PO_ID', sql.NVarChar, PO_ID)
-                    .input('ProductID', sql.Int, item.ProductID)
-                    .input('Qty', sql.Int, qty)
-                    .query('UPDATE dbo.Stock_PODetails SET QtyReceived = QtyReceived + @Qty WHERE PO_ID = @PO_ID AND ProductID = @ProductID');
+                // Update PO Detail Status (Using DetailID if available, else fallback to ProductID)
+                if (item.DetailID) {
+                    await new sql.Request(transaction)
+                        .input('PO_ID', sql.NVarChar, PO_ID)
+                        .input('DetailID', sql.Int, item.DetailID)
+                        .input('Qty', sql.Int, qty)
+                        .query('UPDATE dbo.Stock_PODetails SET QtyReceived = QtyReceived + @Qty WHERE DetailID = @DetailID');
+                } else if (item.ProductID) {
+                    // Fallback for old frontend versions
+                    await new sql.Request(transaction)
+                        .input('PO_ID', sql.NVarChar, PO_ID)
+                        .input('ProductID', sql.Int, item.ProductID)
+                        .input('Qty', sql.Int, qty)
+                        .query('UPDATE dbo.Stock_PODetails SET QtyReceived = QtyReceived + @Qty WHERE PO_ID = @PO_ID AND ProductID = @ProductID');
+                }
 
+                // Log Transaction (ProductID can be null for manual items)
                 await new sql.Request(transaction)
-                    .input('ProductID', sql.Int, item.ProductID)
+                    .input('ProductID', sql.Int, item.ProductID || null)
                     .input('TransType', sql.VarChar, 'IN')
                     .input('Qty', sql.Int, qty)
                     .input('RefInfo', sql.NVarChar, `Invoice: ${InvoiceNo} (PO: ${PO_ID})`)
