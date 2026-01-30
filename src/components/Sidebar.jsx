@@ -39,48 +39,56 @@ const Sidebar = () => {
     };
 
     return (
-        <aside className="w-72 bg-gradient-to-br from-indigo-900 via-slate-900 to-black p-6 flex flex-col text-white relative z-20 border-r border-white/5 shadow-2xl">
-            <div className="flex items-center space-x-3 mb-10">
-                <div className="bg-white/10 p-2 rounded-lg border border-white/10 backdrop-blur-sm">
-                    <Package className="text-white" size={20} />
+        <aside className="w-72 bg-slate-900 p-6 flex flex-col text-white relative z-20 overflow-hidden shadow-2xl">
+            {/* Background Gradients */}
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 z-0"></div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full blur-[100px] opacity-20 -translate-y-1/2 translate-x-1/2 z-0"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500 rounded-full blur-[100px] opacity-10 translate-y-1/2 -translate-x-1/2 z-0"></div>
+
+            <div className="relative z-10 flex items-center space-x-3 mb-10">
+                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+                    <Package className="text-white" size={24} />
                 </div>
-                <h1 className="text-lg font-black tracking-tight text-white">IT STOCK PRO</h1>
+                <div>
+                    <h1 className="text-xl font-black tracking-tight text-white leading-none">IT STOCK</h1>
+                    <span className="text-[10px] font-bold text-indigo-300 tracking-[0.2em] uppercase">Pro System</span>
+                </div>
             </div>
 
-            <nav className="flex-1 space-y-1">
+            <nav className="relative z-10 flex-1 space-y-1.5 overflow-y-auto scrollbar-none pr-2">
                 <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/" />
                 <SidebarItem icon={Database} label="Inventory Master" to="/inventory" />
 
                 {user?.role === 'Staff' && (
                     <>
-                        <div className="pt-4 pb-2 text-[10px] font-bold uppercase text-indigo-300/50 tracking-wider">
-                            Staff Operations
+                        <div className="pt-6 pb-2 text-[10px] font-bold uppercase text-slate-500 tracking-wider pl-3">
+                            Staff Controls
                         </div>
                         <SidebarItem icon={ShoppingCart} label="Purchase Orders" to="/purchase-orders" />
-                        <SidebarItem icon={ArrowDownToLine} label="Receive (Invoice)" to="/receive" />
+                        <SidebarItem icon={ArrowDownToLine} label="Receive Items" to="/receive" />
                         <SidebarItem icon={Plus} label="Manual Import" to="/manual-import" />
                     </>
                 )}
 
-                <div className="pt-4 pb-2 text-[10px] font-bold uppercase text-indigo-300/50 tracking-wider">
-                    Common Actions
+                <div className="pt-6 pb-2 text-[10px] font-bold uppercase text-slate-500 tracking-wider pl-3">
+                    General
                 </div>
                 <SidebarItem icon={ArrowUpFromLine} label="Withdraw Items" to="/withdraw" />
                 <SidebarItem icon={History} label="History Log" to="/history" />
-                <SidebarItem icon={FileSpreadsheet} label="Export Reports" to="/reports" />
+                <SidebarItem icon={FileSpreadsheet} label="Reports" to="/reports" />
             </nav>
 
-            <div className="pt-6 border-t border-white/10">
-                <div className="flex items-center space-x-3 px-3 py-3 bg-white/5 rounded-xl border border-white/5 backdrop-blur-sm">
-                    <div className="w-9 h-9 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xs font-bold shadow-lg ring-2 ring-white/20">
+            <div className="relative z-10 pt-6 border-t border-white/5 mt-2">
+                <div className="flex items-center space-x-3 px-3 py-3 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-md hover:bg-white/10 transition-colors cursor-pointer group">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-sm font-bold shadow-lg ring-2 ring-white/10 group-hover:scale-105 transition-transform">
                         {user?.username?.[0]?.toUpperCase() || '?'}
                     </div>
                     <div className="flex-1 overflow-hidden">
-                        <p className="text-xs font-bold truncate text-white">{user?.name}</p>
-                        <p className="text-[10px] text-indigo-200">{user?.role}</p>
+                        <p className="text-sm font-bold truncate text-white group-hover:text-indigo-200 transition-colors">{user?.name}</p>
+                        <p className="text-[10px] text-slate-400 font-medium group-hover:text-indigo-300 transition-colors">{user?.role}</p>
                     </div>
-                    <button onClick={handleLogout} className="text-indigo-200 hover:text-white transition-colors">
-                        <LogOut size={16} />
+                    <button onClick={handleLogout} className="text-slate-400 hover:text-red-400 transition-colors p-2 hover:bg-white/5 rounded-lg">
+                        <LogOut size={18} />
                     </button>
                 </div>
             </div>
