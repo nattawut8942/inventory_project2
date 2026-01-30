@@ -121,119 +121,121 @@ const PurchaseOrdersPage = () => {
 
             {/* CREATE PO MODAL */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-                    <div className="bg-white w-full max-w-2xl rounded-3xl border border-slate-200 shadow-2xl my-8">
-                        <div className="p-6 bg-slate-50 flex justify-between items-center rounded-t-3xl border-b border-slate-200">
-                            <h3 className="font-bold text-lg text-slate-800">Create Purchase Order</h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
-                        </div>
-                        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">PO Number</label>
-                                    <input name="PO_ID" defaultValue={generatePONumber()} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 outline-none focus:border-indigo-500" required />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">PR Ref No.</label>
-                                    <input name="PR_No" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 outline-none focus:border-indigo-500" placeholder="PR-XXXXX" />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Vendor Name</label>
-                                    <input name="VendorName" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 outline-none focus:border-indigo-500" required placeholder="Supplier name" />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Due Date</label>
-                                    <input name="DueDate" type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 outline-none focus:border-indigo-500" />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Section</label>
-                                    <input name="Section" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 outline-none focus:border-indigo-500" placeholder="IT, Admin, etc." />
-                                </div>
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
+                    <div className="flex min-h-full items-center justify-center p-4 text-center">
+                        <div className="w-full max-w-2xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl transition-all animate-in zoom-in-95 my-8">
+                            <div className="p-6 bg-slate-50 flex justify-between items-center rounded-t-3xl border-b border-slate-200">
+                                <h3 className="font-bold text-lg text-slate-800">Create Purchase Order</h3>
+                                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
                             </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase">Remark</label>
-                                <textarea name="Remark" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 h-20 text-slate-800 outline-none focus:border-indigo-500" placeholder="Additional notes..."></textarea>
-                            </div>
+                            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase">PO Number</label>
+                                        <input name="PO_ID" defaultValue={generatePONumber()} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 outline-none focus:border-indigo-500" required />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase">PR Ref No.</label>
+                                        <input name="PR_No" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 outline-none focus:border-indigo-500" placeholder="PR-XXXXX" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase">Vendor Name</label>
+                                        <input name="VendorName" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 outline-none focus:border-indigo-500" required placeholder="Supplier name" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase">Due Date</label>
+                                        <input name="DueDate" type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 outline-none focus:border-indigo-500" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase">Section</label>
+                                        <input name="Section" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 text-slate-800 outline-none focus:border-indigo-500" placeholder="IT, Admin, etc." />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Remark</label>
+                                    <textarea name="Remark" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl mt-1 h-20 text-slate-800 outline-none focus:border-indigo-500" placeholder="Additional notes..."></textarea>
+                                </div>
 
-                            {/* Items - Manual Input */}
-                            <div>
-                                <div className="flex justify-between items-center mb-3">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Order Items</label>
-                                    <button type="button" onClick={addItem} className="text-xs text-indigo-600 hover:text-indigo-500 flex items-center gap-1 font-bold">
-                                        <Plus size={14} /> Add Item
+                                {/* Items - Manual Input */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase">Order Items</label>
+                                        <button type="button" onClick={addItem} className="text-xs text-indigo-600 hover:text-indigo-500 flex items-center gap-1 font-bold">
+                                            <Plus size={14} /> Add Item
+                                        </button>
+                                    </div>
+
+                                    {/* Header */}
+                                    <div className="grid grid-cols-12 gap-2 mb-2 px-3 text-[10px] text-slate-400 uppercase font-bold">
+                                        <div className="col-span-6">Item Description</div>
+                                        <div className="col-span-2 text-center">Qty</div>
+                                        <div className="col-span-3 text-center">Unit Cost (฿)</div>
+                                        <div className="col-span-1"></div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        {poItems.map((item, idx) => (
+                                            <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm">
+                                                <input
+                                                    type="text"
+                                                    value={item.ItemName}
+                                                    onChange={(e) => updateItem(idx, 'ItemName', e.target.value)}
+                                                    className="col-span-6 bg-white border border-slate-200 p-2 rounded-lg text-sm text-slate-800 outline-none focus:border-indigo-500"
+                                                    placeholder="Enter item name..."
+                                                />
+                                                <input
+                                                    type="number"
+                                                    value={item.QtyOrdered}
+                                                    onChange={(e) => updateItem(idx, 'QtyOrdered', Number(e.target.value))}
+                                                    className="col-span-2 bg-white border border-slate-200 p-2 rounded-lg text-sm text-center text-slate-800 outline-none focus:border-indigo-500"
+                                                    placeholder="Qty"
+                                                    min="1"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    value={item.UnitCost}
+                                                    onChange={(e) => updateItem(idx, 'UnitCost', Number(e.target.value))}
+                                                    className="col-span-3 bg-white border border-slate-200 p-2 rounded-lg text-sm text-center text-slate-800 outline-none focus:border-indigo-500"
+                                                    placeholder="0.00"
+                                                    step="0.01"
+                                                />
+                                                <div className="col-span-1 flex justify-center">
+                                                    {poItems.length > 1 && (
+                                                        <button type="button" onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-600 p-1 transition-colors">
+                                                            <X size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Total */}
+                                    <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
+                                        <span className="text-slate-500 font-medium">Total Amount</span>
+                                        <span className="text-xl font-bold text-indigo-600 font-mono">
+                                            ฿{getTotalAmount().toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 pt-4 border-t border-slate-100">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-4 rounded-xl hover:bg-slate-50 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-200"
+                                    >
+                                        Create Purchase Order
                                     </button>
                                 </div>
-
-                                {/* Header */}
-                                <div className="grid grid-cols-12 gap-2 mb-2 px-3 text-[10px] text-slate-400 uppercase font-bold">
-                                    <div className="col-span-6">Item Description</div>
-                                    <div className="col-span-2 text-center">Qty</div>
-                                    <div className="col-span-3 text-center">Unit Cost (฿)</div>
-                                    <div className="col-span-1"></div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    {poItems.map((item, idx) => (
-                                        <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm">
-                                            <input
-                                                type="text"
-                                                value={item.ItemName}
-                                                onChange={(e) => updateItem(idx, 'ItemName', e.target.value)}
-                                                className="col-span-6 bg-white border border-slate-200 p-2 rounded-lg text-sm text-slate-800 outline-none focus:border-indigo-500"
-                                                placeholder="Enter item name..."
-                                            />
-                                            <input
-                                                type="number"
-                                                value={item.QtyOrdered}
-                                                onChange={(e) => updateItem(idx, 'QtyOrdered', Number(e.target.value))}
-                                                className="col-span-2 bg-white border border-slate-200 p-2 rounded-lg text-sm text-center text-slate-800 outline-none focus:border-indigo-500"
-                                                placeholder="Qty"
-                                                min="1"
-                                            />
-                                            <input
-                                                type="number"
-                                                value={item.UnitCost}
-                                                onChange={(e) => updateItem(idx, 'UnitCost', Number(e.target.value))}
-                                                className="col-span-3 bg-white border border-slate-200 p-2 rounded-lg text-sm text-center text-slate-800 outline-none focus:border-indigo-500"
-                                                placeholder="0.00"
-                                                step="0.01"
-                                            />
-                                            <div className="col-span-1 flex justify-center">
-                                                {poItems.length > 1 && (
-                                                    <button type="button" onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-600 p-1 transition-colors">
-                                                        <X size={16} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Total */}
-                                <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
-                                    <span className="text-slate-500 font-medium">Total Amount</span>
-                                    <span className="text-xl font-bold text-indigo-600 font-mono">
-                                        ฿{getTotalAmount().toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 pt-4 border-t border-slate-100">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-4 rounded-xl hover:bg-slate-50 transition-all"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-200"
-                                >
-                                    Create Purchase Order
-                                </button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}
