@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import AlertModal from '../components/AlertModal';
 
 const API_BASE = 'http://localhost:3001/api';
+const API_URL = 'http://localhost:3001';
 
 const InventoryPage = () => {
     const { products, deviceTypes, refreshData } = useData();
@@ -172,7 +173,7 @@ const InventoryPage = () => {
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
                                                     {p.ImageURL ? (
-                                                        <img src={`http://localhost:3001${p.ImageURL}`} alt="" className="w-full h-full object-cover" />
+                                                        <img src={`${API_URL}${p.ImageURL}`} alt="" className="w-full h-full object-cover" />
                                                     ) : (
                                                         <Icon size={18} className="text-slate-400" />
                                                     )}
@@ -253,12 +254,12 @@ const InventoryPage = () => {
                                 {/* Image or Icon Placeholder */}
                                 <div className="w-24 h-24 mb-4 rounded-2xl overflow-hidden shadow-md bg-white flex items-center justify-center border border-slate-100 group-hover:scale-105 transition-transform">
                                     {p.ImageURL ? (
-                                        <img src={`${API_BASE}${p.ImageURL}`} alt={p.ProductName} className="w-full h-full object-cover" />
+                                        <img src={`${API_URL}${p.ImageURL}`} alt={p.ProductName} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${p.DeviceType === 'Monitor' ? 'from-blue-100 to-cyan-100 text-blue-500' :
-                                                p.DeviceType === 'Network' ? 'from-purple-100 to-fuchsia-100 text-purple-500' :
-                                                    p.DeviceType === 'Asset' ? 'from-amber-100 to-orange-100 text-amber-500' :
-                                                        'from-emerald-100 to-teal-100 text-emerald-500'
+                                            p.DeviceType === 'Network' ? 'from-purple-100 to-fuchsia-100 text-purple-500' :
+                                                p.DeviceType === 'Asset' ? 'from-amber-100 to-orange-100 text-amber-500' :
+                                                    'from-emerald-100 to-teal-100 text-emerald-500'
                                             }`}>
                                             {React.createElement(getIcon(p.DeviceType), { size: 40 })}
                                         </div>

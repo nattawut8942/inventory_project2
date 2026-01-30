@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, CheckCircle } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import AlertModal from '../components/AlertModal';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -11,12 +12,15 @@ const ManualImportPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
+    // Modal State
+    const [alertModal, setAlertModal] = useState({ isOpen: false, type: 'info', title: '', message: '' });
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
 
         try {
-            await fetch(`${API_BASE}/products/manual-import`, {
+            const res = await fetch(`${API_BASE}/products/manual-import`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -24,10 +28,37 @@ const ManualImportPage = () => {
                     UserID: user.username
                 })
             });
-            refreshData();
-            navigate('/inventory');
+
+            if (res.ok) {
+                refreshData();
+                setAlertModal({
+                    isOpen: true,
+                    type: 'success',
+                    title: 'นำเข้าสำเร็จ!',
+                    message: 'รายการสินค้าถูกเพิ่มเข้าสู่ระบบเรียบร้อยแล้ว'
+                });
+            } else {
+                setAlertModal({
+                    isOpen: true,
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'ไม่สามารถนำเข้าสินค้าได้ กรุณาลองใหม่อีกครั้ง'
+                });
+            }
         } catch (err) {
-            alert('Error importing');
+            setAlertModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Connection Error',
+                message: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
+            });
+        }
+    };
+
+    const handleCloseAlert = () => {
+        setAlertModal({ ...alertModal, isOpen: false });
+        if (alertModal.type === 'success') {
+            navigate('/inventory');
         }
     };
 
@@ -110,8 +141,18 @@ const ManualImportPage = () => {
                     </div>
                 </form>
             </div>
+
+            {/* Success/Error Modal */}
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={handleCloseAlert}
+                type={alertModal.type}
+                title={alertModal.title}
+                message={alertModal.message}
+            />
         </div>
     );
 };
 
 export default ManualImportPage;
+
