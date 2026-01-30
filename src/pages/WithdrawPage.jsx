@@ -44,11 +44,11 @@ const WithdrawPage = () => {
 
     const executeWithdraw = async () => {
         if (!withdrawQty || withdrawQty <= 0) {
-            setAlertModal({ isOpen: true, type: 'error', title: 'Invalid Quantity', message: 'Please enter a valid quantity greater than 0.' });
+            setAlertModal({ isOpen: true, type: 'error', title: 'จำนวนไม่ถูกต้อง', message: 'กรุณาระบุจำนวนที่มากกว่า 0' });
             return;
         }
         if (withdrawQty > selectedProduct.CurrentStock) {
-            setAlertModal({ isOpen: true, type: 'error', title: 'Insufficient Stock', message: `Cannot withdraw ${withdrawQty}. Only ${selectedProduct.CurrentStock} left in stock.` });
+            setAlertModal({ isOpen: true, type: 'error', title: 'สต็อคไม่เพียงพอ', message: `ไม่สามารถเบิก ${withdrawQty} ชิ้น เหลือเพียง ${selectedProduct.CurrentStock} ชิ้น` });
             return;
         }
 
@@ -64,11 +64,12 @@ const WithdrawPage = () => {
             });
             if (!res.ok) throw new Error('Failed');
 
+            const productName = selectedProduct.ProductName;
             setSelectedProduct(null);
-            setAlertModal({ isOpen: true, type: 'success', title: 'Withdraw Successful', message: `Successfully withdrew ${withdrawQty} unit(s) of ${selectedProduct.ProductName}.` });
+            setAlertModal({ isOpen: true, type: 'success', title: 'เบิกสำเร็จ', message: `เบิก ${withdrawQty} ชิ้น ของ ${productName} เรียบร้อยแล้ว` });
             refreshData();
         } catch (err) {
-            setAlertModal({ isOpen: true, type: 'error', title: 'Withdraw Failed', message: 'Could not process withdrawal. Please try again.' });
+            setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด', message: 'ไม่สามารถดำเนินการเบิกได้ กรุณาลองใหม่อีกครั้ง' });
         }
     };
 
@@ -78,8 +79,8 @@ const WithdrawPage = () => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                <h2 className="text-3xl font-black text-slate-800 mb-2">Withdraw Items</h2>
-                <p className="text-slate-500">Select items to withdraw from inventory</p>
+                <h2 className="text-3xl font-black text-slate-800 mb-2">เบิกสินค้า</h2>
+                <p className="text-slate-500">เลือกสินค้าที่ต้องการเบิกออกจากคลัง</p>
             </motion.div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -117,7 +118,7 @@ const WithdrawPage = () => {
                                 <h3 className="font-bold text-slate-800 text-lg mb-1 line-clamp-2 min-h-[3.5rem]">{p.ProductName}</h3>
 
                                 <div className="flex items-baseline gap-2 mb-4">
-                                    <span className="text-xs text-slate-400 font-bold uppercase">Stock:</span>
+                                    <span className="text-xs text-slate-400 font-bold uppercase">คงเหลือ:</span>
                                     <span className={`text-2xl font-black ${isLow ? 'text-red-500' : 'text-emerald-500'}`}>{p.CurrentStock}</span>
                                     {isLow && <AlertTriangle size={16} className="text-red-500" />}
                                 </div>
@@ -126,7 +127,7 @@ const WithdrawPage = () => {
                             <div className="relative z-10 mt-auto pt-4 border-t border-slate-100">
                                 <button className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl text-sm hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all active:scale-95 flex items-center justify-center gap-2">
                                     <ShoppingBag size={16} />
-                                    Withdraw
+                                    เบิกสินค้า
                                 </button>
                             </div>
                         </motion.div>
@@ -147,7 +148,7 @@ const WithdrawPage = () => {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
+                            className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
                         >
                             {/* Header with Gradient */}
                             <div className={`p-6 bg-gradient-to-r ${getColorGradient(selectedProduct.DeviceType)} text-white`}>
@@ -160,30 +161,36 @@ const WithdrawPage = () => {
                                                 <Package size={32} className="text-white" />
                                             )}
                                         </div>
-                                        <div>
-                                            <h3 className="font-black text-xl">{selectedProduct.ProductName}</h3>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-black text-xl truncate">{selectedProduct.ProductName}</h3>
                                             <p className="text-white/80 text-sm">{selectedProduct.DeviceType}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => setSelectedProduct(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+                                    <button onClick={() => setSelectedProduct(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors shrink-0">
                                         <X size={20} />
                                     </button>
                                 </div>
                             </div>
 
                             {/* Body */}
-                            <div className="p-6 space-y-6">
-                                {/* Stock Info */}
-                                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
-                                    <span className="text-slate-600 font-medium">Available Stock</span>
-                                    <span className={`text-3xl font-black ${selectedProduct.CurrentStock <= selectedProduct.MinStock ? 'text-red-500' : 'text-emerald-500'}`}>
-                                        {selectedProduct.CurrentStock}
-                                    </span>
+                            <div className="p-6 space-y-5">
+                                {/* Stock Info Grid */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-slate-50 rounded-2xl text-center">
+                                        <p className="text-xs text-slate-500 font-bold mb-1">สต็อคคงเหลือ</p>
+                                        <span className={`text-3xl font-black ${selectedProduct.CurrentStock <= selectedProduct.MinStock ? 'text-red-500' : 'text-emerald-500'}`}>
+                                            {selectedProduct.CurrentStock}
+                                        </span>
+                                    </div>
+                                    <div className="p-4 bg-slate-50 rounded-2xl text-center">
+                                        <p className="text-xs text-slate-500 font-bold mb-1">Min Stock</p>
+                                        <span className="text-3xl font-black text-slate-400">{selectedProduct.MinStock || 0}</span>
+                                    </div>
                                 </div>
 
                                 {/* Quantity Selector */}
                                 <div>
-                                    <label className="text-sm font-bold text-slate-700 mb-3 block">Quantity to Withdraw</label>
+                                    <label className="text-sm font-bold text-slate-700 mb-3 block">จำนวนที่ต้องการเบิก</label>
                                     <div className="flex items-center gap-4">
                                         <button
                                             onClick={() => setWithdrawQty(Math.max(1, withdrawQty - 1))}
@@ -206,11 +213,11 @@ const WithdrawPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Warning if low stock */}
+                                {/* Warning if exceeds stock */}
                                 {withdrawQty > selectedProduct.CurrentStock && (
                                     <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
                                         <AlertTriangle size={18} />
-                                        <span>Cannot exceed available stock of {selectedProduct.CurrentStock}</span>
+                                        <span>ไม่สามารถเบิกเกินสต็อกคงเหลือ {selectedProduct.CurrentStock} ชิ้น</span>
                                     </div>
                                 )}
 
@@ -220,7 +227,7 @@ const WithdrawPage = () => {
                                         onClick={() => setSelectedProduct(null)}
                                         className="flex-1 bg-slate-100 text-slate-600 font-bold py-4 rounded-xl hover:bg-slate-200 transition-all"
                                     >
-                                        Cancel
+                                        ยกเลิก
                                     </button>
                                     <button
                                         onClick={executeWithdraw}
@@ -228,7 +235,7 @@ const WithdrawPage = () => {
                                         className={`flex-[2] bg-gradient-to-r ${getColorGradient(selectedProduct.DeviceType)} text-white font-bold py-4 rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
                                     >
                                         <ShoppingBag size={18} />
-                                        Confirm Withdraw
+                                        ยืนยันการเบิก
                                     </button>
                                 </div>
                             </div>
@@ -244,7 +251,7 @@ const WithdrawPage = () => {
                 title={alertModal.title}
                 message={alertModal.message}
                 onConfirm={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
-                confirmText="Close"
+                confirmText="ปิด"
             />
         </div>
     );

@@ -1,9 +1,23 @@
 import React, { useState } from 'react';
-import { FileText, LogOut, Search, Calendar } from 'lucide-react';
+import { FileText, Search, Calendar, Eye, X, Package, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 
 const API_BASE = 'http://localhost:3001/api';
+
+// Format datetime with time
+const formatDateTime = (dateStr) => {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    return d.toLocaleString('th-TH', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
 
 const ReceivePage = () => {
     const { purchaseOrders, invoices, products, refreshData } = useData();
@@ -12,6 +26,7 @@ const ReceivePage = () => {
     const [activePo, setActivePo] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDate, setFilterDate] = useState('');
+    const [selectedPO, setSelectedPO] = useState(null); // For detail view
 
     const handleReceive = async (poId, invoiceNo, itemsReceived) => {
         if (!itemsReceived || itemsReceived.length === 0) {
@@ -43,10 +58,28 @@ const ReceivePage = () => {
         }
     };
 
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'Completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+            case 'Partial': return 'bg-amber-100 text-amber-700 border-amber-200';
+            default: return 'bg-blue-100 text-blue-700 border-blue-200';
+        }
+    };
+
+    const pendingPOs = purchaseOrders
+        .filter(po => po.Status !== 'Completed')
+        .filter(po => {
+            const matchSearch = po.PO_ID.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (po.VendorName && po.VendorName.toLowerCase().includes(searchTerm.toLowerCase()));
+            const matchDate = !filterDate || (po.RequestDate && po.RequestDate.includes(filterDate));
+            return matchSearch && matchDate;
+        });
+
     return (
         <div className="space-y-8 animate-in fade-in">
             <div>
                 <h2 className="text-3xl font-black mb-4 text-slate-800">Pending Purchase Orders</h2>
+
                 {/* Filter Controls */}
                 <div className="flex flex-wrap gap-3 items-center mb-6">
                     <div className="flex gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
@@ -54,7 +87,7 @@ const ReceivePage = () => {
                         <input
                             type="text"
                             placeholder="ค้นหา PO / ผู้ขาย..."
-                            className="bg-transparent border-none outline-none text-sm w-48 text-slate-700 placeholder-slate-400"
+                            className="bg-transparent border-none outline-none text-sm w-40 text-slate-700 placeholder-slate-400"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -77,58 +110,57 @@ const ReceivePage = () => {
                         </button>
                     )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {purchaseOrders
-                        .filter(po => po.Status !== 'Completed')
-                        .filter(po => {
-                            const matchSearch = po.PO_ID.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                (po.VendorName && po.VendorName.toLowerCase().includes(searchTerm.toLowerCase()));
-                            const matchDate = !filterDate || (po.RequestDate && po.RequestDate.includes(filterDate));
-                            return matchSearch && matchDate;
-                        })
-                        .map(po => (
-                            <div key={po.PO_ID} className="group bg-white border border-slate-100 p-6 rounded-3xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
 
-                                {/* Decorative Gradient Background */}
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-50 to-white rounded-bl-[100px] opacity-60 z-0"></div>
-
-                                <div className="relative z-10 flex justify-between items-start mb-4">
-                                    <div>
-                                        <h4 className="font-black text-indigo-600 text-lg">{po.PO_ID}</h4>
-                                        <p className="text-xs text-slate-500 font-bold">{po.VendorName}</p>
+                {/* Compact PO Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {pendingPOs.map((po, i) => (
+                        <motion.div
+                            key={po.PO_ID}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.03 }}
+                            className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm hover:shadow-lg transition-all"
+                        >
+                            <div className="flex justify-between items-start mb-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                                        <Package size={18} />
                                     </div>
-                                    <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 shadow-sm">
-                                        {po.Status}
-                                    </span>
+                                    <div>
+                                        <h4 className="font-bold text-slate-800 text-sm">{po.PO_ID}</h4>
+                                        <p className="text-[10px] text-slate-400">{po.VendorName || '-'}</p>
+                                    </div>
                                 </div>
-
-                                <div className="relative z-10 space-y-3 mb-6 border-t border-slate-100 pt-4 bg-slate-50/50 p-3 rounded-2xl">
-                                    {po.Items.map(item => {
-                                        const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Unknown Item';
-                                        return (
-                                            <div key={item.DetailID} className="flex justify-between text-xs items-center">
-                                                <span className="text-slate-700 font-medium truncate pr-2 flex-1">{prodName}</span>
-                                                <span className="font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm shrink-0">{item.QtyReceived} / {item.QtyOrdered}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
+                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${getStatusColor(po.Status)}`}>
+                                    {po.Status === 'Open' ? 'Pending' : po.Status}
+                                </span>
+                            </div>
+                            <div className="text-xs text-slate-500 mb-3">
+                                <span>{formatDateTime(po.RequestDate)}</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setSelectedPO(po)}
+                                    className="flex-1 bg-slate-100 text-slate-600 font-bold py-2 rounded-lg text-xs hover:bg-slate-200 transition-all flex items-center justify-center gap-1"
+                                >
+                                    <Eye size={14} /> ดูรายละเอียด
+                                </button>
                                 <button
                                     onClick={() => { setActivePo(po); setIsModalOpen(true); }}
-                                    className="relative z-10 w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2 group-hover:scale-[1.02]"
+                                    className="flex-1 bg-emerald-600 text-white font-bold py-2 rounded-lg text-xs hover:bg-emerald-700 transition-all flex items-center justify-center gap-1"
                                 >
-                                    <FileText size={16} /> Receive Invoice Items
+                                    <Check size={14} /> รับของ
                                 </button>
                             </div>
-                        ))}
-                    {purchaseOrders.filter(po => po.Status !== 'Completed').length === 0 && (
-                        <div className="col-span-full flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-emerald-200 rounded-3xl bg-emerald-50/30">
-                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4 text-emerald-600">
-                                <FileText size={32} />
+                        </motion.div>
+                    ))}
+                    {pendingPOs.length === 0 && (
+                        <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-emerald-200 rounded-2xl bg-emerald-50/30">
+                            <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-3 text-emerald-600">
+                                <FileText size={28} />
                             </div>
-                            <p className="text-emerald-800 text-lg font-bold">All caught up!</p>
-                            <p className="text-emerald-600 text-sm mt-1">No pending orders to receive.</p>
+                            <p className="text-emerald-800 font-bold">All caught up!</p>
+                            <p className="text-emerald-600 text-sm">ไม่มี PO รอรับของ</p>
                         </div>
                     )}
                 </div>
@@ -143,122 +175,188 @@ const ReceivePage = () => {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50 text-xs text-slate-500 uppercase border-b border-slate-200">
                             <tr>
-                                <th className="p-4">Reference No</th>
                                 <th className="p-4">Invoice No</th>
                                 <th className="p-4">PO Ref</th>
-                                <th className="p-4">Date</th>
+                                <th className="p-4">Date & Time</th>
                                 <th className="p-4">Received By</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {invoices.map(inv => (
-                                <tr key={inv.InvoiceID} className="hover:bg-slate-50">
-                                    <td className="p-4 text-slate-400">#{inv.InvoiceID}</td>
-                                    <td className="p-4 font-bold text-slate-700">{inv.InvoiceNo}</td>
-                                    <td className="p-4 text-indigo-500 font-medium">{inv.PO_ID}</td>
-                                    <td className="p-4 text-slate-500">{new Date(inv.ReceiveDate).toLocaleDateString()}</td>
-                                    <td className="p-4 text-slate-600 text-xs uppercase">{inv.ReceivedBy}</td>
+                        <tbody>
+                            {invoices.slice(0, 10).map((inv, i) => (
+                                <tr key={inv.InvoiceID || i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                    <td className="p-4 font-mono font-bold text-slate-700">{inv.InvoiceNo}</td>
+                                    <td className="p-4 text-indigo-600 font-bold">{inv.PO_ID}</td>
+                                    <td className="p-4 text-slate-500">{formatDateTime(inv.ReceiveDate)}</td>
+                                    <td className="p-4 text-slate-600">{inv.ReceivedBy}</td>
                                 </tr>
                             ))}
+                            {invoices.length === 0 && (
+                                <tr>
+                                    <td colSpan="4" className="p-8 text-center text-slate-400">No invoices recorded yet.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {/* MODAL */}
-            {/* MODAL */}
+            {/* DETAIL MODAL */}
+            <AnimatePresence>
+                {selectedPO && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+                        >
+                            {/* Header */}
+                            <div className="p-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="font-black text-2xl">{selectedPO.PO_ID}</h3>
+                                        <p className="text-amber-100">{selectedPO.VendorName || 'ไม่ระบุผู้ขาย'}</p>
+                                    </div>
+                                    <button onClick={() => setSelectedPO(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Body */}
+                            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                                {/* Info */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-slate-50 p-4 rounded-xl">
+                                        <p className="text-xs text-slate-500 font-bold mb-1">สถานะ</p>
+                                        <span className={`text-sm font-bold px-3 py-1 rounded-full border ${getStatusColor(selectedPO.Status)}`}>
+                                            {selectedPO.Status === 'Open' ? 'Pending' : selectedPO.Status}
+                                        </span>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-xl">
+                                        <p className="text-xs text-slate-500 font-bold mb-1">วันที่สร้าง</p>
+                                        <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.RequestDate)}</p>
+                                    </div>
+                                </div>
+
+                                {/* Items */}
+                                <div>
+                                    <h4 className="font-bold text-slate-800 mb-3">รายการ ({selectedPO.Items?.length || 0})</h4>
+                                    <div className="bg-slate-50 rounded-xl overflow-hidden">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-slate-100">
+                                                <tr>
+                                                    <th className="text-left p-3 font-bold text-slate-600">ชื่อรายการ</th>
+                                                    <th className="text-center p-3 font-bold text-slate-600 w-28">รับแล้ว / สั่ง</th>
+                                                    <th className="text-right p-3 font-bold text-slate-600 w-24">ราคา</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {selectedPO.Items?.map((item, idx) => {
+                                                    const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || `Item #${idx + 1}`;
+                                                    return (
+                                                        <tr key={idx} className="border-t border-slate-200">
+                                                            <td className="p-3 text-slate-700">{prodName}</td>
+                                                            <td className="p-3 text-center font-mono">
+                                                                <span className="text-emerald-600">{item.QtyReceived || 0}</span>
+                                                                <span className="text-slate-400"> / {item.QtyOrdered}</span>
+                                                            </td>
+                                                            <td className="p-3 text-right font-mono text-slate-600">฿{(item.UnitCost || 0).toLocaleString()}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-4 bg-slate-50 border-t border-slate-200 flex gap-2">
+                                <button
+                                    onClick={() => setSelectedPO(null)}
+                                    className="flex-1 bg-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-300 transition-all"
+                                >
+                                    ปิด
+                                </button>
+                                <button
+                                    onClick={() => { setActivePo(selectedPO); setSelectedPO(null); setIsModalOpen(true); }}
+                                    className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Check size={18} /> รับของ
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* RECEIVE MODAL */}
             {isModalOpen && activePo && (
                 <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
                     <div className="flex min-h-full items-center justify-center p-4 text-center">
-                        <div className="w-full max-w-lg transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl transition-all animate-in zoom-in-95 my-8">
-                            <div className="p-6 bg-slate-50 flex justify-between items-center border-b border-slate-100">
+                        <div className="w-full max-w-2xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl transition-all my-8">
+                            <div className="p-6 bg-white flex justify-between items-center border-b border-slate-200">
                                 <div>
-                                    <h3 className="font-bold text-lg text-slate-800">Receive Goods</h3>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded">
-                                            PO: {activePo.PO_ID}
-                                        </span>
-                                        <span className="text-xs text-slate-400">{activePo.VendorName}</span>
-                                    </div>
+                                    <h3 className="font-bold text-lg text-slate-800">Receive Invoice - {activePo.PO_ID}</h3>
+                                    <p className="text-slate-500 text-sm">{activePo.VendorName}</p>
                                 </div>
-                                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
-                                    <LogOut size={18} />
-                                </button>
+                                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
                             </div>
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const fd = new FormData(e.target);
-                                // Collect Items first
-                                const items = activePo.Items.map(it => {
-                                    const qty = Number(fd.get(`r-${it.DetailID}`));
-                                    return {
-                                        DetailID: it.DetailID,
-                                        ProductID: it.ProductID,
-                                        Qty: qty
-                                    };
-                                }).filter(it => it.Qty > 0);
-
-                                handleReceive(activePo.PO_ID, fd.get('inv'), items);
+                                const items = activePo.Items.map((item, idx) => ({
+                                    DetailID: item.DetailID,
+                                    QtyReceived: parseInt(fd.get(`qty-${idx}`)) || 0
+                                })).filter(i => i.QtyReceived > 0);
+                                handleReceive(activePo.PO_ID, fd.get('InvoiceNo'), items);
                             }} className="p-6 space-y-6">
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Invoice Number</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Invoice Number</label>
                                     <input
-                                        name="inv"
+                                        name="InvoiceNo"
                                         required
-                                        className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-slate-800 font-medium transition-all"
-                                        placeholder="IV-XXXXXXXX"
+                                        placeholder="INV-XXXX-XXXX"
+                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500 font-mono"
                                     />
                                 </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-end">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Confirm Quantities</label>
-                                        <span className="text-[10px] text-indigo-500 font-bold cursor-pointer hover:underline" onClick={() => {
-                                            // Optional: Auto-fill helper could go here
-                                        }}>Auto-fill Remaining</span>
-                                    </div>
-                                    <div className="max-h-[40vh] overflow-y-auto pr-2 space-y-2">
-                                        {activePo.Items.map(item => {
-                                            const rem = item.QtyOrdered - item.QtyReceived;
-                                            const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Unknown Item';
-
-                                            if (rem <= 0) return null;
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">Items to Receive</label>
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        {activePo.Items.map((item, idx) => {
+                                            const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Unknown';
+                                            const remaining = item.QtyOrdered - (item.QtyReceived || 0);
                                             return (
-                                                <div key={item.DetailID} className="flex items-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300 transition-colors group">
-                                                    <div className="flex-1 text-xs">
-                                                        <p className="font-bold text-slate-700 group-hover:text-indigo-700 transition-colors">{prodName}</p>
-                                                        <div className="flex gap-2 mt-1 ">
-                                                            <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">Ord: {item.QtyOrdered}</span>
-                                                            <span className="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded">Rcv: {item.QtyReceived}</span>
-                                                        </div>
+                                                <div key={idx} className="flex gap-3 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                                    <div className="flex-1">
+                                                        <p className="font-medium text-sm text-slate-700">{prodName}</p>
+                                                        <p className="text-xs text-slate-400">Remaining: {remaining} of {item.QtyOrdered}</p>
                                                     </div>
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <span className="text-[10px] text-slate-400 font-bold uppercase">Receive</span>
-                                                        <input
-                                                            name={`r-${item.DetailID}`}
-                                                            type="number"
-                                                            max={rem}
-                                                            defaultValue={rem}
-                                                            className="w-20 bg-slate-50 border border-slate-200 rounded-lg p-2 text-center text-sm font-bold outline-none focus:border-indigo-500 focus:bg-white text-indigo-600"
-                                                        />
-                                                    </div>
+                                                    <input
+                                                        name={`qty-${idx}`}
+                                                        type="number"
+                                                        min="0"
+                                                        max={remaining}
+                                                        defaultValue={remaining}
+                                                        className="w-20 bg-white border border-slate-200 p-2 rounded-lg text-center text-sm font-mono outline-none focus:border-indigo-500"
+                                                    />
                                                 </div>
                                             );
                                         })}
                                     </div>
                                 </div>
-                                <div className="flex gap-3 pt-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsModalOpen(false)}
-                                        className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-4 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm"
-                                    >
+                                <div className="flex gap-3 pt-4">
+                                    <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-all">
                                         Cancel
                                     </button>
-                                    <button
-                                        type="submit"
-                                        className="flex-[2] bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 items-center justify-center flex gap-2"
-                                    >
-                                        <FileText size={18} /> CONFIRM RECEIPT
+                                    <button type="submit" className="flex-[2] bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg flex items-center justify-center gap-2">
+                                        <Check size={18} /> Confirm Receive
                                     </button>
                                 </div>
                             </form>

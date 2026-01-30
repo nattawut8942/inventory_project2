@@ -51,15 +51,31 @@ const ReportPage = () => {
         color: COLORS[idx % COLORS.length]
     })).filter(c => c.value > 0);
 
-    // Mock stock movement data (would come from transactions in real app)
-    const stockMovementData = [
-        { month: 'ม.ค.', inbound: 120, outbound: 80 },
-        { month: 'ก.พ.', inbound: 95, outbound: 110 },
-        { month: 'มี.ค.', inbound: 150, outbound: 90 },
-        { month: 'เม.ย.', inbound: 85, outbound: 120 },
-        { month: 'พ.ค.', inbound: 130, outbound: 75 },
-        { month: 'มิ.ย.', inbound: 100, outbound: 95 },
-    ];
+    // Calculate real stock movement from transactions
+    const stockMovementData = (() => {
+        const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const dataMap = {};
+
+        // Initialize last 6 months
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const key = months[d.getMonth()];
+            dataMap[key] = { month: key, inbound: 0, outbound: 0 };
+        }
+
+        // Sum transactions by month
+        (transactions || []).forEach(t => {
+            const date = new Date(t.TransDate);
+            const monthKey = months[date.getMonth()];
+            if (dataMap[monthKey]) {
+                if (t.TransType === 'IN') dataMap[monthKey].inbound += t.Qty;
+                if (t.TransType === 'OUT') dataMap[monthKey].outbound += t.Qty;
+            }
+        });
+
+        return Object.values(dataMap);
+    })();
 
     const dataOptions = [
         { id: 'products', label: 'Inventory / Products', description: 'All active products with stock levels', icon: Package, color: 'from-blue-500 to-blue-600' },
