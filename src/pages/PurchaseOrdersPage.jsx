@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Plus, X } from 'lucide-react';
+import { ShoppingCart, Plus, X, TrendingUp } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -82,38 +82,81 @@ const PurchaseOrdersPage = () => {
                 </button>
             </div>
 
+            {/* Dashboard Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl text-white shadow-lg">
+                    <p className="text-indigo-100 text-sm font-bold uppercase tracking-wider mb-1">Total POs</p>
+                    <h3 className="text-3xl font-black">{purchaseOrders.length}</h3>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Pending Approval</p>
+                    <h3 className="text-2xl font-black text-slate-800">{purchaseOrders.filter(p => p.Status === 'Pending').length}</h3>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Awaiting Delivery</p>
+                    <h3 className="text-2xl font-black text-amber-500">{purchaseOrders.filter(p => p.Status === 'Partial').length}</h3>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Completed</p>
+                    <h3 className="text-2xl font-black text-emerald-500">{purchaseOrders.filter(p => p.Status === 'Completed').length}</h3>
+                </div>
+            </div>
+
             {/* PO List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {purchaseOrders.map(po => (
-                    <div key={po.PO_ID} className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h4 className="font-bold text-indigo-600 text-lg">{po.PO_ID}</h4>
-                                <p className="text-xs text-slate-500 font-medium">{po.VendorName}</p>
-                                {po.PR_No && <p className="text-[10px] text-slate-400 mt-0.5">PR: {po.PR_No}</p>}
-                            </div>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${po.Status === 'Completed' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : po.Status === 'Partial' ? 'bg-amber-100 text-amber-600 border-amber-200' : 'bg-blue-100 text-blue-600 border-blue-200'}`}>
-                                {po.Status}
-                            </span>
-                        </div>
-                        <div className="space-y-2 border-t border-slate-100 pt-4">
-                            {po.Items?.map((item, idx) => (
-                                <div key={idx} className="flex justify-between text-xs">
-                                    <span className="text-slate-600 font-medium">{item.ItemName || item.ProductName || `Item #${idx + 1}`}</span>
-                                    <span className="font-mono text-slate-400">{item.QtyReceived || 0} / {item.QtyOrdered}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {purchaseOrders.map((po, i) => (
+                    <div key={po.PO_ID} className="group bg-white border border-slate-100 p-6 rounded-3xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+                        {/* Decorative Gradient Background */}
+                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-slate-50 to-slate-100 opacity-50 z-0"></div>
+
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                                            <ShoppingCart size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-slate-800 text-lg">{po.PO_ID}</h4>
+                                            <p className="text-xs text-slate-500 font-bold">{po.VendorName}</p>
+                                        </div>
+                                    </div>
+                                    {po.PR_No && <span className="inline-block mt-2 text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-200">PR: {po.PR_No}</span>}
                                 </div>
-                            ))}
-                        </div>
-                        <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500">
-                            <p>Requested by: <span className="text-slate-700 font-semibold">{po.RequestedBy}</span></p>
-                            <p>Date: {new Date(po.RequestDate).toLocaleDateString()}</p>
+                                <span className={`text-[10px] font-bold px-3 py-1 rounded-full border shadow-sm ${po.Status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                    po.Status === 'Partial' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                        'bg-blue-50 text-blue-600 border-blue-100'
+                                    }`}>
+                                    {po.Status}
+                                </span>
+                            </div>
+
+                            <div className="space-y-3 border-t border-slate-100 pt-4 mb-4">
+                                {po.Items?.slice(0, 3).map((item, idx) => (
+                                    <div key={idx} className="flex justify-between text-xs items-center bg-slate-50/50 p-2 rounded-lg">
+                                        <span className="text-slate-700 font-medium truncate pr-2">{item.ItemName || item.ProductName || `Item #${idx + 1}`}</span>
+                                        <span className="font-mono text-slate-400 shrink-0 bg-white px-1.5 py-0.5 rounded border border-slate-200">{item.QtyReceived || 0} / {item.QtyOrdered}</span>
+                                    </div>
+                                ))}
+                                {(po.Items?.length || 0) > 3 && <p className="text-[10px] text-center text-slate-400 italic">...and {po.Items.length - 3} more items</p>}
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100 flex justify-between items-end">
+                                <div className="text-xs space-y-1">
+                                    <p className="text-slate-400">By <span className="text-slate-600 font-bold">{po.RequestedBy}</span></p>
+                                    <p className="text-slate-400">{new Date(po.RequestDate).toLocaleDateString()}</p>
+                                </div>
+                                <button className="text-indigo-600 hover:text-indigo-700 text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
+                                    Details <TrendingUp size={14} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ))}
                 {purchaseOrders.length === 0 && (
-                    <div className="col-span-full flex flex-col items-center justify-center py-20 text-center border border-dashed border-slate-300 rounded-2xl bg-white/50">
+                    <div className="col-span-full flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
                         <ShoppingCart size={48} className="text-slate-300 mb-4" />
-                        <p className="text-slate-500 text-lg font-medium">No Purchase Orders</p>
+                        <p className="text-slate-500 text-lg font-bold">No Purchase Orders</p>
                         <p className="text-slate-400 text-sm mt-2">Create your first PO to get started</p>
                     </div>
                 )}

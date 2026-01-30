@@ -45,40 +45,50 @@ const ReceivePage = () => {
         <div className="space-y-8 animate-in fade-in">
             <div>
                 <h2 className="text-3xl font-black mb-6 text-slate-800">Pending Purchase Orders</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {purchaseOrders.filter(po => po.Status !== 'Completed').map(po => (
-                        <div key={po.PO_ID} className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all">
-                            <div className="flex justify-between items-start mb-4">
+                        <div key={po.PO_ID} className="group bg-white border border-slate-100 p-6 rounded-3xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+
+                            {/* Decorative Gradient Background */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-50 to-white rounded-bl-[100px] opacity-60 z-0"></div>
+
+                            <div className="relative z-10 flex justify-between items-start mb-4">
                                 <div>
-                                    <h4 className="font-bold text-indigo-600 text-lg">{po.PO_ID}</h4>
-                                    <p className="text-xs text-slate-500 font-medium">{po.VendorName}</p>
+                                    <h4 className="font-black text-indigo-600 text-lg">{po.PO_ID}</h4>
+                                    <p className="text-xs text-slate-500 font-bold">{po.VendorName}</p>
                                 </div>
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-600 border border-amber-200">
+                                <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 shadow-sm">
                                     {po.Status}
                                 </span>
                             </div>
-                            <div className="space-y-2 mb-6 border-t border-slate-100 pt-4">
+
+                            <div className="relative z-10 space-y-3 mb-6 border-t border-slate-100 pt-4 bg-slate-50/50 p-3 rounded-2xl">
                                 {po.Items.map(item => {
                                     const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Unknown Item';
                                     return (
-                                        <div key={item.DetailID} className="flex justify-between text-xs">
-                                            <span className="text-slate-600 font-medium">{prodName}</span>
-                                            <span className="font-mono text-slate-400">{item.QtyReceived} / {item.QtyOrdered}</span>
+                                        <div key={item.DetailID} className="flex justify-between text-xs items-center">
+                                            <span className="text-slate-700 font-medium truncate pr-2 flex-1">{prodName}</span>
+                                            <span className="font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm shrink-0">{item.QtyReceived} / {item.QtyOrdered}</span>
                                         </div>
                                     );
                                 })}
                             </div>
+
                             <button
                                 onClick={() => { setActivePo(po); setIsModalOpen(true); }}
-                                className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl text-sm hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200"
+                                className="relative z-10 w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2 group-hover:scale-[1.02]"
                             >
-                                Receive Invoice Items
+                                <FileText size={16} /> Receive Invoice Items
                             </button>
                         </div>
                     ))}
                     {purchaseOrders.filter(po => po.Status !== 'Completed').length === 0 && (
-                        <div className="col-span-full text-center py-10 text-slate-400 border border-dashed border-slate-300 rounded-2xl bg-white/50">
-                            No open POs found. All good!
+                        <div className="col-span-full flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-emerald-200 rounded-3xl bg-emerald-50/30">
+                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4 text-emerald-600">
+                                <FileText size={32} />
+                            </div>
+                            <p className="text-emerald-800 text-lg font-bold">All caught up!</p>
+                            <p className="text-emerald-600 text-sm mt-1">No pending orders to receive.</p>
                         </div>
                     )}
                 </div>
