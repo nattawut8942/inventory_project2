@@ -83,22 +83,26 @@ const PurchaseOrdersPage = () => {
             </div>
 
             {/* Dashboard Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl text-white shadow-lg">
-                    <p className="text-indigo-100 text-sm font-bold uppercase tracking-wider mb-1">Total POs</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-5 rounded-2xl text-white shadow-lg">
+                    <p className="text-indigo-100 text-xs font-bold uppercase tracking-wider mb-1">Total POs</p>
                     <h3 className="text-3xl font-black">{purchaseOrders.length}</h3>
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Pending Approval</p>
-                    <h3 className="text-2xl font-black text-slate-800">{purchaseOrders.filter(p => p.Status === 'Pending').length}</h3>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Open</p>
+                    <h3 className="text-2xl font-black text-blue-500">{purchaseOrders.filter(p => p.Status === 'Open' || p.Status === 'Pending').length}</h3>
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Awaiting Delivery</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">รอรับของ</p>
                     <h3 className="text-2xl font-black text-amber-500">{purchaseOrders.filter(p => p.Status === 'Partial').length}</h3>
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                     <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Completed</p>
                     <h3 className="text-2xl font-black text-emerald-500">{purchaseOrders.filter(p => p.Status === 'Completed').length}</h3>
+                </div>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Cancelled</p>
+                    <h3 className="text-2xl font-black text-red-500">{purchaseOrders.filter(p => p.Status === 'Cancelled').length}</h3>
                 </div>
             </div>
 

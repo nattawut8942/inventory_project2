@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { ShoppingBag, AlertTriangle, Monitor, Network, Archive, Database, Package } from 'lucide-react';
+import { motion } from 'motion/react';
 import AlertModal from '../components/AlertModal';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -21,6 +22,16 @@ const WithdrawPage = () => {
             case 'Asset': return Archive;
             case 'Stock': return Database;
             default: return Package;
+        }
+    };
+
+    const getColorGradient = (type) => {
+        switch (type) {
+            case 'Monitor': return 'from-blue-500 to-blue-600';
+            case 'Network': return 'from-purple-500 to-purple-600';
+            case 'Asset': return 'from-amber-500 to-amber-600';
+            case 'Stock': return 'from-emerald-500 to-emerald-600';
+            default: return 'from-pink-500 to-pink-600';
         }
     };
 
@@ -63,28 +74,37 @@ const WithdrawPage = () => {
     };
 
     return (
-        <div className="space-y-8 animate-in slide-in-from-bottom-5">
-            <div>
+        <div className="space-y-8">
+            <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+            >
                 <h2 className="text-3xl font-black text-slate-800 mb-2">Withdraw Items</h2>
                 <p className="text-slate-500">Select items to withdraw from inventory</p>
-            </div>
+            </motion.div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {products.map(p => {
+                {products.map((p, idx) => {
                     const Icon = getIcon(p.DeviceType);
                     const isLow = p.CurrentStock <= p.MinStock;
 
                     return (
-                        <div key={p.ProductID} className="group bg-white rounded-3xl border border-slate-100 p-5 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden flex flex-col">
+                        <motion.div
+                            key={p.ProductID}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.03 }}
+                            className="group bg-white rounded-3xl border border-slate-100 p-5 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden flex flex-col"
+                        >
                             {/* Decorative Gradient Background */}
-                            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-slate-50 to-slate-100 opacity-50 z-0"></div>
+                            <div className={`absolute top-0 left-0 w-full h-24 bg-gradient-to-br ${getColorGradient(p.DeviceType)} opacity-10 z-0`}></div>
 
                             <div className="relative z-10 flex-1">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${p.DeviceType === 'Monitor' ? 'bg-blue-100 text-blue-600' :
-                                            p.DeviceType === 'Network' ? 'bg-purple-100 text-purple-600' :
-                                                p.DeviceType === 'Asset' ? 'bg-amber-100 text-amber-600' :
-                                                    'bg-emerald-100 text-emerald-600'
+                                        p.DeviceType === 'Network' ? 'bg-purple-100 text-purple-600' :
+                                            p.DeviceType === 'Asset' ? 'bg-amber-100 text-amber-600' :
+                                                'bg-emerald-100 text-emerald-600'
                                         }`}>
                                         <Icon size={24} />
                                     </div>
@@ -123,7 +143,7 @@ const WithdrawPage = () => {
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     );
                 })}
             </div>

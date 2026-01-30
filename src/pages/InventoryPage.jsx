@@ -45,6 +45,7 @@ const InventoryPage = () => {
     const { products, deviceTypes, refreshData } = useData();
     const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedType, setSelectedType] = useState('all');
     const [viewMode, setViewMode] = useState('grid');
     const [editItem, setEditItem] = useState(null);
     const [historyItem, setHistoryItem] = useState(null);
@@ -91,7 +92,8 @@ const InventoryPage = () => {
     };
 
     const filteredProducts = products.filter(p =>
-        p.ProductName.toLowerCase().includes(searchTerm.toLowerCase())
+        p.ProductName.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        (selectedType === 'all' || p.DeviceType === selectedType)
     );
 
     // Stats Calculations
@@ -232,6 +234,14 @@ const InventoryPage = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <select
+                        value={selectedType}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-500 outline-none cursor-pointer"
+                    >
+                        <option value="all">ทุกประเภท</option>
+                        {deviceTypes.map(t => <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>)}
+                    </select>
                 </div>
             </motion.div>
 
@@ -371,9 +381,9 @@ const InventoryPage = () => {
 
                                 <h3 className="font-bold text-slate-800 text-sm mb-1 line-clamp-2 min-h-[2.5rem]">{p.ProductName}</h3>
                                 <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border mb-2 ${p.DeviceType === 'Monitor' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                        p.DeviceType === 'Network' ? 'bg-purple-50 text-purple-600 border-purple-100' :
-                                            p.DeviceType === 'Asset' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                                'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                    p.DeviceType === 'Network' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                                        p.DeviceType === 'Asset' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                            'bg-emerald-50 text-emerald-600 border-emerald-100'
                                     }`}>{p.DeviceType}</span>
 
                                 <div className="grid grid-cols-2 gap-2 w-full pt-2 border-t border-slate-100">
@@ -500,6 +510,10 @@ const InventoryPage = () => {
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Min Stock</label>
                                         <input name="MinStock" type="number" defaultValue={editItem.MinStock} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Max Stock (สำหรับคำนวณรายการสั่งซื้อ)</label>
+                                        <input name="MaxStock" type="number" defaultValue={editItem.MaxStock || 0} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
                                     </div>
                                 </div>
                                 <div className="flex gap-3 pt-2">

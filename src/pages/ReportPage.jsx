@@ -61,6 +61,7 @@ const ReportPage = () => {
 
     const dataOptions = [
         { id: 'products', label: 'Inventory / Products', description: 'All active products with stock levels', icon: Package, color: 'from-blue-500 to-blue-600' },
+        { id: 'lowstock', label: 'รายการสินค้าต่ำกว่า Min Stock', description: 'คำนวณ (MaxStock - CurrentStock) × ราคา', icon: TrendingDown, color: 'from-red-500 to-red-600' },
         { id: 'transactions', label: 'Transaction History', description: 'All inbound/outbound movements', icon: TrendingUp, color: 'from-purple-500 to-purple-600' },
         { id: 'invoices', label: 'Invoice Records', description: 'All received invoices', icon: Receipt, color: 'from-pink-500 to-pink-600' },
         { id: 'pos', label: 'Purchase Orders', description: 'All PO records', icon: FileText, color: 'from-orange-500 to-orange-600' }

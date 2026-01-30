@@ -102,7 +102,7 @@ app.get('/api/products', async (req, res) => {
     try {
         const pool = getPool();
         const result = await pool.request().query(`
-            SELECT ProductID, ProductName, DeviceType, MinStock, CurrentStock, LastPrice, UnitOfMeasure, IsActive, ImageURL
+            SELECT ProductID, ProductName, DeviceType, MinStock, MaxStock, CurrentStock, LastPrice, UnitOfMeasure, IsActive, ImageURL
             FROM dbo.Stock_Products
             WHERE IsActive = 1
         `);
@@ -164,7 +164,7 @@ app.post('/api/products/manual-import', async (req, res) => {
 // UPDATE Product (Admin only)
 app.put('/api/products/:id', async (req, res) => {
     const { id } = req.params;
-    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock } = req.body;
+    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, MaxStock } = req.body;
 
     try {
         const pool = getPool();
@@ -174,13 +174,14 @@ app.put('/api/products/:id', async (req, res) => {
             .input('ProductName', sql.NVarChar, ProductName)
             .input('DeviceType', sql.VarChar, DeviceType)
             .input('MinStock', sql.Int, MinStock)
+            .input('MaxStock', sql.Int, MaxStock || 0)
             .input('CurrentStock', sql.Int, CurrentStock)
             .input('LastPrice', sql.Decimal(18, 2), LastPrice);
 
         let query = `
             UPDATE dbo.Stock_Products 
             SET ProductName = @ProductName, DeviceType = @DeviceType, 
-                MinStock = @MinStock, CurrentStock = @CurrentStock, LastPrice = @LastPrice
+                MinStock = @MinStock, MaxStock = @MaxStock, CurrentStock = @CurrentStock, LastPrice = @LastPrice
         `;
 
         if (req.body.ImageURL !== undefined) {
@@ -581,17 +582,17 @@ app.get('/api/transactions', async (req, res) => {
     }
 });
 
-// --- FORECAST ---
+// --- FORECAST / LOW STOCK REPORT ---
 app.get('/api/forecast', async (req, res) => {
     try {
         const pool = getPool();
         const result = await pool.request().query(`
             SELECT 
-                ProductID, ProductName, DeviceType, MinStock, CurrentStock, LastPrice,
-                CASE WHEN CurrentStock < MinStock THEN MinStock - CurrentStock ELSE 0 END as Needed,
-                CASE WHEN CurrentStock < MinStock THEN (MinStock - CurrentStock) * LastPrice ELSE 0 END as EstimatedCost
+                ProductID, ProductName, DeviceType, MinStock, MaxStock, CurrentStock, LastPrice,
+                CASE WHEN CurrentStock <= MinStock THEN ISNULL(MaxStock, MinStock) - CurrentStock ELSE 0 END as OrderQty,
+                CASE WHEN CurrentStock <= MinStock THEN (ISNULL(MaxStock, MinStock) - CurrentStock) * ISNULL(LastPrice, 0) ELSE 0 END as EstimatedCost
             FROM dbo.Stock_Products
-            WHERE IsActive = 1 AND CurrentStock < MinStock
+            WHERE IsActive = 1 AND CurrentStock <= MinStock
         `);
         res.json(result.recordset);
     } catch (err) {
@@ -621,6 +622,16 @@ app.get('/api/report/export', async (req, res) => {
                 case 'products':
                     const prodResult = await pool.request().query('SELECT * FROM dbo.Stock_Products WHERE IsActive = 1');
                     data = prodResult.recordset;
+                    break;
+                case 'lowstock':
+                    const lowStockResult = await pool.request().query(`
+                        SELECT ProductID, ProductName, DeviceType, MinStock, MaxStock, CurrentStock, LastPrice,
+                            ISNULL(MaxStock, MinStock) - CurrentStock as OrderQty,
+                            (ISNULL(MaxStock, MinStock) - CurrentStock) * ISNULL(LastPrice, 0) as EstimatedCost
+                        FROM dbo.Stock_Products
+                        WHERE IsActive = 1 AND CurrentStock <= MinStock
+                    `);
+                    data = lowStockResult.recordset;
                     break;
                 case 'transactions':
                     let transQuery = `SELECT t.*, p.ProductName FROM dbo.Stock_Transactions t 
@@ -668,7 +679,7 @@ const startServer = async () => {
     try {
         await connectDB();
 
-        // Auto-Migration: Ensure ImageURL column exists
+        // Auto-Migration: Ensure ImageURL and MaxStock columns exist
         try {
             const pool = getPool();
             await pool.request().query(`
@@ -677,7 +688,13 @@ const startServer = async () => {
                     ALTER TABLE dbo.Stock_Products ADD ImageURL NVARCHAR(MAX);
                 END
             `);
-            console.log('✅ Schema Check: ImageURL column verified');
+            await pool.request().query(`
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Stock_Products' AND COLUMN_NAME = 'MaxStock')
+                BEGIN
+                    ALTER TABLE dbo.Stock_Products ADD MaxStock INT DEFAULT 0;
+                END
+            `);
+            console.log('✅ Schema Check: ImageURL and MaxStock columns verified');
         } catch (err) {
             console.warn('⚠️ Schema Check Warning:', err.message);
         }
