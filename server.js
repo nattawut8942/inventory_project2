@@ -102,7 +102,7 @@ app.get('/api/products', async (req, res) => {
     try {
         const pool = getPool();
         const result = await pool.request().query(`
-            SELECT ProductID, ProductName, DeviceType, MinStock, CurrentStock, LastPrice, UnitOfMeasure, IsActive
+            SELECT ProductID, ProductName, DeviceType, MinStock, CurrentStock, LastPrice, UnitOfMeasure, IsActive, ImageURL
             FROM dbo.Stock_Products
             WHERE IsActive = 1
         `);
@@ -129,10 +129,11 @@ app.post('/api/products/manual-import', async (req, res) => {
                 .input('MinStock', sql.Int, MinStock)
                 .input('CurrentStock', sql.Int, CurrentStock)
                 .input('LastPrice', sql.Decimal(18, 2), LastPrice)
+                .input('ImageURL', sql.NVarChar, req.body.ImageURL || null)
                 .query(`
-                    INSERT INTO dbo.Stock_Products (ProductName, DeviceType, MinStock, CurrentStock, LastPrice)
+                    INSERT INTO dbo.Stock_Products (ProductName, DeviceType, MinStock, CurrentStock, LastPrice, ImageURL)
                     OUTPUT INSERTED.ProductID
-                    VALUES (@ProductName, @DeviceType, @MinStock, @CurrentStock, @LastPrice)
+                    VALUES (@ProductName, @DeviceType, @MinStock, @CurrentStock, @LastPrice, @ImageURL)
                 `);
 
             const newProductId = insertProduct.recordset[0].ProductID;
@@ -167,19 +168,29 @@ app.put('/api/products/:id', async (req, res) => {
 
     try {
         const pool = getPool();
-        await pool.request()
-            .input('ProductID', sql.Int, id)
+        const request = pool.request();
+
+        request.input('ProductID', sql.Int, id)
             .input('ProductName', sql.NVarChar, ProductName)
             .input('DeviceType', sql.VarChar, DeviceType)
             .input('MinStock', sql.Int, MinStock)
             .input('CurrentStock', sql.Int, CurrentStock)
-            .input('LastPrice', sql.Decimal(18, 2), LastPrice)
-            .query(`
-                UPDATE dbo.Stock_Products 
-                SET ProductName = @ProductName, DeviceType = @DeviceType, 
-                    MinStock = @MinStock, CurrentStock = @CurrentStock, LastPrice = @LastPrice
-                WHERE ProductID = @ProductID
-            `);
+            .input('LastPrice', sql.Decimal(18, 2), LastPrice);
+
+        let query = `
+            UPDATE dbo.Stock_Products 
+            SET ProductName = @ProductName, DeviceType = @DeviceType, 
+                MinStock = @MinStock, CurrentStock = @CurrentStock, LastPrice = @LastPrice
+        `;
+
+        if (req.body.ImageURL !== undefined) {
+            request.input('ImageURL', sql.NVarChar, req.body.ImageURL);
+            query += `, ImageURL = @ImageURL`;
+        }
+
+        query += ` WHERE ProductID = @ProductID`;
+
+        await request.query(query);
         res.json({ success: true });
     } catch (err) {
         console.error('Update Product Error:', err);
@@ -683,112 +694,4 @@ const startServer = async () => {
 
 startServer();
 
-// --- PRODUCTS API UPDATES ---
 
-// GET Products
-app.get('/api/products', async (req, res) => {
-    try {
-        const pool = getPool();
-        const result = await pool.request().query(`
-            SELECT ProductID, ProductName, DeviceType, MinStock, CurrentStock, LastPrice, UnitOfMeasure, IsActive, ImageURL
-            FROM dbo.Stock_Products
-            WHERE IsActive = 1
-        `);
-        res.json(result.recordset);
-    } catch (err) {
-        console.error('Get Products Error:', err);
-        res.status(500).json({ error: 'Database error' });
-    }
-});
-
-// Manual Import
-app.post('/api/products/manual-import', async (req, res) => {
-    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, UserID, ImageURL } = req.body;
-
-    try {
-        const pool = getPool();
-        const transaction = new sql.Transaction(pool);
-        await transaction.begin();
-
-        try {
-            // Ensure DeviceType exists (already implemented)
-            await new sql.Request(transaction).query(`
-                IF NOT EXISTS (SELECT 1 FROM dbo.Stock_DeviceTypes WHERE TypeId = 'Stock')
-                BEGIN
-                    INSERT INTO dbo.Stock_DeviceTypes (TypeId, Label) VALUES ('Stock', 'Consumable Stock')
-                END
-            `);
-
-            const insertProduct = await new sql.Request(transaction)
-                .input('ProductName', sql.NVarChar, ProductName)
-                .input('DeviceType', sql.VarChar, DeviceType)
-                .input('MinStock', sql.Int, MinStock)
-                .input('CurrentStock', sql.Int, CurrentStock)
-                .input('LastPrice', sql.Decimal(18, 2), LastPrice)
-                .input('ImageURL', sql.NVarChar, ImageURL || null)
-                .query(`
-                    INSERT INTO dbo.Stock_Products (ProductName, DeviceType, MinStock, CurrentStock, LastPrice, ImageURL)
-                    OUTPUT INSERTED.ProductID
-                    VALUES (@ProductName, @DeviceType, @MinStock, @CurrentStock, @LastPrice, @ImageURL)
-                `);
-
-            const newProductId = insertProduct.recordset[0].ProductID;
-
-            await new sql.Request(transaction)
-                .input('ProductID', sql.Int, newProductId)
-                .input('TransType', sql.VarChar, 'IN')
-                .input('Qty', sql.Int, CurrentStock)
-                .input('RefInfo', sql.NVarChar, 'Manual Import (Legacy)')
-                .input('UserID', sql.NVarChar, UserID)
-                .query(`
-                    INSERT INTO dbo.Stock_Transactions (ProductID, TransType, Qty, RefInfo, UserID)
-                    VALUES (@ProductID, @TransType, @Qty, @RefInfo, @UserID)
-                `);
-
-            await transaction.commit();
-            res.json({ success: true, ProductID: newProductId });
-        } catch (err) {
-            await transaction.rollback();
-            throw err;
-        }
-    } catch (err) {
-        console.error('Manual Import Error:', err);
-        res.status(500).json({ error: 'Failed to import product' });
-    }
-});
-
-// UPDATE Product
-app.put('/api/products/:id', async (req, res) => {
-    const { id } = req.params;
-    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, ImageURL } = req.body;
-
-    try {
-        const pool = getPool();
-        const request = pool.request()
-            .input('ProductID', sql.Int, id)
-            .input('ProductName', sql.NVarChar, ProductName)
-            .input('DeviceType', sql.VarChar, DeviceType)
-            .input('MinStock', sql.Int, MinStock)
-            .input('CurrentStock', sql.Int, CurrentStock)
-            .input('LastPrice', sql.Decimal(18, 2), LastPrice);
-
-        let query = `
-            UPDATE dbo.Stock_Products 
-            SET ProductName = @ProductName, DeviceType = @DeviceType, 
-                MinStock = @MinStock, CurrentStock = @CurrentStock, LastPrice = @LastPrice
-        `;
-
-        if (ImageURL !== undefined) {
-            request.input('ImageURL', sql.NVarChar, ImageURL);
-            query += `, ImageURL = @ImageURL`;
-        }
-
-        query += ` WHERE ProductID = @ProductID`;
-
-        await request.query(query);
-        res.json({ success: true });
-    } catch (err) {
-        console.error('Update Product Error:', err);
-        res.status(500).json({ error: 'Failed to update product' });
-    }
-});
