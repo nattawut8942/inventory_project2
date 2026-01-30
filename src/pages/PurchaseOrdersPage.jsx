@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Plus, X, TrendingUp } from 'lucide-react';
+import { ShoppingCart, Plus, X, TrendingUp, Search, Calendar } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,6 +10,8 @@ const PurchaseOrdersPage = () => {
     const { user } = useAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [poItems, setPoItems] = useState([{ ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterDate, setFilterDate] = useState('');
 
     const generatePONumber = () => {
         const now = new Date();
@@ -106,57 +108,95 @@ const PurchaseOrdersPage = () => {
                 </div>
             </div>
 
+            {/* Filter Controls */}
+            <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <Search size={18} className="text-slate-400 self-center" />
+                    <input
+                        type="text"
+                        placeholder="ค้นหา PO / ผู้ขาย..."
+                        className="bg-transparent border-none outline-none text-sm w-48 text-slate-700 placeholder-slate-400"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div className="flex gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <Calendar size={18} className="text-slate-400 self-center" />
+                    <input
+                        type="date"
+                        className="bg-transparent border-none outline-none text-sm text-slate-700"
+                        value={filterDate}
+                        onChange={(e) => setFilterDate(e.target.value)}
+                    />
+                </div>
+                {(searchTerm || filterDate) && (
+                    <button
+                        onClick={() => { setSearchTerm(''); setFilterDate(''); }}
+                        className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                        ล้างตัวกรอง
+                    </button>
+                )}
+            </div>
+
             {/* PO List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {purchaseOrders.map((po, i) => (
-                    <div key={po.PO_ID} className="group bg-white border border-slate-100 p-6 rounded-3xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
-                        {/* Decorative Gradient Background */}
-                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-slate-50 to-slate-100 opacity-50 z-0"></div>
+                {purchaseOrders
+                    .filter(po => {
+                        const matchSearch = po.PO_ID.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (po.VendorName && po.VendorName.toLowerCase().includes(searchTerm.toLowerCase()));
+                        const matchDate = !filterDate || (po.RequestDate && po.RequestDate.includes(filterDate));
+                        return matchSearch && matchDate;
+                    })
+                    .map((po, i) => (
+                        <div key={po.PO_ID} className="group bg-white border border-slate-100 p-6 rounded-3xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+                            {/* Decorative Gradient Background */}
+                            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-slate-50 to-slate-100 opacity-50 z-0"></div>
 
-                        <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                                            <ShoppingCart size={20} />
+                            <div className="relative z-10">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                                                <ShoppingCart size={20} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-black text-slate-800 text-lg">{po.PO_ID}</h4>
+                                                <p className="text-xs text-slate-500 font-bold">{po.VendorName}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 className="font-black text-slate-800 text-lg">{po.PO_ID}</h4>
-                                            <p className="text-xs text-slate-500 font-bold">{po.VendorName}</p>
+                                        {po.PR_No && <span className="inline-block mt-2 text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-200">PR: {po.PR_No}</span>}
+                                    </div>
+                                    <span className={`text-[10px] font-bold px-3 py-1 rounded-full border shadow-sm ${po.Status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                        po.Status === 'Partial' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                            'bg-blue-50 text-blue-600 border-blue-100'
+                                        }`}>
+                                        {po.Status}
+                                    </span>
+                                </div>
+
+                                <div className="space-y-3 border-t border-slate-100 pt-4 mb-4">
+                                    {po.Items?.slice(0, 3).map((item, idx) => (
+                                        <div key={idx} className="flex justify-between text-xs items-center bg-slate-50/50 p-2 rounded-lg">
+                                            <span className="text-slate-700 font-medium truncate pr-2">{item.ItemName || item.ProductName || `Item #${idx + 1}`}</span>
+                                            <span className="font-mono text-slate-400 shrink-0 bg-white px-1.5 py-0.5 rounded border border-slate-200">{item.QtyReceived || 0} / {item.QtyOrdered}</span>
                                         </div>
-                                    </div>
-                                    {po.PR_No && <span className="inline-block mt-2 text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-200">PR: {po.PR_No}</span>}
+                                    ))}
+                                    {(po.Items?.length || 0) > 3 && <p className="text-[10px] text-center text-slate-400 italic">...and {po.Items.length - 3} more items</p>}
                                 </div>
-                                <span className={`text-[10px] font-bold px-3 py-1 rounded-full border shadow-sm ${po.Status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                    po.Status === 'Partial' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                        'bg-blue-50 text-blue-600 border-blue-100'
-                                    }`}>
-                                    {po.Status}
-                                </span>
-                            </div>
 
-                            <div className="space-y-3 border-t border-slate-100 pt-4 mb-4">
-                                {po.Items?.slice(0, 3).map((item, idx) => (
-                                    <div key={idx} className="flex justify-between text-xs items-center bg-slate-50/50 p-2 rounded-lg">
-                                        <span className="text-slate-700 font-medium truncate pr-2">{item.ItemName || item.ProductName || `Item #${idx + 1}`}</span>
-                                        <span className="font-mono text-slate-400 shrink-0 bg-white px-1.5 py-0.5 rounded border border-slate-200">{item.QtyReceived || 0} / {item.QtyOrdered}</span>
+                                <div className="pt-4 border-t border-slate-100 flex justify-between items-end">
+                                    <div className="text-xs space-y-1">
+                                        <p className="text-slate-400">By <span className="text-slate-600 font-bold">{po.RequestedBy}</span></p>
+                                        <p className="text-slate-400">{new Date(po.RequestDate).toLocaleDateString()}</p>
                                     </div>
-                                ))}
-                                {(po.Items?.length || 0) > 3 && <p className="text-[10px] text-center text-slate-400 italic">...and {po.Items.length - 3} more items</p>}
-                            </div>
-
-                            <div className="pt-4 border-t border-slate-100 flex justify-between items-end">
-                                <div className="text-xs space-y-1">
-                                    <p className="text-slate-400">By <span className="text-slate-600 font-bold">{po.RequestedBy}</span></p>
-                                    <p className="text-slate-400">{new Date(po.RequestDate).toLocaleDateString()}</p>
+                                    <button className="text-indigo-600 hover:text-indigo-700 text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
+                                        Details <TrendingUp size={14} />
+                                    </button>
                                 </div>
-                                <button className="text-indigo-600 hover:text-indigo-700 text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
-                                    Details <TrendingUp size={14} />
-                                </button>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
                 {purchaseOrders.length === 0 && (
                     <div className="col-span-full flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
                         <ShoppingCart size={48} className="text-slate-300 mb-4" />

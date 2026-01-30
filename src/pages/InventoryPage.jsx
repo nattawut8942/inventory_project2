@@ -140,6 +140,11 @@ const InventoryPage = () => {
 
         const payload = Object.fromEntries(fd);
         payload.ImageURL = imageUrl;
+        // Ensure numeric fields are properly converted
+        payload.MinStock = parseInt(payload.MinStock, 10) || 0;
+        payload.MaxStock = parseInt(payload.MaxStock, 10) || 0;
+        payload.CurrentStock = parseInt(payload.CurrentStock, 10) || 0;
+        payload.LastPrice = parseFloat(payload.LastPrice) || 0;
 
         try {
             const res = await fetch(`${API_BASE}/products/${editItem.ProductID}`, {

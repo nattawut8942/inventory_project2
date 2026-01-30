@@ -30,7 +30,7 @@ const StatCard = ({ icon: Icon, title, value, subtitle, color }) => (
 );
 
 const ReportPage = () => {
-    const { products, deviceTypes } = useData();
+    const { products, deviceTypes, purchaseOrders, transactions } = useData();
     const [selectedTypes, setSelectedTypes] = useState(['products']);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -40,7 +40,9 @@ const ReportPage = () => {
     // Calculate stats from real data
     const totalProducts = products.length;
     const totalValue = products.reduce((sum, p) => sum + (p.CurrentStock * (p.LastPrice || 0)), 0);
-    const lowStockCount = products.filter(p => p.CurrentStock < p.MinStock).length;
+    const lowStockCount = products.filter(p => p.CurrentStock <= p.MinStock).length;
+    const pendingPOCount = (purchaseOrders || []).filter(po => po.Status !== 'Completed').length;
+    const transactionCount = (transactions || []).length;
 
     // Category distribution for pie chart
     const categoryData = deviceTypes.map((t, idx) => ({
@@ -116,7 +118,7 @@ const ReportPage = () => {
     return (
         <div className="space-y-6">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <StatCard
                     icon={Package}
                     title="สินค้าทั้งหมด"
@@ -136,7 +138,21 @@ const ReportPage = () => {
                     title="สินค้าใกล้หมด"
                     value={lowStockCount}
                     subtitle="ต่ำกว่า Min Stock"
-                    color="from-orange-500 to-orange-600"
+                    color="from-red-500 to-red-600"
+                />
+                <StatCard
+                    icon={FileText}
+                    title="PO รอดำเนินการ"
+                    value={pendingPOCount}
+                    subtitle="รอรับของ"
+                    color="from-amber-500 to-amber-600"
+                />
+                <StatCard
+                    icon={TrendingUp}
+                    title="รายการเคลื่อนไหว"
+                    value={transactionCount}
+                    subtitle="ธุรกรรมทั้งหมด"
+                    color="from-emerald-500 to-emerald-600"
                 />
                 <StatCard
                     icon={PieChart}
