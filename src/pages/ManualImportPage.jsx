@@ -63,7 +63,7 @@ const ManualImportPage = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in">
+        <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in">
             {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -10 }}

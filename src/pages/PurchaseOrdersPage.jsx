@@ -386,7 +386,7 @@ const PurchaseOrdersPage = () => {
                                             <Plus size={16} /> เพิ่มรายการ
                                         </button>
                                     </div>
-                                    <div className="space-y-2 max-h-48 overflow-y-auto p-1">
+                                    <div className="space-y-3 relative z-[100]">
                                         {poItems.map((item, index) => (
                                             <div key={index} className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
                                                 <div className="flex-1">
