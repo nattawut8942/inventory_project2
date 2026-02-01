@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Package, TrendingUp, TrendingDown, AlertTriangle, DollarSign, ShoppingCart } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -9,6 +10,7 @@ const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1'
 
 const DashboardPage = () => {
     const { products, transactions, purchaseOrders } = useData();
+    const navigate = useNavigate();
 
     // 1. Calculate Stats
     const stats = useMemo(() => {
@@ -174,7 +176,7 @@ const DashboardPage = () => {
             >
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-slate-800">กิจกรรมล่าสุด</h3>
-                    <button className="text-indigo-600 text-sm font-bold hover:underline">ดูทั้งหมด</button>
+                    <button onClick={() => navigate('/history')} className="text-indigo-600 text-sm font-bold hover:underline">ดูทั้งหมด</button>
                 </div>
 
                 <div className="space-y-4">
