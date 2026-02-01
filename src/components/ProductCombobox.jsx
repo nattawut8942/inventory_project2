@@ -106,8 +106,8 @@ const ProductCombobox = ({ products = [], value = {}, onChange }) => {
                     onKeyDown={handleKeyDown}
                     placeholder="🔍 ค้นหาหรือพิมพ์ชื่อสินค้า..."
                     className={`w-full bg-white border p-2.5 pr-10 rounded-lg text-sm outline-none transition-all ${value.ProductID
-                            ? 'border-emerald-300 bg-emerald-50'
-                            : 'border-slate-200 focus:border-indigo-500'
+                        ? 'border-emerald-300 bg-emerald-50'
+                        : 'border-slate-200 focus:border-indigo-500'
                         }`}
                 />
                 {value.ProductID && (
@@ -119,7 +119,7 @@ const ProductCombobox = ({ products = [], value = {}, onChange }) => {
 
             {/* Dropdown */}
             {isOpen && (searchTerm || filteredProducts.length > 0) && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-64 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-[200] max-h-64 overflow-y-auto">
                     {/* Product list */}
                     {filteredProducts.length > 0 && (
                         <div className="py-1">

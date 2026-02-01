@@ -60,6 +60,48 @@ const WithdrawPage = () => {
         setSelectedProduct(null);
     };
 
+    // Quick Withdraw - เบิกทันที (ไม่ผ่านตะกร้า)
+    const executeQuickWithdraw = async () => {
+        if (!selectedProduct || addQty <= 0) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/products/withdraw`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ProductID: selectedProduct.ProductID,
+                    Qty: addQty,
+                    UserID: user.username
+                })
+            });
+
+            if (res.ok) {
+                setResultModal({
+                    isOpen: true,
+                    type: 'success',
+                    title: 'เบิกสำเร็จ',
+                    message: `เบิก ${selectedProduct.ProductName} จำนวน ${addQty} ชิ้น`
+                });
+                refreshData();
+            } else {
+                setResultModal({
+                    isOpen: true,
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'ไม่สามารถเบิกสินค้าได้'
+                });
+            }
+        } catch (err) {
+            setResultModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Connection Error',
+                message: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'
+            });
+        }
+        setSelectedProduct(null);
+    };
+
     const removeFromCart = (productId) => {
         setCart(cart.filter(c => c.ProductID !== productId));
     };
@@ -208,8 +250,8 @@ const WithdrawPage = () => {
                                     onClick={() => openAddModal(p)}
                                     disabled={p.CurrentStock <= 0}
                                     className={`w-full font-bold py-3 rounded-xl text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${inCart
-                                            ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                                            : 'bg-slate-900 text-white hover:bg-slate-800'
+                                        ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                                        : 'bg-slate-900 text-white hover:bg-slate-800'
                                         }`}
                                 >
                                     {inCart ? (
@@ -327,10 +369,18 @@ const WithdrawPage = () => {
                                     <button
                                         onClick={addToCart}
                                         disabled={addQty > selectedProduct.CurrentStock}
-                                        className="flex-[2] bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="flex-1 bg-indigo-100 text-indigo-700 font-bold py-3 rounded-xl hover:bg-indigo-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         <ShoppingCart size={18} />
-                                        {isInCart(selectedProduct.ProductID) ? 'อัปเดตตะกร้า' : 'เพิ่มลงตะกร้า'}
+                                        {isInCart(selectedProduct.ProductID) ? 'อัปเดต' : 'ตะกร้า'}
+                                    </button>
+                                    <button
+                                        onClick={executeQuickWithdraw}
+                                        disabled={addQty > selectedProduct.CurrentStock}
+                                        className="flex-1 bg-emerald-500 text-white font-bold py-3 rounded-xl hover:bg-emerald-600 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                                    >
+                                        <ShoppingBag size={18} />
+                                        เบิกเลย
                                     </button>
                                 </div>
                             </div>
