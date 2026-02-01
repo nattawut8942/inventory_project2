@@ -188,33 +188,33 @@ const ManualImportPage = () => {
                 </form>
             </motion.div>
 
-            {/* Result Modal */}
+            {/* Result Modal - Fullscreen */}
             <AnimatePresence>
                 {resultModal.isOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
+                        className="fixed inset-0 z-[80] bg-white flex flex-col items-center justify-center"
                     >
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="text-center max-w-md w-full px-8"
                         >
-                            <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                            <div className={`w-28 h-28 rounded-full mx-auto mb-6 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
                                 {resultModal.type === 'success' ? (
-                                    <Check size={40} className="text-emerald-600" />
+                                    <Check size={56} className="text-emerald-600" />
                                 ) : (
-                                    <X size={40} className="text-red-600" />
+                                    <X size={56} className="text-red-600" />
                                 )}
                             </div>
-                            <h3 className="font-black text-2xl text-slate-800 mb-2">{resultModal.title}</h3>
-                            <p className="text-slate-500 mb-6">{resultModal.message}</p>
+                            <h3 className="font-black text-3xl text-slate-800 mb-3">{resultModal.title}</h3>
+                            <p className="text-slate-500 text-lg mb-8">{resultModal.message}</p>
                             <button
                                 onClick={handleCloseResult}
-                                className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all"
+                                className="w-full max-w-xs mx-auto bg-slate-900 text-white font-bold py-4 px-8 rounded-2xl hover:bg-slate-800 transition-all shadow-xl"
                             >
                                 {resultModal.type === 'success' ? 'ไปหน้า Inventory' : 'ปิด'}
                             </button>
