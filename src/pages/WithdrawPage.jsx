@@ -263,8 +263,12 @@ const WithdrawPage = () => {
                                     <tr key={p.ProductID} className={`border-b border-slate-100 hover:bg-slate-50 ${inCart ? 'bg-indigo-50/50' : ''}`}>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getColorGradient(p.DeviceType)} flex items-center justify-center`}>
-                                                    <Icon size={18} className="text-white" />
+                                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getColorGradient(p.DeviceType)} flex items-center justify-center overflow-hidden`}>
+                                                    {p.ImageURL ? (
+                                                        <img src={`${API_URL}${p.ImageURL}`} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Icon size={18} className="text-white" />
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-slate-800">{p.ProductName}</p>
@@ -323,12 +327,6 @@ const WithdrawPage = () => {
                                 transition={{ delay: idx * 0.02 }}
                                 className={`group bg-white rounded-2xl border p-4 shadow-lg hover:shadow-xl transition-all relative overflow-hidden ${inCart ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-slate-100'}`}
                             >
-                                {inCart && (
-                                    <div className="absolute top-2 right-2 bg-indigo-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full z-10">
-                                        ในตะกร้า
-                                    </div>
-                                )}
-
                                 <div className={`absolute top-0 left-0 w-full h-16 bg-gradient-to-br ${getColorGradient(p.DeviceType)} opacity-10 z-0`}></div>
 
                                 <div className="relative z-10">
@@ -340,36 +338,43 @@ const WithdrawPage = () => {
                                                 <Icon size={22} className="text-white" />
                                             )}
                                         </div>
-                                        <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-lg border shadow-sm bg-gradient-to-r ${getColorGradient(p.DeviceType)} text-white`}>
-                                            {p.DeviceType}
-                                        </span>
+                                        <div className="flex flex-col items-end gap-1">
+                                            {inCart && (
+                                                <span className="bg-indigo-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                                                    ในตะกร้า
+                                                </span>
+                                            )}
+                                            <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-lg border shadow-sm bg-gradient-to-r ${getColorGradient(p.DeviceType)} text-white`}>
+                                                {p.DeviceType}
+                                            </span>
+                                        </div>
                                     </div>
+                                </div>
 
-                                    <h3 className="font-bold text-slate-800 text-sm mb-1 line-clamp-2 min-h-[2.5rem]">{p.ProductName}</h3>
+                                <h3 className="font-bold text-slate-800 text-sm mb-1 line-clamp-2 min-h-[2.5rem]">{p.ProductName}</h3>
 
-                                    <div className="flex items-baseline gap-2 mb-3">
-                                        <span className="text-[10px] text-slate-400 font-bold">คงเหลือ:</span>
-                                        <span className={`text-xl font-black ${isLow ? 'text-red-500' : 'text-emerald-500'}`}>{p.CurrentStock}</span>
-                                        {isLow && <AlertTriangle size={12} className="text-red-500" />}
-                                    </div>
+                                <div className="flex items-baseline gap-2 mb-3">
+                                    <span className="text-[10px] text-slate-400 font-bold">คงเหลือ:</span>
+                                    <span className={`text-xl font-black ${isLow ? 'text-red-500' : 'text-emerald-500'}`}>{p.CurrentStock}</span>
+                                    {isLow && <AlertTriangle size={12} className="text-red-500" />}
+                                </div>
 
-                                    {/* Buttons on Card */}
-                                    <div className="flex gap-2 pt-2 border-t border-slate-100">
-                                        <button
-                                            onClick={() => openCartModal(p)}
-                                            disabled={p.CurrentStock <= 0}
-                                            className="flex-1 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-bold text-xs hover:bg-indigo-200 disabled:opacity-50 flex items-center justify-center gap-1"
-                                        >
-                                            <ShoppingCart size={14} />
-                                        </button>
-                                        <button
-                                            onClick={() => openWithdrawModal(p)}
-                                            disabled={p.CurrentStock <= 0}
-                                            className="flex-1 py-2 bg-emerald-500 text-white rounded-lg font-bold text-xs hover:bg-emerald-600 disabled:opacity-50 flex items-center justify-center gap-1"
-                                        >
-                                            <ShoppingBag size={14} /> เบิก
-                                        </button>
-                                    </div>
+                                {/* Buttons on Card */}
+                                <div className="flex gap-2 pt-2 border-t border-slate-100">
+                                    <button
+                                        onClick={() => openCartModal(p)}
+                                        disabled={p.CurrentStock <= 0}
+                                        className="flex-1 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-bold text-xs hover:bg-indigo-200 disabled:opacity-50 flex items-center justify-center gap-1"
+                                    >
+                                        <ShoppingCart size={14} />
+                                    </button>
+                                    <button
+                                        onClick={() => openWithdrawModal(p)}
+                                        disabled={p.CurrentStock <= 0}
+                                        className="flex-1 py-2 bg-emerald-500 text-white rounded-lg font-bold text-xs hover:bg-emerald-600 disabled:opacity-50 flex items-center justify-center gap-1"
+                                    >
+                                        <ShoppingBag size={14} /> เบิก
+                                    </button>
                                 </div>
                             </motion.div>
                         );
@@ -455,8 +460,8 @@ const WithdrawPage = () => {
                                     onClick={handleQtyConfirm}
                                     disabled={selectQty > qtyModal.product.CurrentStock || selectQty <= 0}
                                     className={`flex-1 font-bold py-3 rounded-xl transition-all shadow-lg disabled:opacity-50 ${qtyModal.mode === 'withdraw'
-                                            ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                        ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
                                         }`}
                                 >
                                     {qtyModal.mode === 'withdraw' ? 'ยืนยันเบิก' : 'เพิ่มลงตะกร้า'}
@@ -591,7 +596,7 @@ const WithdrawPage = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 };
 

@@ -337,16 +337,19 @@ const ReceivePage = () => {
                                                 <div key={idx} className="flex gap-3 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
                                                     <div className="flex-1">
                                                         <p className="font-medium text-sm text-slate-700">{prodName}</p>
-                                                        <p className="text-xs text-slate-400">Remaining: {remaining} of {item.QtyOrdered}</p>
+                                                        <p className="text-xs text-slate-400">คงเหลือ: {remaining} / {item.QtyOrdered}</p>
                                                     </div>
-                                                    <input
-                                                        name={`qty-${idx}`}
-                                                        type="number"
-                                                        min="0"
-                                                        max={remaining}
-                                                        defaultValue={remaining}
-                                                        className="w-20 bg-white border border-slate-200 p-2 rounded-lg text-center text-sm font-mono outline-none focus:border-indigo-500"
-                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-slate-500 font-bold">จำนวน:</span>
+                                                        <input
+                                                            name={`qty-${idx}`}
+                                                            type="number"
+                                                            min="0"
+                                                            max={remaining}
+                                                            defaultValue={remaining}
+                                                            className="w-16 bg-white border border-slate-200 p-2 rounded-lg text-center text-sm font-mono outline-none focus:border-indigo-500"
+                                                        />
+                                                    </div>
                                                 </div>
                                             );
                                         })}

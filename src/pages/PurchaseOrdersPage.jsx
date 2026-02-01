@@ -386,7 +386,14 @@ const PurchaseOrdersPage = () => {
                                             <Plus size={16} /> เพิ่มรายการ
                                         </button>
                                     </div>
-                                    <div className="space-y-3 relative z-[100]">
+                                    {/* Header Row */}
+                                    <div className="flex gap-2 items-center px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                        <div className="flex-1">ชื่อสินค้า</div>
+                                        <div className="w-16 text-center">จำนวน</div>
+                                        <div className="w-24 text-right">ราคา/หน่วย</div>
+                                        <div className="w-6"></div>
+                                    </div>
+                                    <div className="space-y-2 relative z-[100]">
                                         {poItems.map((item, index) => (
                                             <div key={index} className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
                                                 <div className="flex-1">
