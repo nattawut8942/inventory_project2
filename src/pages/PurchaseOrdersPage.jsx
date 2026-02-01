@@ -3,6 +3,7 @@ import { ShoppingCart, Plus, X, Eye, Search, Calendar, Filter } from 'lucide-rea
 import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import ProductCombobox from '../components/ProductCombobox';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -20,10 +21,10 @@ const formatDateTime = (dateStr) => {
 };
 
 const PurchaseOrdersPage = () => {
-    const { purchaseOrders, refreshData } = useData();
+    const { purchaseOrders, products, refreshData } = useData();
     const { user } = useAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [poItems, setPoItems] = useState([{ ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
+    const [poItems, setPoItems] = useState([{ ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDate, setFilterDate] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
@@ -38,7 +39,7 @@ const PurchaseOrdersPage = () => {
     };
 
     const addItem = () => {
-        setPoItems([...poItems, { ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
+        setPoItems([...poItems, { ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
     };
 
     const removeItem = (index) => {
@@ -73,7 +74,7 @@ const PurchaseOrdersPage = () => {
             });
             if (res.ok) {
                 setIsModalOpen(false);
-                setPoItems([{ ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
+                setPoItems([{ ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
                 refreshData();
             } else {
                 const data = await res.json();
@@ -388,13 +389,18 @@ const PurchaseOrdersPage = () => {
                                     <div className="space-y-2 max-h-48 overflow-y-auto p-1">
                                         {poItems.map((item, index) => (
                                             <div key={index} className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
-                                                <input
-                                                    type="text"
-                                                    placeholder="ชื่อรายการ"
-                                                    value={item.ItemName}
-                                                    onChange={(e) => updateItem(index, 'ItemName', e.target.value)}
-                                                    className="flex-1 bg-white border border-slate-200 p-2 rounded-lg text-sm outline-none focus:border-indigo-500"
-                                                />
+                                                <div className="flex-1">
+                                                    <ProductCombobox
+                                                        products={products}
+                                                        value={{ ProductID: item.ProductID, ItemName: item.ItemName }}
+                                                        onChange={({ ProductID, ItemName }) => {
+                                                            const updated = [...poItems];
+                                                            updated[index].ProductID = ProductID;
+                                                            updated[index].ItemName = ItemName;
+                                                            setPoItems(updated);
+                                                        }}
+                                                    />
+                                                </div>
                                                 <input
                                                     type="number"
                                                     min="1"
