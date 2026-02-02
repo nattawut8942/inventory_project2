@@ -11,6 +11,7 @@ const AdminUsersPage = () => {
     const [loading, setLoading] = useState(true);
     const [newUsername, setNewUsername] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
     const fetchAdminUsers = async () => {
@@ -69,8 +70,6 @@ const AdminUsersPage = () => {
     };
 
     const handleDeleteAdmin = async (username) => {
-        if (!window.confirm(`ต้องการลบ ${username} ออกจาก Admin หรือไม่?`)) return;
-
         try {
             const res = await fetch(`${API_BASE}/admin-users/${username}`, {
                 method: 'DELETE'
@@ -100,6 +99,8 @@ const AdminUsersPage = () => {
                 title: 'Connection Error',
                 message: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
             });
+        } finally {
+            setDeleteConfirm(null);
         }
     };
 
@@ -198,7 +199,7 @@ const AdminUsersPage = () => {
                                     <td className="px-6 py-4 text-slate-500 text-sm">{admin.CreatedBy || '-'}</td>
                                     <td className="px-6 py-4 text-right">
                                         <button
-                                            onClick={() => handleDeleteAdmin(admin.Username)}
+                                            onClick={() => setDeleteConfirm(admin.Username)}
                                             className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                             title="ลบ Admin"
                                         >
@@ -266,6 +267,47 @@ const AdminUsersPage = () => {
                                         เพิ่ม Admin
                                     </button>
                                 </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {deleteConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="w-full max-w-sm bg-white rounded-3xl p-8 text-center shadow-2xl"
+                        >
+                            <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center bg-red-100">
+                                <Trash2 size={40} className="text-red-600" />
+                            </div>
+                            <h3 className="font-black text-2xl text-slate-800 mb-2">ลบ Admin?</h3>
+                            <p className="text-slate-500 mb-6">
+                                ต้องการลบ <span className="font-bold text-slate-800">{deleteConfirm}</span> ออกจาก Admin หรือไม่?
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setDeleteConfirm(null)}
+                                    className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
+                                >
+                                    ยกเลิก
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteAdmin(deleteConfirm)}
+                                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all"
+                                >
+                                    ลบ
+                                </button>
                             </div>
                         </motion.div>
                     </motion.div>
