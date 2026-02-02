@@ -445,7 +445,9 @@ const InventoryPage = () => {
                                                 className="hover:bg-slate-50 transition-colors"
                                             >
                                                 <td className="p-4 text-slate-500">{new Date(h.TransDate).toLocaleDateString()} <span className="text-xs text-slate-400">{new Date(h.TransDate).toLocaleTimeString()}</span></td>
-                                                <td className="p-4 text-center font-bold text-emerald-600">+{h.Qty}</td>
+                                                <td className={`p-4 text-center font-bold ${h.TransType === 'IN' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                    {h.TransType === 'IN' ? '+' : '-'}{h.Qty}
+                                                </td>
                                                 <td className="p-4 text-indigo-600 font-medium">{h.RefInfo}</td>
                                                 <td className="p-4 text-xs text-slate-400">{h.UserID}</td>
                                             </motion.tr>

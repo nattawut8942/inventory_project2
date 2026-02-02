@@ -94,7 +94,7 @@ const ManualImportPage = () => {
                             <input
                                 name="ProductName"
                                 required
-                                className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-800 font-medium placeholder:text-slate-400 text-lg"
+                                className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-800 font-medium placeholder:text-slate-400 text-lg"
                                 placeholder="e.g. Dell Monitor 24 inch..."
                             />
                         </div>
@@ -106,7 +106,7 @@ const ManualImportPage = () => {
                                 <select
                                     name="DeviceType"
                                     required
-                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
+                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                 >
                                     <option value="">-- เลือกประเภท --</option>
                                     {deviceTypes.map(t => <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>)}
@@ -119,7 +119,7 @@ const ManualImportPage = () => {
                                     type="number"
                                     step="0.01"
                                     required
-                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
+                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                     placeholder="0.00"
                                 />
                             </div>
@@ -129,7 +129,7 @@ const ManualImportPage = () => {
                                     name="CurrentStock"
                                     type="number"
                                     required
-                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
+                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                     placeholder="0"
                                 />
                             </div>
@@ -139,7 +139,7 @@ const ManualImportPage = () => {
                                     name="MinStock"
                                     type="number"
                                     required
-                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
+                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                     placeholder="0"
                                 />
                             </div>
@@ -152,7 +152,7 @@ const ManualImportPage = () => {
                                 <input
                                     name="MaxStock"
                                     type="number"
-                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
+                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                     placeholder="0"
                                 />
                             </div>
