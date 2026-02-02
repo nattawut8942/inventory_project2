@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Plus, X, Eye, Search, Calendar, Filter } from 'lucide-react';
+import { ShoppingCart, Plus, X, Eye, Search, Calendar, Filter, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
