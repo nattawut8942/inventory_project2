@@ -60,7 +60,7 @@ const PurchaseOrdersPage = () => {
 
         const payload = {
             PO_ID: fd.get('PO_ID'),
-            VendorName: selectedVendor === 'other' ? fd.get('CustomVendor') : selectedVendor,
+            VendorName: fd.get('VendorName'),
             DueDate: fd.get('DueDate'),
             RequestedBy: user.username,
             Section: fd.get('Section'),
@@ -78,7 +78,7 @@ const PurchaseOrdersPage = () => {
                 setIsModalOpen(false);
                 setPoItems([{ ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
                 refreshData();
-                setSelectedVendor('');
+
             } else {
                 const data = await res.json();
                 alert(`Failed to create PO: ${data.details || 'Unknown error'}`);
