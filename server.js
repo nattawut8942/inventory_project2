@@ -206,54 +206,7 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-// Manual Import (Legacy / No PO)
-app.post('/api/products/manual-import', async (req, res) => {
-    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, MaxStock } = req.body;
 
-    try {
-        const pool = getPool();
-        const transaction = new sql.Transaction(pool);
-        await transaction.begin();
-
-        try {
-            const insertProduct = await new sql.Request(transaction)
-                .input('ProductName', sql.NVarChar, ProductName)
-                .input('DeviceType', sql.VarChar, DeviceType)
-                .input('MinStock', sql.Int, MinStock)
-                .input('MaxStock', sql.Int, MaxStock || 0)
-                .input('CurrentStock', sql.Int, CurrentStock)
-                .input('LastPrice', sql.Decimal(18, 2), LastPrice)
-                .input('ImageURL', sql.NVarChar, req.body.ImageURL || null)
-                .query(`
-                    INSERT INTO dbo.Stock_Products (ProductName, DeviceType, MinStock, MaxStock, CurrentStock, LastPrice, ImageURL)
-                    OUTPUT INSERTED.ProductID
-                    VALUES (@ProductName, @DeviceType, @MinStock, @MaxStock, @CurrentStock, @LastPrice, @ImageURL)
-                `);
-
-            const newProductId = insertProduct.recordset[0].ProductID;
-
-            await new sql.Request(transaction)
-                .input('ProductID', sql.Int, newProductId)
-                .input('TransType', sql.VarChar, 'IN')
-                .input('Qty', sql.Int, CurrentStock)
-                .input('RefInfo', sql.NVarChar, 'Manual Import (Legacy)')
-                .input('UserID', sql.NVarChar, UserID)
-                .query(`
-                    INSERT INTO dbo.Stock_Transactions (ProductID, TransType, Qty, RefInfo, UserID)
-                    VALUES (@ProductID, @TransType, @Qty, @RefInfo, @UserID)
-                `);
-
-            await transaction.commit();
-            res.json({ success: true, ProductID: newProductId });
-        } catch (err) {
-            await transaction.rollback();
-            throw err;
-        }
-    } catch (err) {
-        console.error('Manual Import Error:', err);
-        res.status(500).json({ error: 'Failed to import product' });
-    }
-});
 
 // UPDATE Product (Admin only)
 app.put('/api/products/:id', async (req, res) => {
@@ -306,6 +259,86 @@ app.delete('/api/products/:id', async (req, res) => {
     } catch (err) {
         console.error('Delete Product Error:', err);
         res.status(500).json({ error: 'Failed to delete product' });
+    }
+});
+
+// Manual Import Product
+app.post('/api/products/manual-import', async (req, res) => {
+    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, MaxStock, Remark, UserID } = req.body;
+
+    const qty = parseInt(CurrentStock) || 0;
+    const unitCost = parseFloat(LastPrice) || 0;
+    const minStock = parseInt(MinStock) || 0;
+    const maxStock = parseInt(MaxStock) || 0;
+
+    try {
+        const pool = getPool();
+        const transaction = new sql.Transaction(pool);
+        await transaction.begin();
+
+        try {
+            // 1. Check if product exists
+            let productID;
+            const checkRes = await new sql.Request(transaction)
+                .input('ProductName', sql.NVarChar, ProductName.trim())
+                .query('SELECT ProductID FROM dbo.Stock_Products WHERE ProductName = @ProductName');
+
+            if (checkRes.recordset.length > 0) {
+                // Update Existing
+                productID = checkRes.recordset[0].ProductID;
+                await new sql.Request(transaction)
+                    .input('ProductID', sql.Int, productID)
+                    .input('Qty', sql.Int, qty)
+                    .input('UnitCost', sql.Decimal(18, 2), unitCost)
+                    .input('MinStock', sql.Int, minStock)
+                    .input('MaxStock', sql.Int, maxStock)
+                    .query(`
+                        UPDATE dbo.Stock_Products 
+                        SET CurrentStock = CurrentStock + @Qty,
+                            LastPrice = @UnitCost,
+                            MinStock = @MinStock,
+                            MaxStock = @MaxStock,
+                            IsActive = 1
+                        WHERE ProductID = @ProductID
+                    `);
+            } else {
+                // Create New
+                const createRes = await new sql.Request(transaction)
+                    .input('ProductName', sql.NVarChar, ProductName.trim())
+                    .input('DeviceType', sql.VarChar, DeviceType || 'Stock')
+                    .input('CurrentStock', sql.Int, qty)
+                    .input('UnitCost', sql.Decimal(18, 2), unitCost)
+                    .input('MinStock', sql.Int, minStock)
+                    .input('MaxStock', sql.Int, maxStock)
+                    .query(`
+                        INSERT INTO dbo.Stock_Products (ProductName, DeviceType, CurrentStock, LastPrice, MinStock, MaxStock, IsActive)
+                        VALUES (@ProductName, @DeviceType, @CurrentStock, @UnitCost, @MinStock, @MaxStock, 1);
+                        SELECT SCOPE_IDENTITY() AS NewID;
+                    `);
+                productID = createRes.recordset[0].NewID;
+            }
+
+            // 2. Log Transaction
+            await new sql.Request(transaction)
+                .input('ProductID', sql.Int, productID)
+                .input('TransType', sql.VarChar, 'IN')
+                .input('Qty', sql.Int, qty)
+                .input('RefInfo', sql.NVarChar, Remark || 'Manual Import')
+                .input('UserID', sql.NVarChar, UserID)
+                .query(`
+                    INSERT INTO dbo.Stock_Transactions (ProductID, TransType, Qty, RefInfo, UserID)
+                    VALUES (@ProductID, @TransType, @Qty, @RefInfo, @UserID)
+                `);
+
+            await transaction.commit();
+            res.json({ success: true, message: 'Import successful' });
+        } catch (err) {
+            await transaction.rollback();
+            throw err;
+        }
+    } catch (err) {
+        console.error('Manual Import Error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -391,6 +424,38 @@ app.get('/api/pos', async (req, res) => {
         res.json(pos);
     } catch (err) {
         console.error('Get POs Error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+
+
+// GET Invoices
+app.get('/api/invoices', async (req, res) => {
+    try {
+        const pool = getPool();
+        const result = await pool.request().query(`
+            SELECT 
+                i.*,
+                (
+                    SELECT d.*, p.ProductName
+                    FROM dbo.Stock_InvoiceDetails d
+                    LEFT JOIN dbo.Stock_Products p ON d.ProductID = p.ProductID
+                    WHERE d.InvoiceID = i.InvoiceID
+                    FOR JSON PATH
+                ) AS Items
+            FROM dbo.Stock_Invoices i
+            ORDER BY i.ReceiveDate DESC
+        `);
+
+        const invoices = result.recordset.map(inv => ({
+            ...inv,
+            Items: JSON.parse(inv.Items || '[]')
+        }));
+
+        res.json(invoices);
+    } catch (err) {
+        console.error('Get Invoices Error:', err);
         res.status(500).json({ error: 'Database error' });
     }
 });
@@ -531,7 +596,7 @@ app.post('/api/receive', async (req, res) => {
                         else if (!finalProductID && detail.ItemName) {
                             // Try find by name in Products table
                             const prodRes = await new sql.Request(transaction)
-                                .input('ProductName', sql.NVarChar, detail.ItemName)
+                                .input('ProductName', sql.NVarChar, detail.ItemName.trim())
                                 .query('SELECT ProductID FROM dbo.Stock_Products WHERE ProductName = @ProductName');
 
                             if (prodRes.recordset.length > 0) {
@@ -547,7 +612,7 @@ app.post('/api/receive', async (req, res) => {
                                     `);
 
                                 const createRes = await new sql.Request(transaction)
-                                    .input('ProductName', sql.NVarChar, detail.ItemName)
+                                    .input('ProductName', sql.NVarChar, detail.ItemName.trim())
                                     .input('Qty', sql.Int, qty) // Initial Stock
                                     .input('UnitCost', sql.Decimal(18, 2), detail.UnitCost || 0)
                                     .query(`

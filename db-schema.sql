@@ -50,12 +50,7 @@ CREATE TABLE dbo.Stock_PurchaseOrders (
     Remark NVARCHAR(MAX),                     -- General notes
     Status NVARCHAR(50) DEFAULT 'Open',       -- Open, Partial, Completed, Cancelled
     
-    -- 5W Fields for PR Form
-    Who_Text NVARCHAR(MAX),                   -- Who is requesting
-    What_Text NVARCHAR(MAX),                  -- What is needed
-    Where_Text NVARCHAR(MAX),                 -- Where it will be used
-    When_Text NVARCHAR(MAX),                  -- When it is needed
-    Why_Text NVARCHAR(MAX)                    -- Why it is needed
+
 );
 
 -- =====================================================

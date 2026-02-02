@@ -69,8 +69,10 @@ const ReportPage = () => {
             const date = new Date(t.TransDate);
             const monthKey = months[date.getMonth()];
             if (dataMap[monthKey]) {
-                if (t.TransType === 'IN') dataMap[monthKey].inbound += t.Qty;
-                if (t.TransType === 'OUT') dataMap[monthKey].outbound += t.Qty;
+                const type = (t.TransType || '').toUpperCase().trim();
+                const qty = Math.abs(t.Qty);
+                if (type === 'IN') dataMap[monthKey].inbound += qty;
+                if (type === 'OUT') dataMap[monthKey].outbound += qty;
             }
         });
 

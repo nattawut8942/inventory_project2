@@ -51,8 +51,10 @@ const DashboardPage = () => {
 
             // Only count if within our map range (simple check)
             if (dataMap[monthKey]) {
-                if (t.TransType === 'IN') dataMap[monthKey].inbound += t.Qty;
-                if (t.TransType === 'OUT') dataMap[monthKey].outbound += t.Qty;
+                const type = (t.TransType || '').toUpperCase().trim();
+                const qty = Math.abs(t.Qty);
+                if (type === 'IN') dataMap[monthKey].inbound += qty;
+                if (type === 'OUT') dataMap[monthKey].outbound += qty;
             }
         });
 
@@ -181,7 +183,7 @@ const DashboardPage = () => {
 
                 <div className="space-y-4">
                     {transactions.slice(0, 5).map((t, idx) => {
-                        const isIn = t.TransType === 'IN';
+                        const isIn = (t.TransType || '').toUpperCase().trim() === 'IN';
                         return (
                             <motion.div
                                 key={idx}
@@ -211,7 +213,7 @@ const DashboardPage = () => {
                                 </div>
                                 <div className="text-right pl-4">
                                     <p className={`text-lg font-bold font-mono ${isIn ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        {isIn ? '+' : '-'}{t.Qty}
+                                        {isIn ? '+' : '-'}{Math.abs(t.Qty)}
                                     </p>
                                 </div>
                             </motion.div>
