@@ -107,6 +107,16 @@ CREATE INDEX IX_Transactions_TransDate ON dbo.Stock_Transactions(TransDate);
 CREATE INDEX IX_Invoices_PO_ID ON dbo.Stock_Invoices(PO_ID);
 
 -- =====================================================
+-- 7. User Roles (Admin/Staff Permissions)
+-- =====================================================
+CREATE TABLE dbo.Stock_UserRole (
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    Username NVARCHAR(50) NOT NULL UNIQUE,
+    CreatedBy NVARCHAR(100),
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- =====================================================
 -- SUMMARY OF TABLES
 -- =====================================================
 -- Table Name               | Description
@@ -117,4 +127,5 @@ CREATE INDEX IX_Invoices_PO_ID ON dbo.Stock_Invoices(PO_ID);
 -- Stock_PODetails          | Detail: PO line items
 -- Stock_Invoices           | Receiving: Invoice/delivery records
 -- Stock_Transactions       | Log: All stock movements (IN/OUT)
+-- Stock_UserRole           | Access: List of Admin/Staff users
 -- =====================================================
