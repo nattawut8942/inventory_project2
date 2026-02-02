@@ -40,7 +40,7 @@ const HistoryPage = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {filteredTransactions.map(t => {
-                            const isIn = (t.TransType || '').toUpperCase().trim() === 'IN';
+                            const isIn = (t.TransType || '').toUpperCase().trim() === 'IN' || (t.RefInfo || '').toLowerCase().includes('invoice');
                             return (
                                 <tr key={t.TransID} className="hover:bg-slate-50 transition-colors">
                                     <td className="p-4 pl-6 text-slate-500 font-mono text-xs">{new Date(t.TransDate).toLocaleString()}</td>
