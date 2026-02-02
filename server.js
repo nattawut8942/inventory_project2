@@ -435,18 +435,12 @@ app.get('/api/invoices', async (req, res) => {
     try {
         const pool = getPool();
         const result = await pool.request().query(`
-            SELECT 
-                i.*,
-                (
-                    SELECT d.*, p.ProductName
-                    FROM dbo.Stock_InvoiceDetails d
-                    LEFT JOIN dbo.Stock_Products p ON d.ProductID = p.ProductID
-                    WHERE d.InvoiceID = i.InvoiceID
-                    FOR JSON PATH
-                ) AS Items
-            FROM dbo.Stock_Invoices i
-            ORDER BY i.ReceiveDate DESC
+            SELECT *
+            FROM dbo.Stock_Invoices
+            ORDER BY ReceiveDate DESC
         `);
+
+        res.json(result.recordset);
 
         const invoices = result.recordset.map(inv => ({
             ...inv,
@@ -646,18 +640,7 @@ app.post('/api/receive', async (req, res) => {
                         .input('Qty', sql.Int, qty)
                         .query('UPDATE dbo.Stock_Products SET CurrentStock = CurrentStock + @Qty WHERE ProductID = @ProductID');
 
-                    // 3.1 Insert into Stock_InvoiceDetails
-                    await new sql.Request(transaction)
-                        .input('InvoiceID', sql.Int, invoiceID)
-                        .input('PO_ID', sql.NVarChar, PO_ID)
-                        .input('ProductID', sql.Int, finalProductID)
-                        .input('ItemName', sql.NVarChar, detail?.ItemName || item.ItemName || '')
-                        .input('Qty', sql.Int, qty)
-                        .input('UnitCost', sql.Decimal(18, 2), detail?.UnitCost || 0)
-                        .query(`
-                            INSERT INTO dbo.Stock_InvoiceDetails (InvoiceID, PO_ID, ProductID, ItemName, Qty, UnitCost)
-                            VALUES (@InvoiceID, @PO_ID, @ProductID, @ItemName, @Qty, @UnitCost)
-                        `);
+
                 }
 
                 // 4. Update PO Detail 'QtyReceived'
@@ -870,21 +853,7 @@ const startServer = async () => {
                 END
             `);
 
-            // Check Stock_InvoiceDetails Table
-            await pool.request().query(`
-                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Stock_InvoiceDetails')
-                BEGIN
-                    CREATE TABLE dbo.Stock_InvoiceDetails (
-                        DetailID INT IDENTITY(1,1) PRIMARY KEY,
-                        InvoiceID INT FOREIGN KEY REFERENCES dbo.Stock_Invoices(InvoiceID),
-                        PO_ID NVARCHAR(50),
-                        ProductID INT,
-                        ItemName NVARCHAR(255),
-                        Qty INT,
-                        UnitCost DECIMAL(18,2)
-                    );
-                END
-            `);
+
             console.log('✅ Schema Check: ImageURL and MaxStock columns verified');
         } catch (err) {
             console.warn('⚠️ Schema Check Warning:', err.message);

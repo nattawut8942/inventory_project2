@@ -27,7 +27,6 @@ const ReceivePage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDate, setFilterDate] = useState('');
     const [selectedPO, setSelectedPO] = useState(null); // For detail view
-    const [selectedInvoice, setSelectedInvoice] = useState(null); // For invoice detail view
     const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
     const handleReceive = async (poId, invoiceNo, itemsReceived) => {
@@ -187,8 +186,7 @@ const ReceivePage = () => {
                             {(Array.isArray(invoices) ? invoices : []).slice(0, 10).map((inv, i) => (
                                 <tr
                                     key={inv.InvoiceID || i}
-                                    onClick={() => setSelectedInvoice(inv)}
-                                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group"
+                                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
                                 >
                                     <td className="p-4 font-mono font-bold text-slate-700">{inv.InvoiceNo}</td>
                                     <td className="p-4 text-indigo-600 font-bold">{inv.PO_ID}</td>
@@ -409,73 +407,7 @@ const ReceivePage = () => {
                 )}
             </AnimatePresence>
 
-            {/* INVOICE DETAIL MODAL */}
-            <AnimatePresence>
-                {selectedInvoice && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[70] overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
-                        >
-                            <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex justify-between items-start">
-                                <div>
-                                    <h3 className="font-black text-2xl">{selectedInvoice.InvoiceNo}</h3>
-                                    <p className="text-blue-100">PO Ref: {selectedInvoice.PO_ID}</p>
-                                </div>
-                                <button onClick={() => setSelectedInvoice(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
-                                    <X size={20} />
-                                </button>
-                            </div>
-                            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                        <p className="text-xs text-slate-500 font-bold mb-1">วันที่รับของ</p>
-                                        <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedInvoice.ReceiveDate)}</p>
-                                    </div>
-                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                        <p className="text-xs text-slate-500 font-bold mb-1">ผู้รับ</p>
-                                        <p className="text-sm font-bold text-slate-800">{selectedInvoice.ReceivedBy || '-'}</p>
-                                    </div>
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-800 mb-3">รายการที่รับ ({selectedInvoice.Items?.length || 0})</h4>
-                                    <div className="bg-slate-50 rounded-xl overflow-hidden">
-                                        <table className="w-full text-sm">
-                                            <thead className="bg-slate-100">
-                                                <tr>
-                                                    <th className="text-left p-3 font-bold text-slate-600">รายการสินคา</th>
-                                                    <th className="text-center p-3 font-bold text-slate-600 w-24">จำนวน</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {selectedInvoice.Items?.map((item, idx) => (
-                                                    <tr key={idx} className="border-t border-slate-200">
-                                                        <td className="p-3 text-slate-700">{item.ProductName || item.ItemName || 'Unknown Item'}</td>
-                                                        <td className="p-3 text-center font-bold text-emerald-600">+{item.Qty}</td>
-                                                    </tr>
-                                                ))}
-                                                {(!selectedInvoice.Items || selectedInvoice.Items.length === 0) && (
-                                                    <tr><td colSpan="2" className="p-4 text-center text-slate-400">No items found</td></tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-4 bg-slate-50 border-t border-slate-200">
-                                <button onClick={() => setSelectedInvoice(null)} className="w-full bg-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-300 transition-all">ปิด</button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+
         </div>
     );
 };
