@@ -17,6 +17,7 @@ import WithdrawPage from './pages/WithdrawPage';
 import HistoryPage from './pages/HistoryPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import ReportPage from './pages/ReportPage';
+import AdminUsersPage from './pages/AdminUsersPage';
 
 // App Routes Component
 const AppRoutes = () => {
@@ -67,6 +68,14 @@ const AppRoutes = () => {
                     element={
                         <ProtectedRoute staffOnly>
                             <ManualImportPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="admin-users"
+                    element={
+                        <ProtectedRoute staffOnly>
+                            <AdminUsersPage />
                         </ProtectedRoute>
                     }
                 />

@@ -10,7 +10,8 @@ import {
     ArrowUpFromLine,
     History,
     Database,
-    FileSpreadsheet
+    FileSpreadsheet,
+    Shield
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -67,6 +68,7 @@ const Sidebar = () => {
                         <SidebarItem icon={ShoppingCart} label="Purchase Orders" to="/purchase-orders" />
                         <SidebarItem icon={ArrowDownToLine} label="Receive Items" to="/receive" />
                         <SidebarItem icon={Plus} label="Manual Import" to="/manual-import" />
+                        <SidebarItem icon={Shield} label="Admin Users" to="/admin-users" />
                     </>
                 )}
 
@@ -84,16 +86,17 @@ const Sidebar = () => {
                         <img
                             src={user.empPic}
                             alt={user?.name || 'User'}
-                            className="w-10 h-10 rounded-xl object-cover shadow-lg ring-2 ring-white/10 group-hover:scale-105 transition-transform"
+                            className="w-12 h-12 rounded-xl object-cover shadow-lg ring-2 ring-white/10 group-hover:scale-105 transition-transform"
                         />
                     ) : (
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-sm font-bold shadow-lg ring-2 ring-white/10 group-hover:scale-105 transition-transform">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-lg font-bold shadow-lg ring-2 ring-white/10 group-hover:scale-105 transition-transform">
                             {user?.name?.[0]?.toUpperCase() || '?'}
                         </div>
                     )}
                     <div className="flex-1 overflow-hidden">
                         <p className="text-sm font-bold truncate text-white group-hover:text-indigo-200 transition-colors">{user?.name}</p>
-                        <p className="text-[10px] text-slate-400 font-medium group-hover:text-indigo-300 transition-colors">{user?.empcode || user?.role}</p>
+                        <p className="text-[10px] text-slate-400 font-medium group-hover:text-indigo-300 transition-colors">{user?.empcode}</p>
+                        <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider">{user?.role}</p>
                     </div>
                     <button onClick={handleLogout} className="text-slate-400 hover:text-red-400 transition-colors p-2 hover:bg-white/5 rounded-lg">
                         <LogOut size={18} />

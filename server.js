@@ -39,9 +39,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// --- ADMIN USERS LIST ---
-const ADMIN_USERS = ['natthawut.y', 'admin'];
-
 // --- AUTHENTICATION (AD API) ---
 app.post('/api/authen', async (req, res) => {
     const { username, password } = req.body;
@@ -54,15 +51,36 @@ app.post('/api/authen', async (req, res) => {
         });
 
         if (response.data && response.status === 200) {
-            const apiData = response.data;
+            // API returns array, get first element
+            const apiData = Array.isArray(response.data) ? response.data[0] : response.data;
 
-            // Validate that API returned actual user data (not just 200 OK)
-            // Daikin API returns empcode/ShortName when login is successful
-            if (!apiData.empcode && !apiData.ShortName && !apiData.empname) {
+            // Debug: Log what Daikin API returns
+            console.log('=== Daikin API Response ===');
+            console.log(JSON.stringify(apiData, null, 2));
+            console.log('===========================');
+
+            // Check if we got valid data
+            if (!apiData) {
                 return res.status(401).json({ success: false, message: 'Invalid username or password' });
             }
 
-            const isAdmin = ADMIN_USERS.includes(username.toLowerCase());
+            // Get user data - check multiple field name variations
+            const empCode = apiData.EmpCode || apiData.empcode || apiData.Empcode || '';
+            const shortName = apiData.ShortName || apiData.Shortname || apiData.shortname || apiData.empname || '';
+            const empPic = apiData.EmpPic || apiData.Emppic || apiData.emppic || '';
+
+            // Validate that API returned actual user data
+            if (!empCode && !shortName) {
+                return res.status(401).json({ success: false, message: 'Invalid username or password' });
+            }
+
+            // Check if user is admin from database
+            const pool = getPool();
+            const adminCheck = await pool.request()
+                .input('username', sql.NVarChar, username.toLowerCase())
+                .query('SELECT 1 FROM dbo.Stock_UserRole WHERE LOWER(Username) = @username');
+
+            const isAdmin = adminCheck.recordset.length > 0;
             const role = isAdmin ? 'Staff' : 'User';
 
             res.json({
@@ -70,9 +88,9 @@ app.post('/api/authen', async (req, res) => {
                 user: {
                     username,
                     role,
-                    name: apiData.ShortName || apiData.empname || username,
-                    empcode: apiData.empcode || '',
-                    empPic: apiData.EmpPic || ''
+                    name: shortName || username,
+                    empcode: empCode,
+                    empPic: empPic
                 }
             });
         } else {
@@ -84,6 +102,71 @@ app.post('/api/authen', async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid username or password' });
         }
         res.status(500).json({ success: false, message: 'Authentication service unavailable' });
+    }
+});
+
+// --- ADMIN USERS MANAGEMENT ---
+// Get all admin users
+app.get('/api/admin-users', async (req, res) => {
+    try {
+        const pool = getPool();
+        const result = await pool.request().query(`
+            SELECT ID, Username, CreatedAt, CreatedBy 
+            FROM dbo.Stock_UserRole 
+            ORDER BY CreatedAt DESC
+        `);
+        res.json(result.recordset);
+    } catch (err) {
+        console.error('Get admin users error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Add new admin user
+app.post('/api/admin-users', async (req, res) => {
+    const { username, createdBy } = req.body;
+
+    if (!username) {
+        return res.status(400).json({ error: 'Username is required' });
+    }
+
+    try {
+        const pool = getPool();
+        await pool.request()
+            .input('username', sql.NVarChar, username.toLowerCase())
+            .input('createdBy', sql.NVarChar, createdBy || 'SYSTEM')
+            .query(`
+                INSERT INTO dbo.Stock_UserRole (Username, CreatedBy)
+                VALUES (@username, @createdBy)
+            `);
+        res.json({ success: true, message: 'Admin user added successfully' });
+    } catch (err) {
+        console.error('Add admin user error:', err);
+        if (err.message.includes('UNIQUE')) {
+            return res.status(400).json({ error: 'Username already exists as admin' });
+        }
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete admin user
+app.delete('/api/admin-users/:username', async (req, res) => {
+    const { username } = req.params;
+
+    try {
+        const pool = getPool();
+        const result = await pool.request()
+            .input('username', sql.NVarChar, username.toLowerCase())
+            .query('DELETE FROM dbo.Stock_UserRole WHERE LOWER(Username) = @username');
+
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ error: 'Admin user not found' });
+        }
+
+        res.json({ success: true, message: 'Admin user removed successfully' });
+    } catch (err) {
+        console.error('Delete admin user error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -125,7 +208,7 @@ app.get('/api/products', async (req, res) => {
 
 // Manual Import (Legacy / No PO)
 app.post('/api/products/manual-import', async (req, res) => {
-    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, MaxStock, UserID } = req.body;
+    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, MaxStock } = req.body;
 
     try {
         const pool = getPool();
