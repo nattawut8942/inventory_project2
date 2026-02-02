@@ -515,10 +515,11 @@ app.get('/api/stock/history/:id', async (req, res) => {
                 SELECT 
                     t.TransDate,
                     t.Qty,
+                    t.TransType,
                     t.RefInfo,
                     t.UserID
                 FROM dbo.Stock_Transactions t
-                WHERE t.ProductID = @ProductID AND t.TransType = 'IN'
+                WHERE t.ProductID = @ProductID
                 ORDER BY t.TransDate DESC
             `);
         res.json(result.recordset);
