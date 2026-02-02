@@ -55,6 +55,13 @@ app.post('/api/authen', async (req, res) => {
 
         if (response.data && response.status === 200) {
             const apiData = response.data;
+
+            // Validate that API returned actual user data (not just 200 OK)
+            // Daikin API returns empcode/ShortName when login is successful
+            if (!apiData.empcode && !apiData.ShortName && !apiData.empname) {
+                return res.status(401).json({ success: false, message: 'Invalid username or password' });
+            }
+
             const isAdmin = ADMIN_USERS.includes(username.toLowerCase());
             const role = isAdmin ? 'Staff' : 'User';
 
