@@ -39,29 +39,32 @@ const HistoryPage = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {filteredTransactions.map(t => (
-                            <tr key={t.TransID} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-4 pl-6 text-slate-500 font-mono text-xs">{new Date(t.TransDate).toLocaleString()}</td>
-                                <td className="p-4">
-                                    <span className={`font-bold px-2.5 py-1 rounded-full text-[10px] border ${t.TransType === 'IN' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
-                                        {t.TransType}
-                                    </span>
-                                </td>
-                                <td className="p-4 font-bold text-slate-700">{t.ProductName}</td>
-                                <td className={`p-4 text-center font-bold font-mono text-sm ${t.TransType === 'IN' ? 'text-emerald-600' : 'text-red-500'}`}>
-                                    {t.TransType === 'IN' ? '+' : '-'}{t.Qty}
-                                </td>
-                                <td className="p-4 text-slate-500 text-xs">{t.RefInfo}</td>
-                                <td className="p-4">
-                                    <span className="flex items-center gap-2 text-xs text-slate-600 font-medium">
-                                        <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">
-                                            {t.UserID?.[0]}
-                                        </div>
-                                        {t.UserID}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
+                        {filteredTransactions.map(t => {
+                            const isIn = (t.TransType || '').toUpperCase().trim() === 'IN';
+                            return (
+                                <tr key={t.TransID} className="hover:bg-slate-50 transition-colors">
+                                    <td className="p-4 pl-6 text-slate-500 font-mono text-xs">{new Date(t.TransDate).toLocaleString()}</td>
+                                    <td className="p-4">
+                                        <span className={`font-bold px-2.5 py-1 rounded-full text-[10px] border ${isIn ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+                                            {t.TransType}
+                                        </span>
+                                    </td>
+                                    <td className="p-4 font-bold text-slate-700">{t.ProductName}</td>
+                                    <td className={`p-4 text-center font-bold font-mono text-sm ${isIn ? 'text-emerald-600' : 'text-red-500'}`}>
+                                        {isIn ? '+' : '-'}{Math.abs(t.Qty)}
+                                    </td>
+                                    <td className="p-4 text-slate-500 text-xs">{t.RefInfo}</td>
+                                    <td className="p-4">
+                                        <span className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                                            <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                                {t.UserID?.[0]}
+                                            </div>
+                                            {t.UserID}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
                 {filteredTransactions.length === 0 && (

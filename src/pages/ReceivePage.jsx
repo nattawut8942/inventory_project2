@@ -314,8 +314,8 @@ const ReceivePage = () => {
                                 const fd = new FormData(e.target);
                                 const items = activePo.Items.map((item, idx) => ({
                                     DetailID: item.DetailID,
-                                    QtyReceived: parseInt(fd.get(`qty-${idx}`)) || 0
-                                })).filter(i => i.QtyReceived > 0);
+                                    Qty: parseInt(fd.get(`qty-${idx}`)) || 0
+                                })).filter(i => i.Qty > 0);
                                 handleReceive(activePo.PO_ID, fd.get('InvoiceNo'), items);
                             }} className="p-6 space-y-6">
                                 <div>
