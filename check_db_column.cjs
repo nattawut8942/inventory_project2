@@ -14,11 +14,42 @@ require('dotenv').config();
                 trustServerCertificate: true
             }
         });
-        const result = await sql.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Stock_Products' AND COLUMN_NAME = 'ImageURL'");
-        console.log(result.recordset);
+
+        // Check if Stock_UserRole table exists
+        const tableExists = await sql.query(`
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_NAME = 'Stock_UserRole'
+        `);
+        console.log('Table exists:', tableExists.recordset.length > 0);
+
+        if (tableExists.recordset.length === 0) {
+            console.log('Creating Stock_UserRole table...');
+            await sql.query(`
+                CREATE TABLE dbo.Stock_UserRole (
+                    ID INT IDENTITY(1,1) PRIMARY KEY,
+                    Username NVARCHAR(100) NOT NULL UNIQUE,
+                    CreatedAt DATETIME DEFAULT GETDATE(),
+                    CreatedBy NVARCHAR(100)
+                )
+            `);
+            console.log('Table created!');
+
+            // Insert default admin
+            await sql.query(`
+                INSERT INTO dbo.Stock_UserRole (Username, CreatedBy) VALUES
+                ('natthawut.y', 'SYSTEM')
+            `);
+            console.log('Default admin inserted!');
+        } else {
+            console.log('Fetching existing admin users...');
+            const users = await sql.query('SELECT * FROM dbo.Stock_UserRole');
+            console.log('Admin users:', users.recordset);
+        }
+
         process.exit(0);
     } catch (err) {
-        console.error(err);
+        console.error('Error:', err.message);
         process.exit(1);
     }
 })();
