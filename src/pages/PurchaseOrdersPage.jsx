@@ -83,7 +83,7 @@ const PurchaseOrdersPage = () => {
                     isOpen: true,
                     type: 'success',
                     title: 'สร้าง PO สำเร็จ',
-                    message: `Purchase Order ${poId} ถูกสร้างเรียบร้อยแล้ว`
+                    message: `Purchase Order ${payload.PO_ID} ถูกสร้างเรียบร้อยแล้ว`
                 });
 
             } else {

@@ -556,7 +556,7 @@ app.post('/api/receive', async (req, res) => {
 
         try {
             // 1. Create Invoice Record
-            await new sql.Request(transaction)
+            const newInvoices = await new sql.Request(transaction)
                 .input('InvoiceNo', sql.NVarChar, InvoiceNo)
                 .input('PO_ID', sql.NVarChar, PO_ID)
                 .input('ReceivedBy', sql.NVarChar, UserID)
