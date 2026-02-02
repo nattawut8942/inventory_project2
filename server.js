@@ -115,7 +115,7 @@ app.get('/api/products', async (req, res) => {
 
 // Manual Import (Legacy / No PO)
 app.post('/api/products/manual-import', async (req, res) => {
-    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, UserID } = req.body;
+    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, MaxStock, UserID } = req.body;
 
     try {
         const pool = getPool();
@@ -127,13 +127,14 @@ app.post('/api/products/manual-import', async (req, res) => {
                 .input('ProductName', sql.NVarChar, ProductName)
                 .input('DeviceType', sql.VarChar, DeviceType)
                 .input('MinStock', sql.Int, MinStock)
+                .input('MaxStock', sql.Int, MaxStock || 0)
                 .input('CurrentStock', sql.Int, CurrentStock)
                 .input('LastPrice', sql.Decimal(18, 2), LastPrice)
                 .input('ImageURL', sql.NVarChar, req.body.ImageURL || null)
                 .query(`
-                    INSERT INTO dbo.Stock_Products (ProductName, DeviceType, MinStock, CurrentStock, LastPrice, ImageURL)
+                    INSERT INTO dbo.Stock_Products (ProductName, DeviceType, MinStock, MaxStock, CurrentStock, LastPrice, ImageURL)
                     OUTPUT INSERTED.ProductID
-                    VALUES (@ProductName, @DeviceType, @MinStock, @CurrentStock, @LastPrice, @ImageURL)
+                    VALUES (@ProductName, @DeviceType, @MinStock, @MaxStock, @CurrentStock, @LastPrice, @ImageURL)
                 `);
 
             const newProductId = insertProduct.recordset[0].ProductID;
