@@ -81,6 +81,16 @@ CREATE TABLE dbo.Stock_Invoices (
     ReceivedBy NVARCHAR(100)                  -- AD Username who received
 );
 
+CREATE TABLE dbo.Stock_InvoiceDetails (
+    DetailID INT IDENTITY(1,1) PRIMARY KEY,
+    InvoiceID INT FOREIGN KEY REFERENCES dbo.Stock_Invoices(InvoiceID),
+    PO_ID NVARCHAR(50),
+    ProductID INT,
+    ItemName NVARCHAR(255),
+    Qty INT,
+    UnitCost DECIMAL(18,2)
+);
+
 -- =====================================================
 -- 6. Stock Transactions Table (Movement Log)
 -- =====================================================
