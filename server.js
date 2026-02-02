@@ -568,8 +568,11 @@ app.post('/api/receive', async (req, res) => {
                 .input('ReceivedBy', sql.NVarChar, UserID)
                 .query(`
                     INSERT INTO dbo.Stock_Invoices (InvoiceNo, PO_ID, ReceivedBy)
-                    VALUES (@InvoiceNo, @PO_ID, @ReceivedBy)
+                    VALUES (@InvoiceNo, @PO_ID, @ReceivedBy);
+                    SELECT SCOPE_IDENTITY() AS InvoiceID;
                 `);
+
+            const invoiceID = newInvoices.recordset[0].InvoiceID;
 
             // 2. Process Each Item
             for (const item of ItemsReceived) {
@@ -642,6 +645,19 @@ app.post('/api/receive', async (req, res) => {
                         .input('ProductID', sql.Int, finalProductID)
                         .input('Qty', sql.Int, qty)
                         .query('UPDATE dbo.Stock_Products SET CurrentStock = CurrentStock + @Qty WHERE ProductID = @ProductID');
+
+                    // 3.1 Insert into Stock_InvoiceDetails
+                    await new sql.Request(transaction)
+                        .input('InvoiceID', sql.Int, invoiceID)
+                        .input('PO_ID', sql.NVarChar, PO_ID)
+                        .input('ProductID', sql.Int, finalProductID)
+                        .input('ItemName', sql.NVarChar, detail?.ItemName || item.ItemName || '')
+                        .input('Qty', sql.Int, qty)
+                        .input('UnitCost', sql.Decimal(18, 2), detail?.UnitCost || 0)
+                        .query(`
+                            INSERT INTO dbo.Stock_InvoiceDetails (InvoiceID, PO_ID, ProductID, ItemName, Qty, UnitCost)
+                            VALUES (@InvoiceID, @PO_ID, @ProductID, @ItemName, @Qty, @UnitCost)
+                        `);
                 }
 
                 // 4. Update PO Detail 'QtyReceived'
@@ -851,6 +867,22 @@ const startServer = async () => {
                 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Stock_Products' AND COLUMN_NAME = 'MaxStock')
                 BEGIN
                     ALTER TABLE dbo.Stock_Products ADD MaxStock INT DEFAULT 0;
+                END
+            `);
+
+            // Check Stock_InvoiceDetails Table
+            await pool.request().query(`
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Stock_InvoiceDetails')
+                BEGIN
+                    CREATE TABLE dbo.Stock_InvoiceDetails (
+                        DetailID INT IDENTITY(1,1) PRIMARY KEY,
+                        InvoiceID INT FOREIGN KEY REFERENCES dbo.Stock_Invoices(InvoiceID),
+                        PO_ID NVARCHAR(50),
+                        ProductID INT,
+                        ItemName NVARCHAR(255),
+                        Qty INT,
+                        UnitCost DECIMAL(18,2)
+                    );
                 END
             `);
             console.log('✅ Schema Check: ImageURL and MaxStock columns verified');

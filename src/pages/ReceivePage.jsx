@@ -184,7 +184,7 @@ const ReceivePage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {invoices.slice(0, 10).map((inv, i) => (
+                            {(Array.isArray(invoices) ? invoices : []).slice(0, 10).map((inv, i) => (
                                 <tr
                                     key={inv.InvoiceID || i}
                                     onClick={() => setSelectedInvoice(inv)}
