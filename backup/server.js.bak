@@ -54,7 +54,6 @@ app.post('/api/authen', async (req, res) => {
         });
 
         if (response.data && response.status === 200) {
-            const apiData = response.data;
             const isAdmin = ADMIN_USERS.includes(username.toLowerCase());
             const role = isAdmin ? 'Staff' : 'User';
 
@@ -63,9 +62,7 @@ app.post('/api/authen', async (req, res) => {
                 user: {
                     username,
                     role,
-                    name: apiData.ShortName || apiData.empname || username,
-                    empcode: apiData.empcode || '',
-                    empPic: apiData.EmpPic || ''
+                    name: response.data.name || response.data.empname || username
                 }
             });
         } else {
