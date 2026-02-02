@@ -8,23 +8,64 @@ import { useAuth } from '../context/AuthContext';
 const API_BASE = 'http://localhost:3001/api';
 
 const ManualImportPage = () => {
-    const { deviceTypes, refreshData } = useData();
+    const { deviceTypes, products, refreshData } = useData();
     const { user } = useAuth();
     const navigate = useNavigate();
+
+    // Form State
+    const [formData, setFormData] = useState({
+        ProductName: '',
+        DeviceType: '',
+        LastPrice: '',
+        Quantity: '', // Renamed from CurrentStock for clarity (Qty to add)
+        MinStock: '',
+        MaxStock: '',
+        Remark: ''
+    });
 
     // Result Modal State
     const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+
+        // Auto-fill logic when ProductName changes
+        if (name === 'ProductName') {
+            const existingProduct = products.find(p => p.ProductName.toLowerCase() === value.toLowerCase());
+            if (existingProduct) {
+                setFormData(prev => ({
+                    ...prev,
+                    ProductName: value,
+                    DeviceType: existingProduct.DeviceType,
+                    LastPrice: existingProduct.LastPrice,
+                    MinStock: existingProduct.MinStock,
+                    MaxStock: existingProduct.MaxStock || '',
+                    // Keep Quantity empty as it's new import
+                }));
+            }
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const fd = new FormData(e.target);
 
         try {
             const res = await fetch(`${API_BASE}/products/manual-import`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    ...Object.fromEntries(fd),
+                    ProductName: formData.ProductName,
+                    DeviceType: formData.DeviceType,
+                    LastPrice: formData.LastPrice,
+                    CurrentStock: formData.Quantity, // Server expects 'CurrentStock' as the Qty to add/set (checking server logic)
+                    // Wait, server logic:
+                    // If Exists: CurrentStock = CurrentStock + @Qty (Variable name in API body was 'CurrentStock'? No)
+                    // Server: const { ProductName, DeviceType, CurrentStock: qty ... } = req.body;
+                    // So server accepts 'CurrentStock' as the quantity. Correct.
+                    MinStock: formData.MinStock,
+                    MaxStock: formData.MaxStock,
+                    Remark: formData.Remark,
                     UserID: user.username
                 })
             });
@@ -92,11 +133,20 @@ const ManualImportPage = () => {
                         <div>
                             <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">ชื่อสินค้า *</label>
                             <input
+                                list="product-suggestions"
                                 name="ProductName"
+                                value={formData.ProductName}
+                                onChange={handleChange}
                                 required
                                 className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-800 font-medium placeholder:text-slate-400 text-lg"
-                                placeholder="e.g. Dell Monitor 24 inch..."
+                                placeholder="พิมพ์ชื่อเพื่อค้นหา หรือสร้างใหม่..."
+                                autoComplete="off"
                             />
+                            <datalist id="product-suggestions">
+                                {products.map(p => (
+                                    <option key={p.ProductID} value={p.ProductName} />
+                                ))}
+                            </datalist>
                         </div>
 
                         {/* 2 Column Grid */}
@@ -105,6 +155,8 @@ const ManualImportPage = () => {
                                 <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">ประเภท *</label>
                                 <select
                                     name="DeviceType"
+                                    value={formData.DeviceType}
+                                    onChange={handleChange}
                                     required
                                     className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                 >
@@ -118,16 +170,20 @@ const ManualImportPage = () => {
                                     name="LastPrice"
                                     type="number"
                                     step="0.01"
+                                    value={formData.LastPrice}
+                                    onChange={handleChange}
                                     required
                                     className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                     placeholder="0.00"
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">จำนวนคงคลัง *</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">จำนวนที่นำเข้า *</label>
                                 <input
-                                    name="CurrentStock"
+                                    name="Quantity"
                                     type="number"
+                                    value={formData.Quantity}
+                                    onChange={handleChange}
                                     required
                                     className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                     placeholder="0"
@@ -138,6 +194,8 @@ const ManualImportPage = () => {
                                 <input
                                     name="MinStock"
                                     type="number"
+                                    value={formData.MinStock}
+                                    onChange={handleChange}
                                     required
                                     className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                     placeholder="0"
@@ -152,6 +210,8 @@ const ManualImportPage = () => {
                                 <input
                                     name="MaxStock"
                                     type="number"
+                                    value={formData.MaxStock}
+                                    onChange={handleChange}
                                     className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                     placeholder="0"
                                 />
@@ -161,6 +221,8 @@ const ManualImportPage = () => {
                                 <input
                                     name="Remark"
                                     type="text"
+                                    value={formData.Remark}
+                                    onChange={handleChange}
                                     className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
                                     placeholder="รายละเอียดเพิ่มเติม..."
                                 />

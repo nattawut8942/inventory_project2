@@ -29,6 +29,7 @@ const PurchaseOrdersPage = () => {
     const [filterDate, setFilterDate] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [selectedPO, setSelectedPO] = useState(null); // For detail modal
+    const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
 
 
@@ -78,13 +79,29 @@ const PurchaseOrdersPage = () => {
                 setIsModalOpen(false);
                 setPoItems([{ ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
                 refreshData();
+                setResultModal({
+                    isOpen: true,
+                    type: 'success',
+                    title: 'สร้าง PO สำเร็จ',
+                    message: `Purchase Order ${poId} ถูกสร้างเรียบร้อยแล้ว`
+                });
 
             } else {
                 const data = await res.json();
-                alert(`Failed to create PO: ${data.details || 'Unknown error'}`);
+                setResultModal({
+                    isOpen: true,
+                    type: 'error',
+                    title: 'สร้าง PO ไม่สำเร็จ',
+                    message: data.details || 'Unknown error'
+                });
             }
         } catch (err) {
-            alert(`Error creating PO: ${err.message}`);
+            setResultModal({
+                isOpen: true,
+                type: 'error',
+                title: 'ข้อผิดพลาด',
+                message: err.message
+            });
         }
     };
 
@@ -456,6 +473,40 @@ const PurchaseOrdersPage = () => {
                     </div>
                 </div>
             )}
+            {/* RESULT MODAL */}
+            <AnimatePresence>
+                {resultModal.isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
+                        >
+                            <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                                {resultModal.type === 'success' ? (
+                                    <Check size={32} className="text-emerald-600" />
+                                ) : (
+                                    <X size={32} className="text-red-600" />
+                                )}
+                            </div>
+                            <h3 className="font-black text-xl text-slate-800 mb-2">{resultModal.title}</h3>
+                            <p className="text-slate-500 mb-6">{resultModal.message}</p>
+                            <button
+                                onClick={() => setResultModal({ ...resultModal, isOpen: false })}
+                                className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all"
+                            >
+                                ปิด
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
