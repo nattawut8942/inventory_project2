@@ -30,6 +30,8 @@ const PurchaseOrdersPage = () => {
     const [filterStatus, setFilterStatus] = useState('all');
     const [selectedPO, setSelectedPO] = useState(null); // For detail modal
 
+
+
     const generatePONumber = () => {
         const now = new Date();
         const year = now.getFullYear();
@@ -58,7 +60,7 @@ const PurchaseOrdersPage = () => {
 
         const payload = {
             PO_ID: fd.get('PO_ID'),
-            VendorName: fd.get('VendorName'),
+            VendorName: selectedVendor === 'other' ? fd.get('CustomVendor') : selectedVendor,
             DueDate: fd.get('DueDate'),
             RequestedBy: user.username,
             Section: fd.get('Section'),
@@ -76,6 +78,7 @@ const PurchaseOrdersPage = () => {
                 setIsModalOpen(false);
                 setPoItems([{ ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
                 refreshData();
+                setSelectedVendor('');
             } else {
                 const data = await res.json();
                 alert(`Failed to create PO: ${data.details || 'Unknown error'}`);
@@ -378,6 +381,7 @@ const PurchaseOrdersPage = () => {
                                         <input name="DueDate" type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500" />
                                     </div>
                                 </div>
+
 
                                 <div>
                                     <div className="flex justify-between items-center mb-3">
