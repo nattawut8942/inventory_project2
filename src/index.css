@@ -90,9 +90,13 @@
 /* Modal Overlay Fixes */
 .modal-overlay {
   position: fixed;
-  inset: 0;
-  min-height: 100vh;
-  min-height: 100dvh;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
 }
 
 /* Prevent body scroll when modal is open */
@@ -100,4 +104,15 @@ body.modal-open {
   overflow: hidden;
   padding-right: 6px;
   /* Compensate for scrollbar disappearing */
+}
+
+/* Fix for nested scroll containers */
+.fixed.inset-0 {
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
 }
