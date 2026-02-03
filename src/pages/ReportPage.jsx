@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { FileSpreadsheet, Calendar, Download, CheckSquare, Square, Package, TrendingUp, TrendingDown, BarChart3, PieChart, FileText, Receipt } from 'lucide-react';
-import { BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useState, useMemo } from 'react';
+import { FileSpreadsheet, Calendar, Download, CheckSquare, Square, Package, TrendingUp, TrendingDown, BarChart3, PieChart, FileText, Receipt, DollarSign, Clock, User, AlertCircle } from 'lucide-react';
+import { BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import AlertModal from '../components/AlertModal';
@@ -51,8 +51,8 @@ const ReportPage = () => {
         color: COLORS[idx % COLORS.length]
     })).filter(c => c.value > 0);
 
-    // Calculate real stock movement from transactions
-    const stockMovementData = (() => {
+    // Calculate real stock movement from transactions (quantity-based)
+    const stockMovementData = useMemo(() => {
         const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         const dataMap = {};
 
@@ -77,7 +77,94 @@ const ReportPage = () => {
         });
 
         return Object.values(dataMap);
-    })();
+    }, [transactions]);
+
+    // NEW: Cost & Usage Analysis (Money-based)
+    const costAnalysisData = useMemo(() => {
+        const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const dataMap = {};
+
+        // Initialize last 6 months
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const key = months[d.getMonth()];
+            dataMap[key] = { month: key, spending: 0, consumption: 0 };
+        }
+
+        // Create product price lookup
+        const priceMap = {};
+        products.forEach(p => {
+            priceMap[p.ProductID] = p.LastPrice || 0;
+        });
+
+        // Sum transactions by month (value-based)
+        (transactions || []).forEach(t => {
+            const date = new Date(t.TransDate);
+            const monthKey = months[date.getMonth()];
+            if (dataMap[monthKey]) {
+                const type = (t.TransType || '').toUpperCase().trim();
+                const qty = Math.abs(t.Qty);
+                const price = priceMap[t.ProductID] || 0;
+                const value = qty * price;
+
+                if (type === 'IN') dataMap[monthKey].spending += value;
+                if (type === 'OUT') dataMap[monthKey].consumption += value;
+            }
+        });
+
+        return Object.values(dataMap);
+    }, [transactions, products]);
+
+    // NEW: Slow Moving Items (No OUT transactions in last 3 months)
+    const slowMovingItems = useMemo(() => {
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+        // Get all ProductIDs that had OUT transactions in last 3 months
+        const activeProductIds = new Set();
+        (transactions || []).forEach(t => {
+            const date = new Date(t.TransDate);
+            const type = (t.TransType || '').toUpperCase().trim();
+            if (type === 'OUT' && date >= threeMonthsAgo) {
+                activeProductIds.add(t.ProductID);
+            }
+        });
+
+        // Filter products that are NOT in the active set and have stock > 0
+        return products
+            .filter(p => !activeProductIds.has(p.ProductID) && p.CurrentStock > 0)
+            .sort((a, b) => (b.CurrentStock * (b.LastPrice || 0)) - (a.CurrentStock * (a.LastPrice || 0)))
+            .slice(0, 10);
+    }, [transactions, products]);
+
+    // Calculate total dead stock value
+    const deadStockValue = slowMovingItems.reduce((sum, p) => sum + (p.CurrentStock * (p.LastPrice || 0)), 0);
+
+    // NEW: Top Consumers (Users who withdraw the most)
+    const topConsumers = useMemo(() => {
+        const userMap = {};
+
+        (transactions || []).forEach(t => {
+            const type = (t.TransType || '').toUpperCase().trim();
+            if (type === 'OUT') {
+                const userId = t.UserID || 'Unknown';
+                if (!userMap[userId]) {
+                    userMap[userId] = { userId, totalQty: 0, totalValue: 0, transactionCount: 0 };
+                }
+                const qty = Math.abs(t.Qty);
+                const price = products.find(p => p.ProductID === t.ProductID)?.LastPrice || 0;
+
+                userMap[userId].totalQty += qty;
+                userMap[userId].totalValue += qty * price;
+                userMap[userId].transactionCount += 1;
+            }
+        });
+
+        return Object.values(userMap)
+            .sort((a, b) => b.totalValue - a.totalValue)
+            .slice(0, 5);
+    }, [transactions, products]);
 
     const dataOptions = [
         { id: 'products', label: 'Inventory / Products', description: 'All active products with stock levels', icon: Package, color: 'from-blue-500 to-blue-600' },
@@ -183,13 +270,13 @@ const ReportPage = () => {
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Stock Movement Chart */}
+                {/* Stock Movement Chart (Quantity) */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
                 >
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4">การเคลื่อนไหวสต็อค</h3>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">การเคลื่อนไหวสต็อค (จำนวนชิ้น)</h3>
                     <ResponsiveContainer width="100%" height={250}>
                         <BarChart data={stockMovementData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -209,34 +296,175 @@ const ReportPage = () => {
                     </ResponsiveContainer>
                 </motion.div>
 
-                {/* Category Distribution */}
+                {/* NEW: Cost & Usage Chart (Money) */}
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
                 >
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4">การกระจายตามหมวดหมู่</h3>
+                    <div className="flex items-center gap-2 mb-4">
+                        <DollarSign className="w-5 h-5 text-emerald-500" />
+                        <h3 className="text-lg font-semibold text-slate-900">วิเคราะห์ค่าใช้จ่าย (บาท)</h3>
+                    </div>
                     <ResponsiveContainer width="100%" height={250}>
-                        <RechartsPie>
-                            <Pie
-                                data={categoryData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                outerRadius={80}
-                                fill="#8884d8"
-                                dataKey="value"
-                            >
-                                {categoryData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                        </RechartsPie>
+                        <LineChart data={costAnalysisData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis dataKey="month" stroke="#64748b" />
+                            <YAxis stroke="#64748b" tickFormatter={(v) => `฿${(v / 1000).toFixed(0)}K`} />
+                            <Tooltip
+                                formatter={(value) => `฿${value.toLocaleString()}`}
+                                contentStyle={{
+                                    backgroundColor: 'white',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '8px',
+                                }}
+                            />
+                            <Legend />
+                            <Line type="monotone" dataKey="spending" stroke="#10b981" strokeWidth={3} name="ซื้อเข้า (Spending)" dot={{ fill: '#10b981' }} />
+                            <Line type="monotone" dataKey="consumption" stroke="#f59e0b" strokeWidth={3} name="เบิกใช้ (Usage)" dot={{ fill: '#f59e0b' }} />
+                        </LineChart>
                     </ResponsiveContainer>
                 </motion.div>
             </div>
+
+            {/* NEW: Analytics Insights Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Slow Moving Items (Dead Stock) */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200 lg:col-span-2"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center">
+                                <Clock className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-slate-800">สินค้าค้างสต็อก (Dead Stock)</h3>
+                                <p className="text-xs text-slate-500">ไม่มีการเบิกใน 3 เดือนที่ผ่านมา</p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xs text-slate-500">มูลค่าค้าง</p>
+                            <p className="text-lg font-bold text-red-500">฿{deadStockValue.toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-slate-200">
+                                    <th className="text-left py-2 px-3 text-slate-500 font-medium">สินค้า</th>
+                                    <th className="text-center py-2 px-3 text-slate-500 font-medium">ประเภท</th>
+                                    <th className="text-center py-2 px-3 text-slate-500 font-medium">คงเหลือ</th>
+                                    <th className="text-right py-2 px-3 text-slate-500 font-medium">มูลค่า</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {slowMovingItems.length > 0 ? slowMovingItems.map((item, idx) => (
+                                    <motion.tr
+                                        key={item.ProductID}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        className="border-b border-slate-100 hover:bg-slate-50"
+                                    >
+                                        <td className="py-3 px-3">
+                                            <p className="font-medium text-slate-800 truncate max-w-[200px]">{item.ProductName}</p>
+                                        </td>
+                                        <td className="py-3 px-3 text-center">
+                                            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-lg">{item.DeviceType}</span>
+                                        </td>
+                                        <td className="py-3 px-3 text-center font-mono text-slate-700">{item.CurrentStock}</td>
+                                        <td className="py-3 px-3 text-right font-mono text-red-500">฿{(item.CurrentStock * (item.LastPrice || 0)).toLocaleString()}</td>
+                                    </motion.tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="4" className="py-8 text-center text-slate-400">
+                                            <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                                            ไม่มีสินค้าค้างสต็อก 👍
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </motion.div>
+
+                {/* Top Consumers */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                            <User className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800">ผู้เบิกสูงสุด</h3>
+                            <p className="text-xs text-slate-500">จัดอันดับตามมูลค่า</p>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        {topConsumers.length > 0 ? topConsumers.map((user, idx) => (
+                            <motion.div
+                                key={user.userId}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100"
+                            >
+                                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold ${idx === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500' : idx === 1 ? 'bg-gradient-to-br from-slate-400 to-slate-500' : idx === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-700' : 'bg-slate-300'}`}>
+                                    {idx + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm text-slate-800 truncate">{user.userId}</p>
+                                    <p className="text-xs text-slate-500">{user.transactionCount} ครั้ง • {user.totalQty} ชิ้น</p>
+                                </div>
+                                <span className="text-sm font-bold text-indigo-600 font-mono">
+                                    ฿{(user.totalValue / 1000).toFixed(1)}K
+                                </span>
+                            </motion.div>
+                        )) : (
+                            <div className="text-center py-8 text-slate-400">
+                                <User className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">ยังไม่มีข้อมูลการเบิก</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* Category Distribution */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+            >
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">การกระจายตามหมวดหมู่</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                    <RechartsPie>
+                        <Pie
+                            data={categoryData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                        >
+                            {categoryData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                    </RechartsPie>
+                </ResponsiveContainer>
+            </motion.div>
 
             {/* Export Section */}
             <motion.div
