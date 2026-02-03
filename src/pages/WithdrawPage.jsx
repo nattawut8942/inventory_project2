@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { ShoppingBag, AlertTriangle, Monitor, Network, Archive, Database, Package, X, Minus, Plus, ShoppingCart, Trash2, Check, Search, List, LayoutGrid, HardDrive, Mouse, Droplet } from 'lucide-react';
+import { ShoppingBag, AlertTriangle, Monitor, Network, Archive, Database, Package, X, Minus, Plus, ShoppingCart, Trash2, Check, Search, List, LayoutGrid, HardDrive, Mouse, Droplet, FileEdit } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -19,6 +19,17 @@ const WithdrawPage = () => {
     // Cart State
     const [cart, setCart] = useState([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
+
+    // Withdrawal Reason State
+    const reasonOptions = [
+        { id: 'New Withdrawal', label: 'เบิกใหม่ (New Withdrawal)' },
+        { id: 'Replacement', label: 'ทดแทน (Replacement)' },
+        { id: 'Upgrade', label: 'อัปเกรด (Upgrade)' },
+        { id: 'Testing', label: 'ยืมทดสอบ (Testing)' },
+        { id: 'Other', label: 'อื่นๆ (Other)' }
+    ];
+    const [selectedReason, setSelectedReason] = useState('New Withdrawal');
+    const [reasonDetail, setReasonDetail] = useState('');
 
     // Qty Modal State (only for selecting quantity)
     const [qtyModal, setQtyModal] = useState({ isOpen: false, product: null, mode: 'cart' }); // mode: 'cart' | 'withdraw'
@@ -67,7 +78,18 @@ const WithdrawPage = () => {
     // Open qty modal for quick withdraw
     const openWithdrawModal = (product) => {
         setSelectQty(1);
+        setSelectedReason('New Withdrawal'); // Reset default
+        setReasonDetail('');
         setQtyModal({ isOpen: true, product, mode: 'withdraw' });
+    };
+
+    // Helper: Construct RefInfo
+    const getRefInfo = () => {
+        let info = selectedReason;
+        if (reasonDetail.trim()) {
+            info += `: ${reasonDetail.trim()}`;
+        }
+        return info;
     };
 
     // Confirm action based on mode
@@ -95,7 +117,8 @@ const WithdrawPage = () => {
                     body: JSON.stringify({
                         ProductID: product.ProductID,
                         Qty: selectQty,
-                        UserID: user.username
+                        UserID: user.username,
+                        RefInfo: getRefInfo() // Send Reason
                     })
                 });
 
@@ -146,6 +169,8 @@ const WithdrawPage = () => {
         if (cart.length === 0) return;
 
         let successCount = 0;
+        const refInfo = getRefInfo(); // Use global reason for bulk withdraw
+
         for (const item of cart) {
             try {
                 const res = await fetch(`${API_BASE}/products/withdraw`, {
@@ -154,7 +179,8 @@ const WithdrawPage = () => {
                     body: JSON.stringify({
                         ProductID: item.ProductID,
                         Qty: item.qty,
-                        UserID: user.username
+                        UserID: user.username,
+                        RefInfo: refInfo
                     })
                 });
                 if (res.ok) successCount++;
@@ -227,7 +253,11 @@ const WithdrawPage = () => {
 
                     {/* Cart Button */}
                     <button
-                        onClick={() => setIsCartOpen(true)}
+                        onClick={() => {
+                            setSelectedReason('New Withdrawal'); // Reset default
+                            setReasonDetail('');
+                            setIsCartOpen(true);
+                        }}
                         className="relative bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg flex items-center gap-2"
                     >
                         <ShoppingCart size={18} />
@@ -386,7 +416,7 @@ const WithdrawPage = () => {
                 </div>
             )}
 
-            {/* QTY MODAL - Simple with only qty selector */}
+            {/* QTY MODAL - Now with Reason Section (Only for Withdraw Mode) */}
             <AnimatePresence>
                 {qtyModal.isOpen && qtyModal.product && (
                     <motion.div
@@ -399,10 +429,10 @@ const WithdrawPage = () => {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden"
+                            className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
                         >
                             {/* Header */}
-                            <div className={`p-5 bg-gradient-to-r ${getColorGradient(qtyModal.product.DeviceType)} text-white`}>
+                            <div className={`p-5 bg-gradient-to-r ${getColorGradient(qtyModal.product.DeviceType)} text-white flex-shrink-0`}>
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -419,10 +449,10 @@ const WithdrawPage = () => {
                                 </div>
                             </div>
 
-                            {/* Body - Just Qty Selector */}
-                            <div className="p-6">
+                            {/* Scrollable Body */}
+                            <div className="p-6 overflow-y-auto">
                                 <label className="text-sm font-bold text-slate-700 mb-3 block text-center">เลือกจำนวน</label>
-                                <div className="flex items-center gap-3 justify-center">
+                                <div className="flex items-center gap-3 justify-center mb-6">
                                     <button
                                         type="button"
                                         onClick={() => setSelectQty(Math.max(1, selectQty - 1))}
@@ -446,14 +476,53 @@ const WithdrawPage = () => {
                                 </div>
 
                                 {selectQty > qtyModal.product.CurrentStock && (
-                                    <p className="text-red-500 text-xs text-center mt-3 flex items-center justify-center gap-1">
+                                    <p className="text-red-500 text-xs text-center mt-3 flex items-center justify-center gap-1 mb-4">
                                         <AlertTriangle size={12} /> ไม่สามารถเบิกเกินสต็อก
                                     </p>
+                                )}
+
+                                {/* REASON SECTION (Only for Quick Withdraw) */}
+                                {qtyModal.mode === 'withdraw' && (
+                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">ระบุเหตุผลการเบิก</label>
+                                        <div className="space-y-2">
+                                            {reasonOptions.map((opt) => (
+                                                <label key={opt.id} className="flex items-center gap-3 p-2 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-300 transition-all">
+                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedReason === opt.id ? 'border-indigo-500' : 'border-slate-300'}`}>
+                                                        {selectedReason === opt.id && <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full" />}
+                                                    </div>
+                                                    <input
+                                                        type="radio"
+                                                        name="withdrawReason"
+                                                        value={opt.id}
+                                                        checked={selectedReason === opt.id}
+                                                        onChange={(e) => setSelectedReason(e.target.value)}
+                                                        className="hidden"
+                                                    />
+                                                    <span className={`text-sm font-medium ${selectedReason === opt.id ? 'text-indigo-700' : 'text-slate-600'}`}>{opt.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+
+                                        {/* Optional Detail Input */}
+                                        <div className="mt-3">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <FileEdit size={14} className="text-slate-400" />
+                                                <span className="text-xs font-bold text-slate-500">รายละเอียดเพิ่มเติม (Optional)</span>
+                                            </div>
+                                            <textarea
+                                                value={reasonDetail}
+                                                onChange={(e) => setReasonDetail(e.target.value)}
+                                                placeholder="เช่น ระบุชื่อโปรเจกต์ หรือหมายเลขแจ้งซ่อม..."
+                                                className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none h-20 resize-none"
+                                            />
+                                        </div>
+                                    </div>
                                 )}
                             </div>
 
                             {/* Footer */}
-                            <div className="p-4 bg-slate-50 border-t border-slate-200 flex gap-3">
+                            <div className="p-4 bg-slate-50 border-t border-slate-200 flex gap-3 flex-shrink-0">
                                 <button
                                     onClick={() => setQtyModal({ isOpen: false, product: null, mode: 'cart' })}
                                     className="flex-1 bg-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-300 transition-all"
@@ -513,34 +582,76 @@ const WithdrawPage = () => {
                                         <p className="font-bold">ตะกร้าว่าง</p>
                                     </div>
                                 ) : (
-                                    cart.map((item) => (
-                                        <div key={item.ProductID} className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="font-bold text-slate-800 text-sm truncate">{item.ProductName}</h4>
-                                                    <p className="text-xs text-slate-500">{item.DeviceType}</p>
+                                    <>
+                                        {/* Items List */}
+                                        <div className="space-y-3 mb-6">
+                                            {cart.map((item) => (
+                                                <div key={item.ProductID} className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="font-bold text-slate-800 text-sm truncate">{item.ProductName}</h4>
+                                                            <p className="text-xs text-slate-500">{item.DeviceType}</p>
+                                                        </div>
+                                                        <button onClick={() => removeFromCart(item.ProductID)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => updateCartQty(item.ProductID, item.qty - 1)}
+                                                            className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-100"
+                                                        >
+                                                            <Minus size={14} />
+                                                        </button>
+                                                        <span className="w-12 text-center font-bold text-lg">{item.qty}</span>
+                                                        <button
+                                                            onClick={() => updateCartQty(item.ProductID, item.qty + 1)}
+                                                            className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-100"
+                                                        >
+                                                            <Plus size={14} />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <button onClick={() => removeFromCart(item.ProductID)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
-                                                    <Trash2 size={16} />
-                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* REASON SECTION (For Cart) */}
+                                        <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 space-y-3">
+                                            <label className="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-2">ระบุเหตุผลสำหรับการเบิกครั้งนี้</label>
+                                            <div className="space-y-2">
+                                                {reasonOptions.map((opt) => (
+                                                    <label key={opt.id} className="flex items-center gap-3 p-2 bg-white rounded-xl border border-indigo-100 cursor-pointer hover:border-indigo-300 transition-all">
+                                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedReason === opt.id ? 'border-indigo-500' : 'border-slate-300'}`}>
+                                                            {selectedReason === opt.id && <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full" />}
+                                                        </div>
+                                                        <input
+                                                            type="radio"
+                                                            name="cartReason"
+                                                            value={opt.id}
+                                                            checked={selectedReason === opt.id}
+                                                            onChange={(e) => setSelectedReason(e.target.value)}
+                                                            className="hidden"
+                                                        />
+                                                        <span className={`text-sm font-medium ${selectedReason === opt.id ? 'text-indigo-700' : 'text-slate-600'}`}>{opt.label}</span>
+                                                    </label>
+                                                ))}
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => updateCartQty(item.ProductID, item.qty - 1)}
-                                                    className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-100"
-                                                >
-                                                    <Minus size={14} />
-                                                </button>
-                                                <span className="w-12 text-center font-bold text-lg">{item.qty}</span>
-                                                <button
-                                                    onClick={() => updateCartQty(item.ProductID, item.qty + 1)}
-                                                    className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-100"
-                                                >
-                                                    <Plus size={14} />
-                                                </button>
+
+                                            {/* Optional Detail Input */}
+                                            <div className="mt-3">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <FileEdit size={14} className="text-indigo-400" />
+                                                    <span className="text-xs font-bold text-indigo-500">รายละเอียดเพิ่มเติม (Optional)</span>
+                                                </div>
+                                                <textarea
+                                                    value={reasonDetail}
+                                                    onChange={(e) => setReasonDetail(e.target.value)}
+                                                    placeholder="เช่น ระบุชื่อโปรเจกต์..."
+                                                    className="w-full bg-white border border-indigo-100 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none h-20 resize-none"
+                                                />
                                             </div>
                                         </div>
-                                    ))
+                                    </>
                                 )}
                             </div>
 
@@ -555,7 +666,7 @@ const WithdrawPage = () => {
                                         onClick={executeWithdrawAll}
                                         className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold py-4 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg flex items-center justify-center gap-2"
                                     >
-                                        <Check size={20} /> เบิกทั้งหมด
+                                        <Check size={20} /> ยืนยันเบิกสินค้า
                                     </button>
                                 </div>
                             )}

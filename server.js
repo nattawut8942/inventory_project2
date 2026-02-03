@@ -383,7 +383,7 @@ app.post('/api/products/manual-import', async (req, res) => {
 
 // Withdrawal (Outbound)
 app.post('/api/products/withdraw', async (req, res) => {
-    const { ProductID, Qty, UserID } = req.body;
+    const { ProductID, Qty, UserID, RefInfo } = req.body;
 
     try {
         const pool = getPool();
@@ -415,7 +415,7 @@ app.post('/api/products/withdraw', async (req, res) => {
                 .input('ProductID', sql.Int, ProductID)
                 .input('TransType', sql.VarChar, 'OUT')
                 .input('Qty', sql.Int, Qty)
-                .input('RefInfo', sql.NVarChar, 'Internal Withdrawal')
+                .input('RefInfo', sql.NVarChar, RefInfo || 'Internal Withdrawal')
                 .input('UserID', sql.NVarChar, UserID)
                 .query(`
                     INSERT INTO dbo.Stock_Transactions (ProductID, TransType, Qty, RefInfo, UserID)
