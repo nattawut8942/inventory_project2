@@ -4,6 +4,7 @@ import { Plus, CheckCircle, X, Package, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import Portal from '../components/Portal';
 
 const API_BASE = 'http://localhost:3001/api';
 

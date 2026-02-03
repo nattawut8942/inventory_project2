@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, CheckCircle, HelpCircle, X } from 'lucide-react';
+import Portal from './Portal';
 
 const AlertModal = ({ isOpen, type = 'info', title, message, onConfirm, onCancel, confirmText = 'OK', cancelText = 'Cancel' }) => {
     if (!isOpen) return null;
@@ -14,34 +15,37 @@ const AlertModal = ({ isOpen, type = 'info', title, message, onConfirm, onCancel
     const { icon: Icon, color, bg, btn } = config[type];
 
     return (
-        <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/60 backdrop-blur-sm">
-            <div className="flex min-h-screen items-center justify-center p-4">
-                <div className="w-full max-w-sm transform overflow-hidden rounded-3xl bg-white p-6 text-center shadow-2xl transition-all animate-in zoom-in-95">
-                    <div className={`w-16 h-16 ${bg} rounded-full flex items-center justify-center mx-auto mb-4 ${color}`}>
-                        <Icon size={32} />
-                    </div>
-                    <h3 className="font-black text-xl mb-2 text-slate-800">{title}</h3>
-                    <p className="text-slate-500 text-sm mb-6 px-4 leading-relaxed">{message}</p>
-                    <div className="flex gap-3">
-                        {onCancel && (
+        <Portal>
+            <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/60 backdrop-blur-sm">
+                <div className="flex min-h-screen items-center justify-center p-4">
+                    <div className="w-full max-w-sm transform overflow-hidden rounded-3xl bg-white p-6 text-center shadow-2xl transition-all animate-in zoom-in-95">
+                        <div className={`w-16 h-16 ${bg} rounded-full flex items-center justify-center mx-auto mb-4 ${color}`}>
+                            <Icon size={32} />
+                        </div>
+                        <h3 className="font-black text-xl mb-2 text-slate-800">{title}</h3>
+                        <p className="text-slate-500 text-sm mb-6 px-4 leading-relaxed">{message}</p>
+                        <div className="flex gap-3">
+                            {onCancel && (
+                                <button
+                                    onClick={onCancel}
+                                    className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                                >
+                                    {cancelText}
+                                </button>
+                            )}
                             <button
-                                onClick={onCancel}
-                                className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                                onClick={onConfirm || onCancel}
+                                className={`flex-1 text-white py-3 rounded-xl font-bold transition-all shadow-lg ${btn}`}
                             >
-                                {cancelText}
+                                {confirmText}
                             </button>
-                        )}
-                        <button
-                            onClick={onConfirm || onCancel}
-                            className={`flex-1 text-white py-3 rounded-xl font-bold transition-all shadow-lg ${btn}`}
-                        >
-                            {confirmText}
-                        </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </Portal>
     );
 };
 
 export default AlertModal;
+

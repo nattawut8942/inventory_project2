@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Plus, Trash2, Shield, AlertTriangle, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import Portal from '../components/Portal';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -216,136 +217,142 @@ const AdminUsersPage = () => {
             {/* Add Admin Modal */}
             <AnimatePresence>
                 {showAddModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
+                    <Portal>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
                         >
-                            <div className="p-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white">
-                                <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                                            <Plus size={20} />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+                            >
+                                <div className="p-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                                <Plus size={20} />
+                                            </div>
+                                            <h3 className="text-lg font-bold">เพิ่ม Admin ใหม่</h3>
                                         </div>
-                                        <h3 className="text-lg font-bold">เพิ่ม Admin ใหม่</h3>
+                                        <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                                            <X size={20} />
+                                        </button>
                                     </div>
-                                    <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
-                                        <X size={20} />
-                                    </button>
                                 </div>
-                            </div>
-                            <div className="p-6 space-y-4">
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">Username (AD User)</label>
-                                    <input
-                                        type="text"
-                                        value={newUsername}
-                                        onChange={(e) => setNewUsername(e.target.value)}
-                                        placeholder="e.g. john.d"
-                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-amber-100 focus:border-amber-500 outline-none text-slate-800 font-medium"
-                                    />
+                                <div className="p-6 space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">Username (AD User)</label>
+                                        <input
+                                            type="text"
+                                            value={newUsername}
+                                            onChange={(e) => setNewUsername(e.target.value)}
+                                            placeholder="e.g. john.d"
+                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-amber-100 focus:border-amber-500 outline-none text-slate-800 font-medium"
+                                        />
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setShowAddModal(false)}
+                                            className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
+                                        >
+                                            ยกเลิก
+                                        </button>
+                                        <button
+                                            onClick={handleAddAdmin}
+                                            disabled={!newUsername.trim()}
+                                            className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
+                                        >
+                                            เพิ่ม Admin
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setShowAddModal(false)}
-                                        className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
-                                    >
-                                        ยกเลิก
-                                    </button>
-                                    <button
-                                        onClick={handleAddAdmin}
-                                        disabled={!newUsername.trim()}
-                                        className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
-                                    >
-                                        เพิ่ม Admin
-                                    </button>
-                                </div>
-                            </div>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
+                    </Portal>
                 )}
             </AnimatePresence>
 
             {/* Delete Confirmation Modal */}
             <AnimatePresence>
                 {deleteConfirm && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
+                    <Portal>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="w-full max-w-sm bg-white rounded-3xl p-8 text-center shadow-2xl"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
                         >
-                            <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center bg-red-100">
-                                <Trash2 size={40} className="text-red-600" />
-                            </div>
-                            <h3 className="font-black text-2xl text-slate-800 mb-2">ลบ Admin?</h3>
-                            <p className="text-slate-500 mb-6">
-                                ต้องการลบ <span className="font-bold text-slate-800">{deleteConfirm}</span> ออกจาก Admin หรือไม่?
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setDeleteConfirm(null)}
-                                    className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
-                                >
-                                    ยกเลิก
-                                </button>
-                                <button
-                                    onClick={() => handleDeleteAdmin(deleteConfirm)}
-                                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all"
-                                >
-                                    ลบ
-                                </button>
-                            </div>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="w-full max-w-sm bg-white rounded-3xl p-8 text-center shadow-2xl"
+                            >
+                                <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center bg-red-100">
+                                    <Trash2 size={40} className="text-red-600" />
+                                </div>
+                                <h3 className="font-black text-2xl text-slate-800 mb-2">ลบ Admin?</h3>
+                                <p className="text-slate-500 mb-6">
+                                    ต้องการลบ <span className="font-bold text-slate-800">{deleteConfirm}</span> ออกจาก Admin หรือไม่?
+                                </p>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setDeleteConfirm(null)}
+                                        className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
+                                    >
+                                        ยกเลิก
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteAdmin(deleteConfirm)}
+                                        className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all"
+                                    >
+                                        ลบ
+                                    </button>
+                                </div>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
+                    </Portal>
                 )}
             </AnimatePresence>
 
             {/* Result Modal */}
             <AnimatePresence>
                 {resultModal.isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
+                    <Portal>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="w-full max-w-sm bg-white rounded-3xl p-8 text-center shadow-2xl"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
                         >
-                            <div className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
-                                {resultModal.type === 'success' ? (
-                                    <Check size={40} className="text-emerald-600" />
-                                ) : (
-                                    <AlertTriangle size={40} className="text-red-600" />
-                                )}
-                            </div>
-                            <h3 className="font-black text-2xl text-slate-800 mb-2">{resultModal.title}</h3>
-                            <p className="text-slate-500 mb-6">{resultModal.message}</p>
-                            <button
-                                onClick={() => setResultModal({ ...resultModal, isOpen: false })}
-                                className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all"
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="w-full max-w-sm bg-white rounded-3xl p-8 text-center shadow-2xl"
                             >
-                                ปิด
-                            </button>
+                                <div className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                                    {resultModal.type === 'success' ? (
+                                        <Check size={40} className="text-emerald-600" />
+                                    ) : (
+                                        <AlertTriangle size={40} className="text-red-600" />
+                                    )}
+                                </div>
+                                <h3 className="font-black text-2xl text-slate-800 mb-2">{resultModal.title}</h3>
+                                <p className="text-slate-500 mb-6">{resultModal.message}</p>
+                                <button
+                                    onClick={() => setResultModal({ ...resultModal, isOpen: false })}
+                                    className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all"
+                                >
+                                    ปิด
+                                </button>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
+                    </Portal>
                 )}
             </AnimatePresence>
         </div>

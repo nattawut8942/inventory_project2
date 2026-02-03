@@ -3,6 +3,7 @@ import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { ShoppingBag, AlertTriangle, Monitor, Network, Archive, Database, Package, X, Minus, Plus, ShoppingCart, Trash2, Check, Search, List, LayoutGrid, HardDrive, Mouse, Droplet, FileEdit } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import Portal from '../components/Portal';
 
 const API_BASE = 'http://localhost:3001/api';
 const API_URL = 'http://localhost:3001';

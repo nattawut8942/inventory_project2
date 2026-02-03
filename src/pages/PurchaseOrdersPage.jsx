@@ -5,6 +5,7 @@ import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import ProductCombobox from '../components/ProductCombobox';
 import VendorCombobox from '../components/VendorCombobox';
+import Portal from '../components/Portal';
 
 const API_BASE = 'http://localhost:3001/api';
 
