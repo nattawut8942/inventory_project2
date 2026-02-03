@@ -479,7 +479,6 @@ app.get('/api/invoices', async (req, res) => {
             ORDER BY ReceiveDate DESC
         `);
 
-        res.json(result.recordset);
 
         const invoices = result.recordset.map(inv => ({
             ...inv,

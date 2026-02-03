@@ -15,7 +15,7 @@ const AlertModal = ({ isOpen, type = 'info', title, message, onConfirm, onCancel
 
     return (
         <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/60 backdrop-blur-sm">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <div className="flex min-h-screen items-center justify-center p-4">
                 <div className="w-full max-w-sm transform overflow-hidden rounded-3xl bg-white p-6 text-center shadow-2xl transition-all animate-in zoom-in-95">
                     <div className={`w-16 h-16 ${bg} rounded-full flex items-center justify-center mx-auto mb-4 ${color}`}>
                         <Icon size={32} />

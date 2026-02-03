@@ -303,7 +303,7 @@ const ReceivePage = () => {
             {/* RECEIVE MODAL */}
             {isModalOpen && activePo && (
                 <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
-                    <div className="flex min-h-full items-center justify-center p-4 text-center">
+                    <div className="flex min-h-screen items-center justify-center p-4">
                         <div className="w-full max-w-2xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl transition-all my-8">
                             <div className="p-6 bg-white flex justify-between items-center border-b border-slate-200">
                                 <div>
