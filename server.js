@@ -865,13 +865,13 @@ app.get('/api/report/export', async (req, res) => {
                 }
                 case 'transactions': {
                     sheetName = '📊 ประวัติรับ-เบิก';
-                    const request = pool.request();
-                    if (startDate) request.input('startDate', sql.DateTime, new Date(startDate));
-                    if (endDate) request.input('endDate', sql.DateTime, new Date(endDate));
+                    const transRequest = pool.request();
+                    if (startDate) transRequest.input('startDate', sql.DateTime, new Date(startDate));
+                    if (endDate) transRequest.input('endDate', sql.DateTime, new Date(endDate));
 
                     let transQuery = `
-                        SELECT t.TransID, t.TransDate, t.TransType, t.Qty, t.Remark, t.UserID,
-                               t.POID, t.InvoiceNo, p.ProductName, p.DeviceType, p.LastPrice
+                        SELECT t.TransID, t.TransDate, t.TransType, t.Qty, t.RefInfo, t.UserID,
+                               p.ProductName, p.DeviceType, p.LastPrice
                         FROM dbo.Stock_Transactions t 
                         LEFT JOIN dbo.Stock_Products p ON t.ProductID = p.ProductID 
                         WHERE 1=1
@@ -880,7 +880,7 @@ app.get('/api/report/export', async (req, res) => {
                     if (endDate) transQuery += ' AND t.TransDate <= @endDate';
                     transQuery += ' ORDER BY t.TransDate DESC';
 
-                    const transResult = await request.query(transQuery);
+                    const transResult = await transRequest.query(transQuery);
                     data = transResult.recordset.map(row => ({
                         'เลขที่': row.TransID,
                         'วันที่': row.TransDate ? new Date(row.TransDate).toLocaleDateString('th-TH') : '-',
@@ -892,74 +892,70 @@ app.get('/api/report/export', async (req, res) => {
                         'ราคา/หน่วย (฿)': row.LastPrice || 0,
                         'มูลค่า (฿)': Math.abs(row.Qty) * (row.LastPrice || 0),
                         'ผู้ทำรายการ': row.UserID || '-',
-                        'เลข PO': row.POID || '-',
-                        'เลข Invoice': row.InvoiceNo || '-',
-                        'หมายเหตุ': row.Remark || '-'
+                        'อ้างอิง': row.RefInfo || '-'
                     }));
                     break;
                 }
                 case 'invoices': {
                     sheetName = '🧾 ข้อมูล Invoice';
-                    const request = pool.request();
-                    if (startDate) request.input('startDate', sql.DateTime, new Date(startDate));
-                    if (endDate) request.input('endDate', sql.DateTime, new Date(endDate));
+                    const invRequest = pool.request();
+                    if (startDate) invRequest.input('startDate', sql.DateTime, new Date(startDate));
+                    if (endDate) invRequest.input('endDate', sql.DateTime, new Date(endDate));
 
                     let invQuery = `
-                        SELECT i.*, po.RequestBy, v.VendorName
+                        SELECT i.InvoiceID, i.InvoiceNo, i.PO_ID, i.ReceiveDate, i.ReceivedBy,
+                               po.VendorName, po.RequestedBy
                         FROM dbo.Stock_Invoices i
-                        LEFT JOIN dbo.Stock_PurchaseOrders po ON i.POID = po.POID
-                        LEFT JOIN dbo.Stock_Vendors v ON po.VendorID = v.VendorID
+                        LEFT JOIN dbo.Stock_PurchaseOrders po ON i.PO_ID = po.PO_ID
                         WHERE 1=1
                     `;
                     if (startDate) invQuery += ' AND i.ReceiveDate >= @startDate';
                     if (endDate) invQuery += ' AND i.ReceiveDate <= @endDate';
                     invQuery += ' ORDER BY i.ReceiveDate DESC';
 
-                    const invResult = await request.query(invQuery);
+                    const invResult = await invRequest.query(invQuery);
                     data = invResult.recordset.map(row => ({
                         'เลข Invoice': row.InvoiceNo || '-',
                         'วันที่รับ': row.ReceiveDate ? new Date(row.ReceiveDate).toLocaleDateString('th-TH') : '-',
-                        'เลข PO': row.POID || '-',
+                        'เลข PO': row.PO_ID || '-',
                         'Vendor': row.VendorName || '-',
-                        'ผู้สั่งซื้อ': row.RequestBy || '-',
-                        'หมายเหตุ': row.Remark || '-'
+                        'ผู้สั่งซื้อ': row.RequestedBy || '-',
+                        'ผู้รับ': row.ReceivedBy || '-'
                     }));
                     break;
                 }
                 case 'pos': {
                     sheetName = '📋 ใบสั่งซื้อ (PO)';
-                    const request = pool.request();
-                    if (startDate) request.input('startDate', sql.DateTime, new Date(startDate));
-                    if (endDate) request.input('endDate', sql.DateTime, new Date(endDate));
+                    const poRequest = pool.request();
+                    if (startDate) poRequest.input('startDate', sql.DateTime, new Date(startDate));
+                    if (endDate) poRequest.input('endDate', sql.DateTime, new Date(endDate));
 
                     let poQuery = `
-                        SELECT po.*, v.VendorName,
-                            (SELECT STRING_AGG(p.ProductName + ' x' + CAST(d.Qty AS VARCHAR), ', ')
-                             FROM dbo.Stock_PODetails d
-                             JOIN dbo.Stock_Products p ON d.ProductID = p.ProductID
-                             WHERE d.POID = po.POID) as Items,
-                            (SELECT SUM(d.Qty * d.UnitPrice) 
-                             FROM dbo.Stock_PODetails d 
-                             WHERE d.POID = po.POID) as TotalAmount
+                        SELECT po.PO_ID, po.PR_No, po.VendorName, po.RequestDate, po.DueDate,
+                               po.RequestedBy, po.Section, po.Status, po.Remark,
+                               (SELECT SUM(d.QtyOrdered * ISNULL(d.UnitCost, 0)) 
+                                FROM dbo.Stock_PODetails d 
+                                WHERE d.PO_ID = po.PO_ID) as TotalAmount
                         FROM dbo.Stock_PurchaseOrders po
-                        LEFT JOIN dbo.Stock_Vendors v ON po.VendorID = v.VendorID
                         WHERE 1=1
                     `;
                     if (startDate) poQuery += ' AND po.RequestDate >= @startDate';
                     if (endDate) poQuery += ' AND po.RequestDate <= @endDate';
                     poQuery += ' ORDER BY po.RequestDate DESC';
 
-                    const poResult = await request.query(poQuery);
+                    const poResult = await poRequest.query(poQuery);
                     data = poResult.recordset.map(row => ({
-                        'เลข PO': row.POID,
+                        'เลข PO': row.PO_ID,
+                        'เลข PR': row.PR_No || '-',
                         'วันที่สร้าง': row.RequestDate ? new Date(row.RequestDate).toLocaleDateString('th-TH') : '-',
+                        'วันกำหนดส่ง': row.DueDate ? new Date(row.DueDate).toLocaleDateString('th-TH') : '-',
                         'Vendor': row.VendorName || '-',
-                        'สถานะ': row.Status === 'Pending' ? 'รอดำเนินการ' :
+                        'สถานะ': row.Status === 'Open' ? 'รอดำเนินการ' :
                             row.Status === 'Partial' ? 'รับบางส่วน' :
                                 row.Status === 'Completed' ? 'เสร็จสิ้น' : row.Status,
-                        'รายการสินค้า': row.Items || '-',
                         'มูลค่ารวม (฿)': row.TotalAmount || 0,
-                        'ผู้สร้าง': row.RequestBy || '-',
+                        'ผู้สร้าง': row.RequestedBy || '-',
+                        'แผนก': row.Section || '-',
                         'หมายเหตุ': row.Remark || '-'
                     }));
                     break;
