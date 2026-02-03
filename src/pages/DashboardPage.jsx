@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Package, TrendingUp, TrendingDown, AlertTriangle, DollarSign, ShoppingCart } from 'lucide-react';
+import { Package, TrendingUp, TrendingDown, AlertTriangle, DollarSign, ShoppingCart, Clock, ArrowRight, Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import StatCard from '../components/StatCard';
@@ -59,6 +59,61 @@ const DashboardPage = () => {
         });
 
         return Object.values(dataMap);
+    }, [transactions]);
+
+    // 4. NEW: Critical Low Stock Items (Top 5)
+    const lowStockItems = useMemo(() => {
+        return products
+            .filter(p => p.CurrentStock <= p.MinStock)
+            .sort((a, b) => (a.CurrentStock - a.MinStock) - (b.CurrentStock - b.MinStock))
+            .slice(0, 5);
+    }, [products]);
+
+    // 5. NEW: Top 5 Most Withdrawn (Current Month)
+    const topWithdrawn = useMemo(() => {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const withdrawMap = {};
+        transactions.forEach(t => {
+            const date = new Date(t.TransDate);
+            const type = (t.TransType || '').toUpperCase().trim();
+            if (type === 'OUT' && date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+                const productId = t.ProductID;
+                if (!withdrawMap[productId]) {
+                    withdrawMap[productId] = {
+                        ProductID: productId,
+                        ProductName: t.ProductName || `ID: ${productId}`,
+                        totalQty: 0
+                    };
+                }
+                withdrawMap[productId].totalQty += Math.abs(t.Qty);
+            }
+        });
+
+        return Object.values(withdrawMap)
+            .sort((a, b) => b.totalQty - a.totalQty)
+            .slice(0, 5);
+    }, [transactions]);
+
+    // 6. NEW: Pending POs (Open/Partial, sorted by oldest first)
+    const pendingPOs = useMemo(() => {
+        return purchaseOrders
+            .filter(po => po.Status !== 'Completed')
+            .map(po => ({
+                ...po,
+                daysAgo: Math.floor((new Date() - new Date(po.RequestDate)) / (1000 * 60 * 60 * 24))
+            }))
+            .sort((a, b) => b.daysAgo - a.daysAgo)
+            .slice(0, 5);
+    }, [purchaseOrders]);
+
+    // 7. Recent Transactions (Last 5)
+    const recentTransactions = useMemo(() => {
+        return [...transactions]
+            .sort((a, b) => new Date(b.TransDate) - new Date(a.TransDate))
+            .slice(0, 5);
     }, [transactions]);
 
     return (
@@ -170,6 +225,140 @@ const DashboardPage = () => {
                 </motion.div>
             </div>
 
+            {/* NEW: Operational Insights Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Critical Low Stock */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
+                                <AlertTriangle className="w-5 h-5 text-white" />
+                            </div>
+                            <h3 className="font-bold text-slate-800">สินค้าต้องเติมด่วน</h3>
+                        </div>
+                        <button onClick={() => navigate('/inventory')} className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
+                            ดูทั้งหมด <ArrowRight size={14} />
+                        </button>
+                    </div>
+                    <div className="space-y-3">
+                        {lowStockItems.length > 0 ? lowStockItems.map((item, idx) => (
+                            <motion.div
+                                key={item.ProductID}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-100"
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm text-slate-800 truncate">{item.ProductName}</p>
+                                    <p className="text-xs text-red-500">คงเหลือ: {item.CurrentStock} / Min: {item.MinStock}</p>
+                                </div>
+                                <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-lg">
+                                    ขาด {item.MinStock - item.CurrentStock}
+                                </span>
+                            </motion.div>
+                        )) : (
+                            <div className="text-center py-8 text-slate-400">
+                                <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">สต็อกเพียงพอ 👍</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* Pending POs */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
+                                <Clock className="w-5 h-5 text-white" />
+                            </div>
+                            <h3 className="font-bold text-slate-800">PO รอรับของ</h3>
+                        </div>
+                        <button onClick={() => navigate('/receive')} className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
+                            รับของ <ArrowRight size={14} />
+                        </button>
+                    </div>
+                    <div className="space-y-3">
+                        {pendingPOs.length > 0 ? pendingPOs.map((po, idx) => (
+                            <motion.div
+                                key={po.PO_ID}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-100"
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-sm text-slate-800">{po.PO_ID}</p>
+                                    <p className="text-xs text-amber-600 truncate">{po.VendorName || 'ไม่ระบุผู้ขาย'}</p>
+                                </div>
+                                <span className={`text-xs font-bold px-2 py-1 rounded-lg ${po.daysAgo > 7 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
+                                    {po.daysAgo} วัน
+                                </span>
+                            </motion.div>
+                        )) : (
+                            <div className="text-center py-8 text-slate-400">
+                                <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">ไม่มี PO ค้าง ✅</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* Top Withdrawn */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center">
+                                <Flame className="w-5 h-5 text-white" />
+                            </div>
+                            <h3 className="font-bold text-slate-800">เบิกเยอะสุด (เดือนนี้)</h3>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        {topWithdrawn.length > 0 ? topWithdrawn.map((item, idx) => (
+                            <motion.div
+                                key={item.ProductID}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100"
+                            >
+                                <span className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-bold flex items-center justify-center">
+                                    {idx + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm text-slate-800 truncate">{item.ProductName}</p>
+                                </div>
+                                <span className="text-sm font-bold text-purple-600 font-mono">
+                                    {item.totalQty} ชิ้น
+                                </span>
+                            </motion.div>
+                        )) : (
+                            <div className="text-center py-8 text-slate-400">
+                                <TrendingDown className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">ยังไม่มีการเบิกเดือนนี้</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            </div>
+
             {/* Recent Activities styled */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -178,11 +367,13 @@ const DashboardPage = () => {
             >
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-slate-800">กิจกรรมล่าสุด</h3>
-                    <button onClick={() => navigate('/history')} className="text-indigo-600 text-sm font-bold hover:underline">ดูทั้งหมด</button>
+                    <button onClick={() => navigate('/history')} className="text-indigo-600 text-sm font-bold hover:underline flex items-center gap-1">
+                        ดูทั้งหมด <ArrowRight size={14} />
+                    </button>
                 </div>
 
                 <div className="space-y-4">
-                    {transactions.slice(0, 5).map((t, idx) => {
+                    {recentTransactions.map((t, idx) => {
                         const isIn = (t.TransType || '').toUpperCase().trim() === 'IN';
                         return (
                             <motion.div
@@ -219,7 +410,7 @@ const DashboardPage = () => {
                             </motion.div>
                         );
                     })}
-                    {transactions.length === 0 && (
+                    {recentTransactions.length === 0 && (
                         <div className="text-center py-12 text-slate-400">
                             <Package className="w-12 h-12 mx-auto mb-3 opacity-20" />
                             <p>ยังไม่มีรายการเคลื่อนไหว</p>
