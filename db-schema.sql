@@ -11,10 +11,12 @@ CREATE TABLE dbo.Stock_DeviceTypes (
 
 -- Insert Default Device Types
 INSERT INTO dbo.Stock_DeviceTypes (TypeId, Label) VALUES
-('Monitor', 'Monitor'),
 ('Asset', 'General Asset'),
-('Stock', 'Consumable Stock'),
-('Network', 'Network Device');
+('Consumable', 'Consumable Stock'),
+('Monitor', 'Monitor'),
+('Network', 'Network Device'),
+('Peripheral', 'Peripheral Devices'),
+('Storage', 'Storage Stock');
 
 -- =====================================================
 -- 2. Products / Inventory Master Table

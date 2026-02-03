@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Monitor, Network, Archive, Database, Package, List, LayoutGrid, Edit2, Trash2, X, TrendingUp, TrendingDown, AlertTriangle, DollarSign } from 'lucide-react';
+import { Search, Monitor, Network, Archive, Database, Package, List, LayoutGrid, Edit2, Trash2, X, TrendingUp, TrendingDown, AlertTriangle, DollarSign, HardDrive, Mouse, Droplet } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -76,7 +76,9 @@ const InventoryPage = () => {
             case 'Monitor': return Monitor;
             case 'Network': return Network;
             case 'Asset': return Archive;
-            case 'Stock': return Database;
+            case 'Consumable': return Droplet;
+            case 'Storage': return HardDrive;
+            case 'Peripheral': return Mouse;
             default: return Package;
         }
     };
@@ -86,8 +88,22 @@ const InventoryPage = () => {
             case 'Monitor': return 'from-blue-500 to-blue-600';
             case 'Network': return 'from-purple-500 to-purple-600';
             case 'Asset': return 'from-amber-500 to-amber-600';
-            case 'Stock': return 'from-emerald-500 to-emerald-600';
-            default: return 'from-pink-500 to-pink-600';
+            case 'Consumable': return 'from-emerald-500 to-emerald-600';
+            case 'Storage': return 'from-orange-500 to-orange-600';
+            case 'Peripheral': return 'from-cyan-500 to-cyan-600';
+            default: return 'from-slate-500 to-slate-600';
+        }
+    };
+
+    const getBadgeStyle = (type) => {
+        switch (type) {
+            case 'Monitor': return 'bg-blue-50 text-blue-600 border-blue-100';
+            case 'Network': return 'bg-purple-50 text-purple-600 border-purple-100';
+            case 'Asset': return 'bg-amber-50 text-amber-600 border-amber-100';
+            case 'Consumable': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'Storage': return 'bg-orange-50 text-orange-600 border-orange-100';
+            case 'Peripheral': return 'bg-cyan-50 text-cyan-600 border-cyan-100';
+            default: return 'bg-slate-50 text-slate-600 border-slate-100';
         }
     };
 
@@ -294,11 +310,7 @@ const InventoryPage = () => {
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            <span className={`flex items-center w-fit gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${p.DeviceType === 'Monitor' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                                p.DeviceType === 'Network' ? 'bg-purple-50 text-purple-600 border-purple-100' :
-                                                    p.DeviceType === 'Asset' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                                        'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                }`}>
+                                            <span className={`flex items-center w-fit gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${getBadgeStyle(p.DeviceType)}`}>
                                                 {p.DeviceType}
                                             </span>
                                         </td>
@@ -385,11 +397,7 @@ const InventoryPage = () => {
                                 </div>
 
                                 <h3 className="font-bold text-slate-800 text-sm mb-1 line-clamp-2 min-h-[2.5rem]">{p.ProductName}</h3>
-                                <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border mb-2 ${p.DeviceType === 'Monitor' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                    p.DeviceType === 'Network' ? 'bg-purple-50 text-purple-600 border-purple-100' :
-                                        p.DeviceType === 'Asset' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                            'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                    }`}>{p.DeviceType}</span>
+                                <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border mb-2 ${getBadgeStyle(p.DeviceType)}`}>{p.DeviceType}</span>
 
                                 <div className="grid grid-cols-2 gap-2 w-full pt-2 border-t border-slate-100">
                                     <div>

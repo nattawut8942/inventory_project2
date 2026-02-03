@@ -305,7 +305,7 @@ app.post('/api/products/manual-import', async (req, res) => {
                 // Create New
                 const createRes = await new sql.Request(transaction)
                     .input('ProductName', sql.NVarChar, ProductName.trim())
-                    .input('DeviceType', sql.VarChar, DeviceType || 'Stock')
+                    .input('DeviceType', sql.VarChar, DeviceType || 'Consumable')
                     .input('CurrentStock', sql.Int, qty)
                     .input('UnitCost', sql.Decimal(18, 2), unitCost)
                     .input('MinStock', sql.Int, minStock)
@@ -603,19 +603,19 @@ app.post('/api/receive', async (req, res) => {
                                 // Create New Product
                                 // First ensure 'Stock' type exists to prevent FK violation
                                 await new sql.Request(transaction).query(`
-                                        IF NOT EXISTS (SELECT 1 FROM dbo.Stock_DeviceTypes WHERE TypeId = 'Stock')
+                                        IF NOT EXISTS (SELECT 1 FROM dbo.Stock_DeviceTypes WHERE TypeId = 'Consumable')
                                         BEGIN
-                                            INSERT INTO dbo.Stock_DeviceTypes (TypeId, Label) VALUES ('Stock', 'Consumable Stock')
+                                            INSERT INTO dbo.Stock_DeviceTypes (TypeId, Label) VALUES ('Consumable', 'Consumable Stock')
                                         END
                                     `);
 
                                 const createRes = await new sql.Request(transaction)
                                     .input('ProductName', sql.NVarChar, detail.ItemName.trim())
                                     .input('Qty', sql.Int, qty) // Initial Stock
-                                    .input('UnitCost', sql.Decimal(18, 2), detail.UnitCost || 0)
+                                    .input('UnitCost', sql.Decimal(18, 2), detail?.UnitCost || 0)
                                     .query(`
                                         INSERT INTO dbo.Stock_Products (ProductName, DeviceType, CurrentStock, LastPrice, MinStock, IsActive)
-                                        VALUES (@ProductName, 'Stock', 0, @UnitCost, 0, 1); -- Start 0 stock, we add below
+                                        VALUES (@ProductName, 'Consumable', 0, @UnitCost, 0, 1); -- Start 0 stock, we add below
                                         SELECT SCOPE_IDENTITY() AS NewID;
                                     `);
                                 finalProductID = createRes.recordset[0].NewID;
@@ -856,6 +856,25 @@ const startServer = async () => {
 
 
             console.log('✅ Schema Check: ImageURL and MaxStock columns verified');
+
+            // Seed Device Types (Ensure new types exist)
+            const typesToSeed = [
+                { id: 'Asset', label: 'General Asset' },
+                { id: 'Consumable', label: 'Consumable Stock' },
+                { id: 'Monitor', label: 'Monitor' },
+                { id: 'Network', label: 'Network Device' },
+                { id: 'Peripheral', label: 'Peripheral Devices' },
+                { id: 'Storage', label: 'Storage Stock' }
+            ];
+
+            for (const t of typesToSeed) {
+                await pool.request().query(`
+                     IF NOT EXISTS (SELECT 1 FROM dbo.Stock_DeviceTypes WHERE TypeId = '${t.id}')
+                     INSERT INTO dbo.Stock_DeviceTypes (TypeId, Label) VALUES ('${t.id}', '${t.label}')
+                 `);
+            }
+            console.log('✅ Device Types verified/seeded');
+
         } catch (err) {
             console.warn('⚠️ Schema Check Warning:', err.message);
         }

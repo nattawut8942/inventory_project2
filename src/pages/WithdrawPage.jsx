@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { ShoppingBag, AlertTriangle, Monitor, Network, Archive, Database, Package, X, Minus, Plus, ShoppingCart, Trash2, Check, Search, List, LayoutGrid } from 'lucide-react';
+import { ShoppingBag, AlertTriangle, Monitor, Network, Archive, Database, Package, X, Minus, Plus, ShoppingCart, Trash2, Check, Search, List, LayoutGrid, HardDrive, Mouse, Droplet } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -32,7 +32,9 @@ const WithdrawPage = () => {
             case 'Monitor': return Monitor;
             case 'Network': return Network;
             case 'Asset': return Archive;
-            case 'Stock': return Database;
+            case 'Consumable': return Droplet;
+            case 'Storage': return HardDrive;
+            case 'Peripheral': return Mouse;
             default: return Package;
         }
     };
@@ -42,8 +44,10 @@ const WithdrawPage = () => {
             case 'Monitor': return 'from-blue-500 to-blue-600';
             case 'Network': return 'from-purple-500 to-purple-600';
             case 'Asset': return 'from-amber-500 to-amber-600';
-            case 'Stock': return 'from-emerald-500 to-emerald-600';
-            default: return 'from-pink-500 to-pink-600';
+            case 'Consumable': return 'from-emerald-500 to-emerald-600';
+            case 'Storage': return 'from-orange-500 to-orange-600';
+            case 'Peripheral': return 'from-cyan-500 to-cyan-600';
+            default: return 'from-slate-500 to-slate-600';
         }
     };
 
