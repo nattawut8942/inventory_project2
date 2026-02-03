@@ -29,12 +29,12 @@ export const DataProvider = ({ children }) => {
                 fetch(`${API_BASE}/types`),
                 fetch(`${API_BASE}/vendors`)
             ]);
-            setProducts(await prodRes.json());
-            setPurchaseOrders(await poRes.json());
-            setInvoices(await invRes.json());
-            setTransactions(await transRes.json());
-            setDeviceTypes(await typeRes.json());
-            setVendors(await vendorRes.json());
+            if (prodRes.ok) setProducts(await prodRes.json());
+            if (poRes.ok) setPurchaseOrders(await poRes.json());
+            if (invRes.ok) setInvoices(await invRes.json());
+            if (transRes.ok) setTransactions(await transRes.json());
+            if (typeRes.ok) setDeviceTypes(await typeRes.json());
+            if (vendorRes.ok) setVendors(await vendorRes.json());
         } catch (err) {
             console.error("Failed to fetch data", err);
         } finally {
