@@ -119,6 +119,22 @@ CREATE TABLE dbo.Stock_UserRole (
 );
 
 -- =====================================================
+-- 8. Vendor Master (Suppliers)
+-- =====================================================
+CREATE TABLE dbo.Stock_Vendors (
+    VendorID INT IDENTITY(1,1) PRIMARY KEY,
+    VendorName NVARCHAR(200) NOT NULL UNIQUE,
+    ContactInfo NVARCHAR(500),
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- Insert Default Vendors
+INSERT INTO dbo.Stock_Vendors (VendorName) VALUES
+('SAMAPHAN TECHNOLOGIES'),
+('NITHIKASEM TELECOM');
+
+-- =====================================================
 -- SUMMARY OF TABLES
 -- =====================================================
 -- Table Name               | Description
@@ -130,4 +146,5 @@ CREATE TABLE dbo.Stock_UserRole (
 -- Stock_Invoices           | Receiving: Invoice/delivery records
 -- Stock_Transactions       | Log: All stock movements (IN/OUT)
 -- Stock_UserRole           | Access: List of Admin/Staff users
+-- Stock_Vendors            | Master: Vendor/Supplier list
 -- =====================================================

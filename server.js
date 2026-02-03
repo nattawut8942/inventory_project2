@@ -190,6 +190,45 @@ app.get('/api/types', async (req, res) => {
     }
 });
 
+// --- VENDORS ---
+app.get('/api/vendors', async (req, res) => {
+    try {
+        const pool = getPool();
+        const result = await pool.request().query(`
+            SELECT VendorID, VendorName, ContactInfo 
+            FROM dbo.Stock_Vendors 
+            WHERE IsActive = 1 
+            ORDER BY VendorName
+        `);
+        res.json(result.recordset);
+    } catch (err) {
+        console.error('Get Vendors Error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.post('/api/vendors', async (req, res) => {
+    const { VendorName, ContactInfo } = req.body;
+    if (!VendorName) {
+        return res.status(400).json({ error: 'VendorName is required' });
+    }
+    try {
+        const pool = getPool();
+        const result = await pool.request()
+            .input('VendorName', sql.NVarChar, VendorName.trim())
+            .input('ContactInfo', sql.NVarChar, ContactInfo || '')
+            .query(`
+                INSERT INTO dbo.Stock_Vendors (VendorName, ContactInfo)
+                VALUES (@VendorName, @ContactInfo);
+                SELECT SCOPE_IDENTITY() AS VendorID;
+            `);
+        res.json({ success: true, VendorID: result.recordset[0].VendorID });
+    } catch (err) {
+        console.error('Create Vendor Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- PRODUCTS ---
 app.get('/api/products', async (req, res) => {
     try {
@@ -874,6 +913,29 @@ const startServer = async () => {
                  `);
             }
             console.log('✅ Device Types verified/seeded');
+
+            // Ensure Stock_Vendors table exists and seed vendors
+            await pool.request().query(`
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Stock_Vendors')
+                BEGIN
+                    CREATE TABLE dbo.Stock_Vendors (
+                        VendorID INT IDENTITY(1,1) PRIMARY KEY,
+                        VendorName NVARCHAR(200) NOT NULL UNIQUE,
+                        ContactInfo NVARCHAR(500),
+                        IsActive BIT DEFAULT 1,
+                        CreatedAt DATETIME DEFAULT GETDATE()
+                    );
+                END
+            `);
+
+            const vendorsToSeed = ['SAMAPHAN TECHNOLOGIES', 'NITHIKASEM TELECOM'];
+            for (const v of vendorsToSeed) {
+                await pool.request().query(`
+                     IF NOT EXISTS (SELECT 1 FROM dbo.Stock_Vendors WHERE VendorName = '${v}')
+                     INSERT INTO dbo.Stock_Vendors (VendorName) VALUES ('${v}')
+                 `);
+            }
+            console.log('✅ Vendors verified/seeded');
 
         } catch (err) {
             console.warn('⚠️ Schema Check Warning:', err.message);

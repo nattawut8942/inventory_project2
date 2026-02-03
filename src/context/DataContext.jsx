@@ -14,24 +14,27 @@ export const DataProvider = ({ children }) => {
     const [invoices, setInvoices] = useState([]);
     const [transactions, setTransactions] = useState([]);
     const [deviceTypes, setDeviceTypes] = useState([]);
+    const [vendors, setVendors] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const fetchData = async () => {
         if (!user) return;
         setLoading(true);
         try {
-            const [prodRes, poRes, invRes, transRes, typeRes] = await Promise.all([
+            const [prodRes, poRes, invRes, transRes, typeRes, vendorRes] = await Promise.all([
                 fetch(`${API_BASE}/products`),
                 fetch(`${API_BASE}/pos`),
                 fetch(`${API_BASE}/invoices`),
                 fetch(`${API_BASE}/transactions`),
-                fetch(`${API_BASE}/types`)
+                fetch(`${API_BASE}/types`),
+                fetch(`${API_BASE}/vendors`)
             ]);
             setProducts(await prodRes.json());
             setPurchaseOrders(await poRes.json());
             setInvoices(await invRes.json());
             setTransactions(await transRes.json());
             setDeviceTypes(await typeRes.json());
+            setVendors(await vendorRes.json());
         } catch (err) {
             console.error("Failed to fetch data", err);
         } finally {
@@ -52,6 +55,7 @@ export const DataProvider = ({ children }) => {
             invoices,
             transactions,
             deviceTypes,
+            vendors,
             loading,
             refreshData: fetchData
         }}>

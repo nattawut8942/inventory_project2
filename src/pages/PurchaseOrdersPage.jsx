@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import ProductCombobox from '../components/ProductCombobox';
+import VendorCombobox from '../components/VendorCombobox';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -21,7 +22,7 @@ const formatDateTime = (dateStr) => {
 };
 
 const PurchaseOrdersPage = () => {
-    const { purchaseOrders, products, refreshData } = useData();
+    const { purchaseOrders, products, vendors, refreshData } = useData();
     const { user } = useAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [poItems, setPoItems] = useState([{ ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
@@ -30,6 +31,7 @@ const PurchaseOrdersPage = () => {
     const [filterStatus, setFilterStatus] = useState('all');
     const [selectedPO, setSelectedPO] = useState(null); // For detail modal
     const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
+    const [selectedVendor, setSelectedVendor] = useState({ VendorID: null, VendorName: '' });
 
 
 
@@ -61,7 +63,7 @@ const PurchaseOrdersPage = () => {
 
         const payload = {
             PO_ID: fd.get('PO_ID'),
-            VendorName: fd.get('VendorName'),
+            VendorName: selectedVendor.VendorName,
             DueDate: fd.get('DueDate'),
             RequestedBy: user.username,
             Section: fd.get('Section'),
@@ -78,6 +80,7 @@ const PurchaseOrdersPage = () => {
             if (res.ok) {
                 setIsModalOpen(false);
                 setPoItems([{ ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
+                setSelectedVendor({ VendorID: null, VendorName: '' });
                 refreshData();
                 setResultModal({
                     isOpen: true,
@@ -387,7 +390,11 @@ const PurchaseOrdersPage = () => {
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Vendor Name</label>
-                                        <input name="VendorName" required className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500" />
+                                        <VendorCombobox
+                                            vendors={vendors}
+                                            value={selectedVendor}
+                                            onChange={setSelectedVendor}
+                                        />
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Section</label>
@@ -421,10 +428,14 @@ const PurchaseOrdersPage = () => {
                                                     <ProductCombobox
                                                         products={products}
                                                         value={{ ProductID: item.ProductID, ItemName: item.ItemName }}
-                                                        onChange={({ ProductID, ItemName }) => {
+                                                        onChange={({ ProductID, ItemName, LastPrice }) => {
                                                             const updated = [...poItems];
                                                             updated[index].ProductID = ProductID;
                                                             updated[index].ItemName = ItemName;
+                                                            // Auto-fill price from master (only if coming from master)
+                                                            if (ProductID && LastPrice !== undefined) {
+                                                                updated[index].UnitCost = LastPrice;
+                                                            }
                                                             setPoItems(updated);
                                                         }}
                                                     />
