@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import AlertModal from '../components/AlertModal';
+import Portal from '../components/Portal';
 
 const API_BASE = 'http://localhost:3001/api';
 const API_URL = 'http://localhost:3001';
@@ -419,153 +420,159 @@ const InventoryPage = () => {
 
             {/* HISTORY MODAL */}
             {historyItem && (
-                <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
-                    <div className="flex min-h-screen items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="w-full max-w-2xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl"
-                        >
-                            <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-500 flex justify-between items-center">
-                                <div>
-                                    <h3 className="font-bold text-lg text-white">Stock History</h3>
-                                    <p className="text-xs text-indigo-100">{historyItem.ProductName}</p>
+                <Portal>
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
+                        <div className="flex min-h-screen items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="w-full max-w-2xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl"
+                            >
+                                <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-500 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-white">Stock History</h3>
+                                        <p className="text-xs text-indigo-100">{historyItem.ProductName}</p>
+                                    </div>
+                                    <button onClick={() => setHistoryItem(null)} className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"><X size={20} /></button>
                                 </div>
-                                <button onClick={() => setHistoryItem(null)} className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"><X size={20} /></button>
-                            </div>
-                            <div className="max-h-[60vh] overflow-y-auto scrollbar-thin">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-white text-slate-500 text-[10px] uppercase sticky top-0 border-b border-slate-100 shadow-sm z-10">
-                                        <tr>
-                                            <th className="p-4 bg-slate-50/90 backdrop-blur">Date</th>
-                                            <th className="p-4 text-center bg-slate-50/90 backdrop-blur">Qty</th>
-                                            <th className="p-4 bg-slate-50/90 backdrop-blur">Source Ref</th>
-                                            <th className="p-4 bg-slate-50/90 backdrop-blur">User</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {historyData.map((h, i) => (
-                                            <motion.tr
-                                                key={i}
-                                                initial={{ opacity: 0, x: -10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: i * 0.05 }}
-                                                className="hover:bg-slate-50 transition-colors"
-                                            >
-                                                <td className="p-4 text-slate-500">{new Date(h.TransDate).toLocaleDateString()} <span className="text-xs text-slate-400">{new Date(h.TransDate).toLocaleTimeString()}</span></td>
-                                                <td className={`p-4 text-center font-bold ${(h.TransType || '').toUpperCase().trim() === 'IN' || (h.RefInfo || '').toLowerCase().includes('invoice') ? 'text-emerald-600' : 'text-red-500'}`}>
-                                                    {(h.TransType || '').toUpperCase().trim() === 'IN' || (h.RefInfo || '').toLowerCase().includes('invoice') ? '+' : '-'}{Math.abs(h.Qty)}
-                                                </td>
-                                                <td className="p-4 text-indigo-600 font-medium">{h.RefInfo}</td>
-                                                <td className="p-4 text-xs text-slate-400">{h.UserID}</td>
-                                            </motion.tr>
-                                        ))}
-                                        {historyData.length === 0 && (
-                                            <tr><td colSpan="4" className="p-8 text-center text-slate-400">No history available</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0">
-                                <button onClick={() => setHistoryItem(null)} className="w-full bg-white border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm">
-                                    Close History
-                                </button>
-                            </div>
-                        </motion.div>
+                                <div className="max-h-[60vh] overflow-y-auto scrollbar-thin">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-white text-slate-500 text-[10px] uppercase sticky top-0 border-b border-slate-100 shadow-sm z-10">
+                                            <tr>
+                                                <th className="p-4 bg-slate-50/90 backdrop-blur">Date</th>
+                                                <th className="p-4 text-center bg-slate-50/90 backdrop-blur">Qty</th>
+                                                <th className="p-4 bg-slate-50/90 backdrop-blur">Source Ref</th>
+                                                <th className="p-4 bg-slate-50/90 backdrop-blur">User</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {historyData.map((h, i) => (
+                                                <motion.tr
+                                                    key={i}
+                                                    initial={{ opacity: 0, x: -10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: i * 0.05 }}
+                                                    className="hover:bg-slate-50 transition-colors"
+                                                >
+                                                    <td className="p-4 text-slate-500">{new Date(h.TransDate).toLocaleDateString()} <span className="text-xs text-slate-400">{new Date(h.TransDate).toLocaleTimeString()}</span></td>
+                                                    <td className={`p-4 text-center font-bold ${(h.TransType || '').toUpperCase().trim() === 'IN' || (h.RefInfo || '').toLowerCase().includes('invoice') ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                        {(h.TransType || '').toUpperCase().trim() === 'IN' || (h.RefInfo || '').toLowerCase().includes('invoice') ? '+' : '-'}{Math.abs(h.Qty)}
+                                                    </td>
+                                                    <td className="p-4 text-indigo-600 font-medium">{h.RefInfo}</td>
+                                                    <td className="p-4 text-xs text-slate-400">{h.UserID}</td>
+                                                </motion.tr>
+                                            ))}
+                                            {historyData.length === 0 && (
+                                                <tr><td colSpan="4" className="p-8 text-center text-slate-400">No history available</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0">
+                                    <button onClick={() => setHistoryItem(null)} className="w-full bg-white border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm">
+                                        Close History
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
                     </div>
-                </div>
+                </Portal>
             )}
 
             {/* EDIT MODAL */}
             {editItem && (
-                <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
-                    <div className="flex min-h-screen items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="w-full max-w-lg transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl my-8"
-                        >
-                            <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-500 flex justify-between items-center">
-                                <h3 className="font-bold text-lg text-white">Edit Product</h3>
-                                <button onClick={() => setEditItem(null)} className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"><X size={20} /></button>
-                            </div>
-                            <form onSubmit={handleUpdate} className="p-6 space-y-5">
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Product Name</label>
-                                    <input name="ProductName" defaultValue={editItem.ProductName} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium" required />
+                <Portal>
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
+                        <div className="flex min-h-screen items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="w-full max-w-lg transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl my-8"
+                            >
+                                <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-500 flex justify-between items-center">
+                                    <h3 className="font-bold text-lg text-white">Edit Product</h3>
+                                    <button onClick={() => setEditItem(null)} className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"><X size={20} /></button>
                                 </div>
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Product Image</label>
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${getColorGradient(editItem.DeviceType)} flex items-center justify-center overflow-hidden shadow-md`}>
-                                            {editItem.ImageURL ? (
-                                                <img src={`${API_URL}${editItem.ImageURL}`} alt="" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <Package className="text-white" />
-                                            )}
+                                <form onSubmit={handleUpdate} className="p-6 space-y-5">
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Product Name</label>
+                                        <input name="ProductName" defaultValue={editItem.ProductName} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 font-medium" required />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Product Image</label>
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${getColorGradient(editItem.DeviceType)} flex items-center justify-center overflow-hidden shadow-md`}>
+                                                {editItem.ImageURL ? (
+                                                    <img src={`${API_URL}${editItem.ImageURL}`} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Package className="text-white" />
+                                                )}
+                                            </div>
+                                            <input type="file" name="imageFile" accept="image/*" className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
                                         </div>
-                                        <input type="file" name="imageFile" accept="image/*" className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
                                     </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Type</label>
-                                        <select name="DeviceType" defaultValue={editItem.DeviceType} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500">
-                                            {deviceTypes.map(t => <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>)}
-                                        </select>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Type</label>
+                                            <select name="DeviceType" defaultValue={editItem.DeviceType} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500">
+                                                {deviceTypes.map(t => <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Price (฿)</label>
+                                            <input name="LastPrice" type="number" step="0.01" defaultValue={editItem.LastPrice} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Current Stock</label>
+                                            <input name="CurrentStock" type="number" defaultValue={editItem.CurrentStock} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Min Stock</label>
+                                            <input name="MinStock" type="number" defaultValue={editItem.MinStock} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Max Stock (สำหรับคำนวณรายการสั่งซื้อ)</label>
+                                            <input name="MaxStock" type="number" defaultValue={editItem.MaxStock || 0} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Price (฿)</label>
-                                        <input name="LastPrice" type="number" step="0.01" defaultValue={editItem.LastPrice} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
+                                    <div className="flex gap-3 pt-2">
+                                        <button type="button" onClick={() => setEditItem(null)} className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" className="flex-[2] bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-3.5 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-200">
+                                            Save Changes
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Current Stock</label>
-                                        <input name="CurrentStock" type="number" defaultValue={editItem.CurrentStock} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Min Stock</label>
-                                        <input name="MinStock" type="number" defaultValue={editItem.MinStock} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Max Stock (สำหรับคำนวณรายการสั่งซื้อ)</label>
-                                        <input name="MaxStock" type="number" defaultValue={editItem.MaxStock || 0} className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl outline-none text-slate-800 focus:border-indigo-500 font-mono" />
-                                    </div>
-                                </div>
-                                <div className="flex gap-3 pt-2">
-                                    <button type="button" onClick={() => setEditItem(null)} className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" className="flex-[2] bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-3.5 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-200">
-                                        Save Changes
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.div>
+                                </form>
+                            </motion.div>
+                        </div>
                     </div>
-                </div>
+                </Portal>
             )}
 
             {/* DELETE CONFIRM */}
             {showDeleteConfirm && (
-                <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
-                    <div className="flex min-h-screen items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="w-full max-w-sm transform overflow-hidden rounded-2xl bg-white p-6 text-center shadow-2xl align-middle"
-                        >
-                            <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white shadow-lg">
-                                <Trash2 size={32} />
-                            </div>
-                            <h3 className="font-bold text-xl mb-2 text-slate-800">Delete Product?</h3>
-                            <p className="text-slate-500 text-sm mb-6">This action cannot be undone. Are you sure?</p>
-                            <div className="flex gap-3">
-                                <button onClick={() => setShowDeleteConfirm(null)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors">Cancel</button>
-                                <button onClick={() => handleDelete(showDeleteConfirm)} className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-xl font-bold hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-200 transition-colors">Delete</button>
-                            </div>
-                        </motion.div>
+                <Portal>
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
+                        <div className="flex min-h-screen items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="w-full max-w-sm transform overflow-hidden rounded-2xl bg-white p-6 text-center shadow-2xl align-middle"
+                            >
+                                <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white shadow-lg">
+                                    <Trash2 size={32} />
+                                </div>
+                                <h3 className="font-bold text-xl mb-2 text-slate-800">Delete Product?</h3>
+                                <p className="text-slate-500 text-sm mb-6">This action cannot be undone. Are you sure?</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowDeleteConfirm(null)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors">Cancel</button>
+                                    <button onClick={() => handleDelete(showDeleteConfirm)} className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-xl font-bold hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-200 transition-colors">Delete</button>
+                                </div>
+                            </motion.div>
+                        </div>
                     </div>
-                </div>
+                </Portal>
             )}
 
             {/* ALERT MODAL */}
