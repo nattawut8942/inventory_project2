@@ -798,10 +798,9 @@ app.get('/api/forecast', async (req, res) => {
     }
 });
 
-// --- EXPORT REPORT ---
+// --- EXPORT REPORT (Enhanced with Thai columns) ---
 app.get('/api/report/export', async (req, res) => {
-    const { types, startDate, endDate, format } = req.query;
-    // types = comma-separated: products,transactions,invoices,pos
+    const { types, startDate, endDate } = req.query;
 
     try {
         const pool = getPool();
@@ -810,60 +809,193 @@ app.get('/api/report/export', async (req, res) => {
 
         for (const dataType of dataTypes) {
             let data = [];
-            const request = pool.request();
-
-            if (startDate) request.input('startDate', sql.DateTime, new Date(startDate));
-            if (endDate) request.input('endDate', sql.DateTime, new Date(endDate));
+            let sheetName = dataType;
 
             switch (dataType) {
-                case 'products':
-                    const prodResult = await pool.request().query('SELECT * FROM dbo.Stock_Products WHERE IsActive = 1');
-                    data = prodResult.recordset;
+                case 'products': {
+                    sheetName = '📦 สินค้าทั้งหมด';
+                    const prodResult = await pool.request().query(`
+                        SELECT 
+                            p.ProductID, p.ProductName, p.DeviceType, 
+                            p.CurrentStock, p.MinStock, p.MaxStock, 
+                            p.LastPrice, p.IsActive
+                        FROM dbo.Stock_Products p
+                        WHERE p.IsActive = 1
+                        ORDER BY p.DeviceType, p.ProductName
+                    `);
+                    data = prodResult.recordset.map(row => ({
+                        'รหัสสินค้า': row.ProductID,
+                        'ชื่อสินค้า': row.ProductName,
+                        'ประเภท': row.DeviceType,
+                        'คงเหลือ': row.CurrentStock,
+                        'ต่ำสุด (Min)': row.MinStock,
+                        'สูงสุด (Max)': row.MaxStock || '-',
+                        'ราคา/หน่วย (฿)': row.LastPrice || 0,
+                        'มูลค่ารวม (฿)': (row.CurrentStock || 0) * (row.LastPrice || 0),
+                        'สถานะ': row.CurrentStock <= row.MinStock ? '⚠️ ต่ำ' : '✅ ปกติ'
+                    }));
                     break;
-                case 'lowstock':
+                }
+                case 'lowstock': {
+                    sheetName = '⚠️ สินค้าต่ำกว่า Min';
                     const lowStockResult = await pool.request().query(`
-                        SELECT ProductID, ProductName, DeviceType, MinStock, MaxStock, CurrentStock, LastPrice,
-                            ISNULL(MaxStock, MinStock) - CurrentStock as OrderQty,
-                            (ISNULL(MaxStock, MinStock) - CurrentStock) * ISNULL(LastPrice, 0) as EstimatedCost
+                        SELECT 
+                            ProductID, ProductName, DeviceType, 
+                            MinStock, MaxStock, CurrentStock, LastPrice
                         FROM dbo.Stock_Products
                         WHERE IsActive = 1 AND CurrentStock <= MinStock
+                        ORDER BY (ISNULL(MaxStock, MinStock) - CurrentStock) * ISNULL(LastPrice, 0) DESC
                     `);
-                    data = lowStockResult.recordset;
+                    data = lowStockResult.recordset.map(row => {
+                        const orderQty = (row.MaxStock || row.MinStock) - row.CurrentStock;
+                        const estimatedCost = orderQty * (row.LastPrice || 0);
+                        return {
+                            'รหัสสินค้า': row.ProductID,
+                            'ชื่อสินค้า': row.ProductName,
+                            'ประเภท': row.DeviceType,
+                            'คงเหลือ': row.CurrentStock,
+                            'ต่ำสุด (Min)': row.MinStock,
+                            'สูงสุด (Max)': row.MaxStock || '-',
+                            'ต้องสั่งเพิ่ม': orderQty > 0 ? orderQty : 0,
+                            'ราคา/หน่วย (฿)': row.LastPrice || 0,
+                            'มูลค่าที่ต้องสั่ง (฿)': estimatedCost > 0 ? estimatedCost : 0
+                        };
+                    });
                     break;
-                case 'transactions':
-                    let transQuery = `SELECT t.*, p.ProductName FROM dbo.Stock_Transactions t 
-                                      LEFT JOIN dbo.Stock_Products p ON t.ProductID = p.ProductID WHERE 1=1`;
+                }
+                case 'transactions': {
+                    sheetName = '📊 ประวัติรับ-เบิก';
+                    const request = pool.request();
+                    if (startDate) request.input('startDate', sql.DateTime, new Date(startDate));
+                    if (endDate) request.input('endDate', sql.DateTime, new Date(endDate));
+
+                    let transQuery = `
+                        SELECT t.TransID, t.TransDate, t.TransType, t.Qty, t.Remark, t.UserID,
+                               t.POID, t.InvoiceNo, p.ProductName, p.DeviceType, p.LastPrice
+                        FROM dbo.Stock_Transactions t 
+                        LEFT JOIN dbo.Stock_Products p ON t.ProductID = p.ProductID 
+                        WHERE 1=1
+                    `;
                     if (startDate) transQuery += ' AND t.TransDate >= @startDate';
                     if (endDate) transQuery += ' AND t.TransDate <= @endDate';
+                    transQuery += ' ORDER BY t.TransDate DESC';
+
                     const transResult = await request.query(transQuery);
-                    data = transResult.recordset;
+                    data = transResult.recordset.map(row => ({
+                        'เลขที่': row.TransID,
+                        'วันที่': row.TransDate ? new Date(row.TransDate).toLocaleDateString('th-TH') : '-',
+                        'เวลา': row.TransDate ? new Date(row.TransDate).toLocaleTimeString('th-TH') : '-',
+                        'ชื่อสินค้า': row.ProductName || '-',
+                        'ประเภท': row.DeviceType || '-',
+                        'ประเภทรายการ': row.TransType === 'IN' ? 'รับเข้า' : row.TransType === 'OUT' ? 'เบิกออก' : row.TransType,
+                        'จำนวน': row.Qty,
+                        'ราคา/หน่วย (฿)': row.LastPrice || 0,
+                        'มูลค่า (฿)': Math.abs(row.Qty) * (row.LastPrice || 0),
+                        'ผู้ทำรายการ': row.UserID || '-',
+                        'เลข PO': row.POID || '-',
+                        'เลข Invoice': row.InvoiceNo || '-',
+                        'หมายเหตุ': row.Remark || '-'
+                    }));
                     break;
-                case 'invoices':
-                    let invQuery = 'SELECT * FROM dbo.Stock_Invoices WHERE 1=1';
-                    if (startDate) invQuery += ' AND ReceiveDate >= @startDate';
-                    if (endDate) invQuery += ' AND ReceiveDate <= @endDate';
+                }
+                case 'invoices': {
+                    sheetName = '🧾 ข้อมูล Invoice';
+                    const request = pool.request();
+                    if (startDate) request.input('startDate', sql.DateTime, new Date(startDate));
+                    if (endDate) request.input('endDate', sql.DateTime, new Date(endDate));
+
+                    let invQuery = `
+                        SELECT i.*, po.RequestBy, v.VendorName
+                        FROM dbo.Stock_Invoices i
+                        LEFT JOIN dbo.Stock_PurchaseOrders po ON i.POID = po.POID
+                        LEFT JOIN dbo.Stock_Vendors v ON po.VendorID = v.VendorID
+                        WHERE 1=1
+                    `;
+                    if (startDate) invQuery += ' AND i.ReceiveDate >= @startDate';
+                    if (endDate) invQuery += ' AND i.ReceiveDate <= @endDate';
+                    invQuery += ' ORDER BY i.ReceiveDate DESC';
+
                     const invResult = await request.query(invQuery);
-                    data = invResult.recordset;
+                    data = invResult.recordset.map(row => ({
+                        'เลข Invoice': row.InvoiceNo || '-',
+                        'วันที่รับ': row.ReceiveDate ? new Date(row.ReceiveDate).toLocaleDateString('th-TH') : '-',
+                        'เลข PO': row.POID || '-',
+                        'Vendor': row.VendorName || '-',
+                        'ผู้สั่งซื้อ': row.RequestBy || '-',
+                        'หมายเหตุ': row.Remark || '-'
+                    }));
                     break;
-                case 'pos':
-                    let poQuery = 'SELECT * FROM dbo.Stock_PurchaseOrders WHERE 1=1';
-                    if (startDate) poQuery += ' AND RequestDate >= @startDate';
-                    if (endDate) poQuery += ' AND RequestDate <= @endDate';
+                }
+                case 'pos': {
+                    sheetName = '📋 ใบสั่งซื้อ (PO)';
+                    const request = pool.request();
+                    if (startDate) request.input('startDate', sql.DateTime, new Date(startDate));
+                    if (endDate) request.input('endDate', sql.DateTime, new Date(endDate));
+
+                    let poQuery = `
+                        SELECT po.*, v.VendorName,
+                            (SELECT STRING_AGG(p.ProductName + ' x' + CAST(d.Qty AS VARCHAR), ', ')
+                             FROM dbo.Stock_PODetails d
+                             JOIN dbo.Stock_Products p ON d.ProductID = p.ProductID
+                             WHERE d.POID = po.POID) as Items,
+                            (SELECT SUM(d.Qty * d.UnitPrice) 
+                             FROM dbo.Stock_PODetails d 
+                             WHERE d.POID = po.POID) as TotalAmount
+                        FROM dbo.Stock_PurchaseOrders po
+                        LEFT JOIN dbo.Stock_Vendors v ON po.VendorID = v.VendorID
+                        WHERE 1=1
+                    `;
+                    if (startDate) poQuery += ' AND po.RequestDate >= @startDate';
+                    if (endDate) poQuery += ' AND po.RequestDate <= @endDate';
+                    poQuery += ' ORDER BY po.RequestDate DESC';
+
                     const poResult = await request.query(poQuery);
-                    data = poResult.recordset;
+                    data = poResult.recordset.map(row => ({
+                        'เลข PO': row.POID,
+                        'วันที่สร้าง': row.RequestDate ? new Date(row.RequestDate).toLocaleDateString('th-TH') : '-',
+                        'Vendor': row.VendorName || '-',
+                        'สถานะ': row.Status === 'Pending' ? 'รอดำเนินการ' :
+                            row.Status === 'Partial' ? 'รับบางส่วน' :
+                                row.Status === 'Completed' ? 'เสร็จสิ้น' : row.Status,
+                        'รายการสินค้า': row.Items || '-',
+                        'มูลค่ารวม (฿)': row.TotalAmount || 0,
+                        'ผู้สร้าง': row.RequestBy || '-',
+                        'หมายเหตุ': row.Remark || '-'
+                    }));
                     break;
+                }
             }
 
             if (data.length > 0) {
+                // Create worksheet with proper column widths
                 const ws = XLSX.utils.json_to_sheet(data);
-                XLSX.utils.book_append_sheet(workbook, ws, dataType);
+
+                // Auto-fit column widths
+                const colWidths = Object.keys(data[0]).map(key => ({
+                    wch: Math.max(key.length, ...data.map(row => String(row[key] || '').length)) + 2
+                }));
+                ws['!cols'] = colWidths;
+
+                XLSX.utils.book_append_sheet(workbook, ws, sheetName.substring(0, 31)); // Excel sheet name limit
             }
+        }
+
+        // Add summary sheet if multiple types exported
+        if (dataTypes.length > 1) {
+            const summaryData = [{
+                'รายงาน': 'Export Report',
+                'วันที่สร้าง': new Date().toLocaleString('th-TH'),
+                'ช่วงวันที่': startDate && endDate ? `${startDate} - ${endDate}` : 'ทั้งหมด',
+                'ประเภทที่ Export': dataTypes.join(', ')
+            }];
+            const summaryWs = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(workbook, summaryWs, '📝 สรุป');
         }
 
         const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=report_${Date.now()}.xlsx`);
+        res.setHeader('Content-Disposition', `attachment; filename=stock_report_${new Date().toISOString().split('T')[0]}.xlsx`);
         res.send(buffer);
     } catch (err) {
         console.error('Export Error:', err);
