@@ -258,265 +258,271 @@ const PurchaseOrdersPage = () => {
             {/* DETAIL MODAL */}
             <AnimatePresence>
                 {selectedPO && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
+                    <Portal>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
                         >
-                            {/* Header */}
-                            <div className="p-6 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h3 className="font-black text-2xl">{selectedPO.PO_ID}</h3>
-                                        <p className="text-indigo-200">{selectedPO.VendorName || 'ไม่ระบุผู้ขาย'}</p>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+                            >
+                                {/* Header */}
+                                <div className="p-6 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-black text-2xl">{selectedPO.PO_ID}</h3>
+                                            <p className="text-indigo-200">{selectedPO.VendorName || 'ไม่ระบุผู้ขาย'}</p>
+                                        </div>
+                                        <button onClick={() => setSelectedPO(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+                                            <X size={20} />
+                                        </button>
                                     </div>
-                                    <button onClick={() => setSelectedPO(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
-                                        <X size={20} />
+                                </div>
+
+                                {/* Body */}
+                                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                                    {/* Status & Date */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-slate-50 p-4 rounded-xl">
+                                            <p className="text-xs text-slate-500 font-bold mb-1">สถานะ</p>
+                                            <span className={`text-sm font-bold px-3 py-1 rounded-full border ${getStatusColor(selectedPO.Status)}`}>
+                                                {selectedPO.Status === 'Open' ? 'Pending' : selectedPO.Status}
+                                            </span>
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-xl">
+                                            <p className="text-xs text-slate-500 font-bold mb-1">วันที่สร้าง</p>
+                                            <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.RequestDate)}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Info Grid */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-slate-50 p-4 rounded-xl">
+                                            <p className="text-xs text-slate-500 font-bold mb-1">ผู้ขอ</p>
+                                            <p className="text-sm font-bold text-slate-800">{selectedPO.RequestedBy || '-'}</p>
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-xl">
+                                            <p className="text-xs text-slate-500 font-bold mb-1">แผนก</p>
+                                            <p className="text-sm font-bold text-slate-800">{selectedPO.Section || '-'}</p>
+                                        </div>
+                                        {selectedPO.DueDate && (
+                                            <div className="bg-slate-50 p-4 rounded-xl">
+                                                <p className="text-xs text-slate-500 font-bold mb-1">กำหนดส่ง</p>
+                                                <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.DueDate)}</p>
+                                            </div>
+                                        )}
+                                        {selectedPO.PR_No && (
+                                            <div className="bg-slate-50 p-4 rounded-xl">
+                                                <p className="text-xs text-slate-500 font-bold mb-1">PR No</p>
+                                                <p className="text-sm font-bold text-slate-800">{selectedPO.PR_No}</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Items List */}
+                                    <div>
+                                        <h4 className="font-bold text-slate-800 mb-3">รายการสินค้า ({selectedPO.Items?.length || 0})</h4>
+                                        <div className="bg-slate-50 rounded-xl overflow-hidden">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-slate-100">
+                                                    <tr>
+                                                        <th className="text-left p-3 font-bold text-slate-600">รายการ</th>
+                                                        <th className="text-center p-3 font-bold text-slate-600 w-24">จำนวน</th>
+                                                        <th className="text-right p-3 font-bold text-slate-600 w-28">ราคา/หน่วย</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {selectedPO.Items?.map((item, idx) => (
+                                                        <tr key={idx} className="border-t border-slate-200">
+                                                            <td className="p-3 text-slate-700">{item.ItemName || item.ProductName || `Item #${idx + 1}`}</td>
+                                                            <td className="p-3 text-center font-mono">
+                                                                <span className="text-emerald-600">{item.QtyReceived || 0}</span>
+                                                                <span className="text-slate-400"> / {item.QtyOrdered}</span>
+                                                            </td>
+                                                            <td className="p-3 text-right font-mono text-slate-600">฿{(item.UnitCost || 0).toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* Remark */}
+                                    {selectedPO.Remark && (
+                                        <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                                            <p className="text-xs text-amber-600 font-bold mb-1">หมายเหตุ</p>
+                                            <p className="text-sm text-amber-800">{selectedPO.Remark}</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Footer */}
+                                <div className="p-4 bg-slate-50 border-t border-slate-200">
+                                    <button
+                                        onClick={() => setSelectedPO(null)}
+                                        className="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-700 transition-all"
+                                    >
+                                        ปิด
                                     </button>
                                 </div>
-                            </div>
-
-                            {/* Body */}
-                            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                                {/* Status & Date */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                        <p className="text-xs text-slate-500 font-bold mb-1">สถานะ</p>
-                                        <span className={`text-sm font-bold px-3 py-1 rounded-full border ${getStatusColor(selectedPO.Status)}`}>
-                                            {selectedPO.Status === 'Open' ? 'Pending' : selectedPO.Status}
-                                        </span>
-                                    </div>
-                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                        <p className="text-xs text-slate-500 font-bold mb-1">วันที่สร้าง</p>
-                                        <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.RequestDate)}</p>
-                                    </div>
-                                </div>
-
-                                {/* Info Grid */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                        <p className="text-xs text-slate-500 font-bold mb-1">ผู้ขอ</p>
-                                        <p className="text-sm font-bold text-slate-800">{selectedPO.RequestedBy || '-'}</p>
-                                    </div>
-                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                        <p className="text-xs text-slate-500 font-bold mb-1">แผนก</p>
-                                        <p className="text-sm font-bold text-slate-800">{selectedPO.Section || '-'}</p>
-                                    </div>
-                                    {selectedPO.DueDate && (
-                                        <div className="bg-slate-50 p-4 rounded-xl">
-                                            <p className="text-xs text-slate-500 font-bold mb-1">กำหนดส่ง</p>
-                                            <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.DueDate)}</p>
-                                        </div>
-                                    )}
-                                    {selectedPO.PR_No && (
-                                        <div className="bg-slate-50 p-4 rounded-xl">
-                                            <p className="text-xs text-slate-500 font-bold mb-1">PR No</p>
-                                            <p className="text-sm font-bold text-slate-800">{selectedPO.PR_No}</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Items List */}
-                                <div>
-                                    <h4 className="font-bold text-slate-800 mb-3">รายการสินค้า ({selectedPO.Items?.length || 0})</h4>
-                                    <div className="bg-slate-50 rounded-xl overflow-hidden">
-                                        <table className="w-full text-sm">
-                                            <thead className="bg-slate-100">
-                                                <tr>
-                                                    <th className="text-left p-3 font-bold text-slate-600">รายการ</th>
-                                                    <th className="text-center p-3 font-bold text-slate-600 w-24">จำนวน</th>
-                                                    <th className="text-right p-3 font-bold text-slate-600 w-28">ราคา/หน่วย</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {selectedPO.Items?.map((item, idx) => (
-                                                    <tr key={idx} className="border-t border-slate-200">
-                                                        <td className="p-3 text-slate-700">{item.ItemName || item.ProductName || `Item #${idx + 1}`}</td>
-                                                        <td className="p-3 text-center font-mono">
-                                                            <span className="text-emerald-600">{item.QtyReceived || 0}</span>
-                                                            <span className="text-slate-400"> / {item.QtyOrdered}</span>
-                                                        </td>
-                                                        <td className="p-3 text-right font-mono text-slate-600">฿{(item.UnitCost || 0).toLocaleString()}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                {/* Remark */}
-                                {selectedPO.Remark && (
-                                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
-                                        <p className="text-xs text-amber-600 font-bold mb-1">หมายเหตุ</p>
-                                        <p className="text-sm text-amber-800">{selectedPO.Remark}</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Footer */}
-                            <div className="p-4 bg-slate-50 border-t border-slate-200">
-                                <button
-                                    onClick={() => setSelectedPO(null)}
-                                    className="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-700 transition-all"
-                                >
-                                    ปิด
-                                </button>
-                            </div>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
+                    </Portal>
                 )}
             </AnimatePresence>
 
             {/* CREATE PO MODAL */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
-                    <div className="flex min-h-screen items-center justify-center p-4">
-                        <div className="w-full max-w-2xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl transition-all animate-in zoom-in-95 my-8">
-                            <div className="p-6 bg-slate-50 flex justify-between items-center rounded-t-3xl border-b border-slate-200">
-                                <h3 className="font-bold text-lg text-slate-800">Create Purchase Order</h3>
-                                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
-                            </div>
-                            <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">PO Number</label>
-                                        <input name="PO_ID" defaultValue={generatePONumber()} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500 font-mono" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Vendor Name</label>
-                                        <VendorCombobox
-                                            vendors={vendors}
-                                            value={selectedVendor}
-                                            onChange={setSelectedVendor}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Section</label>
-                                        <input name="Section" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Due Date</label>
-                                        <input name="DueDate" type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500" />
-                                    </div>
+                <Portal>
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
+                        <div className="flex min-h-screen items-center justify-center p-4">
+                            <div className="w-full max-w-2xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl transition-all animate-in zoom-in-95 my-8">
+                                <div className="p-6 bg-slate-50 flex justify-between items-center rounded-t-3xl border-b border-slate-200">
+                                    <h3 className="font-bold text-lg text-slate-800">Create Purchase Order</h3>
+                                    <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
                                 </div>
+                                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">PO Number</label>
+                                            <input name="PO_ID" defaultValue={generatePONumber()} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500 font-mono" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Vendor Name</label>
+                                            <VendorCombobox
+                                                vendors={vendors}
+                                                value={selectedVendor}
+                                                onChange={setSelectedVendor}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Section</label>
+                                            <input name="Section" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Due Date</label>
+                                            <input name="DueDate" type="date" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500" />
+                                        </div>
+                                    </div>
 
 
-                                <div>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Order Items</label>
-                                        <button type="button" onClick={addItem} className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-bold">
-                                            <Plus size={16} /> เพิ่มรายการ
+                                    <div>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Order Items</label>
+                                            <button type="button" onClick={addItem} className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-bold">
+                                                <Plus size={16} /> เพิ่มรายการ
+                                            </button>
+                                        </div>
+                                        {/* Header Row */}
+                                        <div className="flex gap-2 items-center px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                            <div className="flex-1">ชื่อสินค้า</div>
+                                            <div className="w-16 text-center">จำนวน</div>
+                                            <div className="w-24 text-right">ราคา/หน่วย</div>
+                                            <div className="w-6"></div>
+                                        </div>
+                                        <div className="space-y-2 relative z-[100]">
+                                            {poItems.map((item, index) => (
+                                                <div key={index} className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                                    <div className="flex-1">
+                                                        <ProductCombobox
+                                                            products={products}
+                                                            value={{ ProductID: item.ProductID, ItemName: item.ItemName }}
+                                                            onChange={({ ProductID, ItemName, LastPrice }) => {
+                                                                const updated = [...poItems];
+                                                                updated[index].ProductID = ProductID;
+                                                                updated[index].ItemName = ItemName;
+                                                                // Auto-fill price from master (only if coming from master)
+                                                                if (ProductID && LastPrice !== undefined) {
+                                                                    updated[index].UnitCost = LastPrice;
+                                                                }
+                                                                setPoItems(updated);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={item.QtyOrdered}
+                                                        onChange={(e) => updateItem(index, 'QtyOrdered', parseInt(e.target.value) || 1)}
+                                                        className="w-16 bg-white border border-slate-200 p-2 rounded-lg text-sm text-center outline-none focus:border-indigo-500"
+                                                    />
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        placeholder="ราคา"
+                                                        value={item.UnitCost}
+                                                        onChange={(e) => updateItem(index, 'UnitCost', parseFloat(e.target.value) || 0)}
+                                                        className="w-24 bg-white border border-slate-200 p-2 rounded-lg text-sm text-right outline-none focus:border-indigo-500"
+                                                    />
+                                                    {poItems.length > 1 && (
+                                                        <button type="button" onClick={() => removeItem(index)} className="text-red-400 hover:text-red-600 p-1">
+                                                            <X size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-right text-sm font-bold text-slate-600 mt-2">ยอดรวม: ฿{getTotalAmount().toLocaleString()}</p>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Remark</label>
+                                        <textarea name="Remark" rows="2" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500 resize-none"></textarea>
+                                    </div>
+
+                                    <div className="flex gap-3 pt-4">
+                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-all">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" className="flex-[2] bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+                                            Create PO
                                         </button>
                                     </div>
-                                    {/* Header Row */}
-                                    <div className="flex gap-2 items-center px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                        <div className="flex-1">ชื่อสินค้า</div>
-                                        <div className="w-16 text-center">จำนวน</div>
-                                        <div className="w-24 text-right">ราคา/หน่วย</div>
-                                        <div className="w-6"></div>
-                                    </div>
-                                    <div className="space-y-2 relative z-[100]">
-                                        {poItems.map((item, index) => (
-                                            <div key={index} className="flex gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
-                                                <div className="flex-1">
-                                                    <ProductCombobox
-                                                        products={products}
-                                                        value={{ ProductID: item.ProductID, ItemName: item.ItemName }}
-                                                        onChange={({ ProductID, ItemName, LastPrice }) => {
-                                                            const updated = [...poItems];
-                                                            updated[index].ProductID = ProductID;
-                                                            updated[index].ItemName = ItemName;
-                                                            // Auto-fill price from master (only if coming from master)
-                                                            if (ProductID && LastPrice !== undefined) {
-                                                                updated[index].UnitCost = LastPrice;
-                                                            }
-                                                            setPoItems(updated);
-                                                        }}
-                                                    />
-                                                </div>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    value={item.QtyOrdered}
-                                                    onChange={(e) => updateItem(index, 'QtyOrdered', parseInt(e.target.value) || 1)}
-                                                    className="w-16 bg-white border border-slate-200 p-2 rounded-lg text-sm text-center outline-none focus:border-indigo-500"
-                                                />
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    placeholder="ราคา"
-                                                    value={item.UnitCost}
-                                                    onChange={(e) => updateItem(index, 'UnitCost', parseFloat(e.target.value) || 0)}
-                                                    className="w-24 bg-white border border-slate-200 p-2 rounded-lg text-sm text-right outline-none focus:border-indigo-500"
-                                                />
-                                                {poItems.length > 1 && (
-                                                    <button type="button" onClick={() => removeItem(index)} className="text-red-400 hover:text-red-600 p-1">
-                                                        <X size={16} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <p className="text-right text-sm font-bold text-slate-600 mt-2">ยอดรวม: ฿{getTotalAmount().toLocaleString()}</p>
-                                </div>
-
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Remark</label>
-                                    <textarea name="Remark" rows="2" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500 resize-none"></textarea>
-                                </div>
-
-                                <div className="flex gap-3 pt-4">
-                                    <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-all">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" className="flex-[2] bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
-                                        Create PO
-                                    </button>
-                                </div>
-                            </form>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </Portal>
             )}
             {/* RESULT MODAL */}
             <AnimatePresence>
                 {resultModal.isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
+                    <Portal>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
                         >
-                            <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
-                                {resultModal.type === 'success' ? (
-                                    <Check size={32} className="text-emerald-600" />
-                                ) : (
-                                    <X size={32} className="text-red-600" />
-                                )}
-                            </div>
-                            <h3 className="font-black text-xl text-slate-800 mb-2">{resultModal.title}</h3>
-                            <p className="text-slate-500 mb-6">{resultModal.message}</p>
-                            <button
-                                onClick={() => setResultModal({ ...resultModal, isOpen: false })}
-                                className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all"
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
                             >
-                                ปิด
-                            </button>
+                                <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                                    {resultModal.type === 'success' ? (
+                                        <Check size={32} className="text-emerald-600" />
+                                    ) : (
+                                        <X size={32} className="text-red-600" />
+                                    )}
+                                </div>
+                                <h3 className="font-black text-xl text-slate-800 mb-2">{resultModal.title}</h3>
+                                <p className="text-slate-500 mb-6">{resultModal.message}</p>
+                                <button
+                                    onClick={() => setResultModal({ ...resultModal, isOpen: false })}
+                                    className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all"
+                                >
+                                    ปิด
+                                </button>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
+                    </Portal>
                 )}
             </AnimatePresence>
         </div>

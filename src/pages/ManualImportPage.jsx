@@ -254,35 +254,37 @@ const ManualImportPage = () => {
             {/* Result Modal - Centered */}
             <AnimatePresence>
                 {resultModal.isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
+                    <Portal>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-3xl p-8 text-center max-w-md w-full shadow-2xl"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
                         >
-                            <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
-                                {resultModal.type === 'success' ? (
-                                    <Check size={40} className="text-emerald-600" />
-                                ) : (
-                                    <X size={40} className="text-red-600" />
-                                )}
-                            </div>
-                            <h3 className="font-black text-2xl text-slate-800 mb-2">{resultModal.title}</h3>
-                            <p className="text-slate-500 mb-6">{resultModal.message}</p>
-                            <button
-                                onClick={handleCloseResult}
-                                className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all"
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="bg-white rounded-3xl p-8 text-center max-w-md w-full shadow-2xl"
                             >
-                                {resultModal.type === 'success' ? 'ไปหน้า Inventory' : 'ปิด'}
-                            </button>
+                                <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                                    {resultModal.type === 'success' ? (
+                                        <Check size={40} className="text-emerald-600" />
+                                    ) : (
+                                        <X size={40} className="text-red-600" />
+                                    )}
+                                </div>
+                                <h3 className="font-black text-2xl text-slate-800 mb-2">{resultModal.title}</h3>
+                                <p className="text-slate-500 mb-6">{resultModal.message}</p>
+                                <button
+                                    onClick={handleCloseResult}
+                                    className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all"
+                                >
+                                    {resultModal.type === 'success' ? 'ไปหน้า Inventory' : 'ปิด'}
+                                </button>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
+                    </Portal>
                 )}
             </AnimatePresence>
         </div>

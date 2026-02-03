@@ -420,214 +420,82 @@ const WithdrawPage = () => {
             {/* QTY MODAL - Now with Reason Section (Only for Withdraw Mode) */}
             <AnimatePresence>
                 {qtyModal.isOpen && qtyModal.product && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
+                    <Portal>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
                         >
-                            {/* Header */}
-                            <div className={`p-5 bg-gradient-to-r ${getColorGradient(qtyModal.product.DeviceType)} text-white flex-shrink-0`}>
-                                <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                                            <Package size={20} className="text-white" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-sm truncate max-w-[200px]">{qtyModal.product.ProductName}</h3>
-                                            <p className="text-white/80 text-xs">คงเหลือ: {qtyModal.product.CurrentStock}</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => setQtyModal({ isOpen: false, product: null, mode: 'cart' })} className="p-1.5 hover:bg-white/20 rounded-full">
-                                        <X size={18} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Scrollable Body */}
-                            <div className="p-6 overflow-y-auto">
-                                <label className="text-sm font-bold text-slate-700 mb-3 block text-center">เลือกจำนวน</label>
-                                <div className="flex items-center gap-3 justify-center mb-6">
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectQty(Math.max(1, selectQty - 1))}
-                                        className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-all"
-                                    >
-                                        <Minus size={20} />
-                                    </button>
-                                    <input
-                                        type="number"
-                                        value={selectQty}
-                                        onChange={(e) => setSelectQty(Math.max(1, Math.min(qtyModal.product.CurrentStock, parseInt(e.target.value) || 1)))}
-                                        className="w-24 text-center text-3xl font-black py-3 bg-slate-50 border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-500"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectQty(Math.min(qtyModal.product.CurrentStock, selectQty + 1))}
-                                        className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-all"
-                                    >
-                                        <Plus size={20} />
-                                    </button>
-                                </div>
-
-                                {selectQty > qtyModal.product.CurrentStock && (
-                                    <p className="text-red-500 text-xs text-center mt-3 flex items-center justify-center gap-1 mb-4">
-                                        <AlertTriangle size={12} /> ไม่สามารถเบิกเกินสต็อก
-                                    </p>
-                                )}
-
-                                {/* REASON SECTION (Only for Quick Withdraw) */}
-                                {qtyModal.mode === 'withdraw' && (
-                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">ระบุเหตุผลการเบิก</label>
-                                        <div className="space-y-2">
-                                            {reasonOptions.map((opt) => (
-                                                <label key={opt.id} className="flex items-center gap-3 p-2 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-300 transition-all">
-                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedReason === opt.id ? 'border-indigo-500' : 'border-slate-300'}`}>
-                                                        {selectedReason === opt.id && <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full" />}
-                                                    </div>
-                                                    <input
-                                                        type="radio"
-                                                        name="withdrawReason"
-                                                        value={opt.id}
-                                                        checked={selectedReason === opt.id}
-                                                        onChange={(e) => setSelectedReason(e.target.value)}
-                                                        className="hidden"
-                                                    />
-                                                    <span className={`text-sm font-medium ${selectedReason === opt.id ? 'text-indigo-700' : 'text-slate-600'}`}>{opt.label}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-
-                                        {/* Optional Detail Input */}
-                                        <div className="mt-3">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <FileEdit size={14} className="text-slate-400" />
-                                                <span className="text-xs font-bold text-slate-500">รายละเอียดเพิ่มเติม (Optional)</span>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                            >
+                                {/* Header */}
+                                <div className={`p-5 bg-gradient-to-r ${getColorGradient(qtyModal.product.DeviceType)} text-white flex-shrink-0`}>
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                                <Package size={20} className="text-white" />
                                             </div>
-                                            <textarea
-                                                value={reasonDetail}
-                                                onChange={(e) => setReasonDetail(e.target.value)}
-                                                placeholder="เช่น ระบุชื่อโปรเจกต์ หรือหมายเลขแจ้งซ่อม..."
-                                                className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none h-20 resize-none"
-                                            />
+                                            <div>
+                                                <h3 className="font-bold text-sm truncate max-w-[200px]">{qtyModal.product.ProductName}</h3>
+                                                <p className="text-white/80 text-xs">คงเหลือ: {qtyModal.product.CurrentStock}</p>
+                                            </div>
                                         </div>
+                                        <button onClick={() => setQtyModal({ isOpen: false, product: null, mode: 'cart' })} className="p-1.5 hover:bg-white/20 rounded-full">
+                                            <X size={18} />
+                                        </button>
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Footer */}
-                            <div className="p-4 bg-slate-50 border-t border-slate-200 flex gap-3 flex-shrink-0">
-                                <button
-                                    onClick={() => setQtyModal({ isOpen: false, product: null, mode: 'cart' })}
-                                    className="flex-1 bg-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-300 transition-all"
-                                >
-                                    ยกเลิก
-                                </button>
-                                <button
-                                    onClick={handleQtyConfirm}
-                                    disabled={selectQty > qtyModal.product.CurrentStock || selectQty <= 0}
-                                    className={`flex-1 font-bold py-3 rounded-xl transition-all shadow-lg disabled:opacity-50 ${qtyModal.mode === 'withdraw'
-                                        ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                                        }`}
-                                >
-                                    {qtyModal.mode === 'withdraw' ? 'ยืนยันเบิก' : 'เพิ่มลงตะกร้า'}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Cart Drawer */}
-            <AnimatePresence>
-                {isCartOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[70] bg-slate-900/70 backdrop-blur-sm"
-                        onClick={() => setIsCartOpen(false)}
-                    >
-                        <motion.div
-                            initial={{ x: '100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                            className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {/* Cart Header */}
-                            <div className="p-6 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                                <div>
-                                    <h3 className="font-black text-xl text-slate-800">ตะกร้าเบิก</h3>
-                                    <p className="text-slate-500 text-sm">{cart.length} รายการ</p>
                                 </div>
-                                <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-                                    <X size={20} className="text-slate-600" />
-                                </button>
-                            </div>
 
-                            {/* Cart Items */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                                {cart.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                                        <ShoppingCart size={48} className="mb-3 opacity-30" />
-                                        <p className="font-bold">ตะกร้าว่าง</p>
+                                {/* Scrollable Body */}
+                                <div className="p-6 overflow-y-auto">
+                                    <label className="text-sm font-bold text-slate-700 mb-3 block text-center">เลือกจำนวน</label>
+                                    <div className="flex items-center gap-3 justify-center mb-6">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectQty(Math.max(1, selectQty - 1))}
+                                            className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-all"
+                                        >
+                                            <Minus size={20} />
+                                        </button>
+                                        <input
+                                            type="number"
+                                            value={selectQty}
+                                            onChange={(e) => setSelectQty(Math.max(1, Math.min(qtyModal.product.CurrentStock, parseInt(e.target.value) || 1)))}
+                                            className="w-24 text-center text-3xl font-black py-3 bg-slate-50 border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-500"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectQty(Math.min(qtyModal.product.CurrentStock, selectQty + 1))}
+                                            className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-all"
+                                        >
+                                            <Plus size={20} />
+                                        </button>
                                     </div>
-                                ) : (
-                                    <>
-                                        {/* Items List */}
-                                        <div className="space-y-3 mb-6">
-                                            {cart.map((item) => (
-                                                <div key={item.ProductID} className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                                                    <div className="flex justify-between items-start mb-3">
-                                                        <div className="flex-1 min-w-0">
-                                                            <h4 className="font-bold text-slate-800 text-sm truncate">{item.ProductName}</h4>
-                                                            <p className="text-xs text-slate-500">{item.DeviceType}</p>
-                                                        </div>
-                                                        <button onClick={() => removeFromCart(item.ProductID)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => updateCartQty(item.ProductID, item.qty - 1)}
-                                                            className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-100"
-                                                        >
-                                                            <Minus size={14} />
-                                                        </button>
-                                                        <span className="w-12 text-center font-bold text-lg">{item.qty}</span>
-                                                        <button
-                                                            onClick={() => updateCartQty(item.ProductID, item.qty + 1)}
-                                                            className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-100"
-                                                        >
-                                                            <Plus size={14} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
 
-                                        {/* REASON SECTION (For Cart) */}
-                                        <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 space-y-3">
-                                            <label className="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-2">ระบุเหตุผลสำหรับการเบิกครั้งนี้</label>
+                                    {selectQty > qtyModal.product.CurrentStock && (
+                                        <p className="text-red-500 text-xs text-center mt-3 flex items-center justify-center gap-1 mb-4">
+                                            <AlertTriangle size={12} /> ไม่สามารถเบิกเกินสต็อก
+                                        </p>
+                                    )}
+
+                                    {/* REASON SECTION (Only for Quick Withdraw) */}
+                                    {qtyModal.mode === 'withdraw' && (
+                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">ระบุเหตุผลการเบิก</label>
                                             <div className="space-y-2">
                                                 {reasonOptions.map((opt) => (
-                                                    <label key={opt.id} className="flex items-center gap-3 p-2 bg-white rounded-xl border border-indigo-100 cursor-pointer hover:border-indigo-300 transition-all">
+                                                    <label key={opt.id} className="flex items-center gap-3 p-2 bg-white rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-300 transition-all">
                                                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedReason === opt.id ? 'border-indigo-500' : 'border-slate-300'}`}>
                                                             {selectedReason === opt.id && <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full" />}
                                                         </div>
                                                         <input
                                                             type="radio"
-                                                            name="cartReason"
+                                                            name="withdrawReason"
                                                             value={opt.id}
                                                             checked={selectedReason === opt.id}
                                                             onChange={(e) => setSelectedReason(e.target.value)}
@@ -641,75 +509,213 @@ const WithdrawPage = () => {
                                             {/* Optional Detail Input */}
                                             <div className="mt-3">
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <FileEdit size={14} className="text-indigo-400" />
-                                                    <span className="text-xs font-bold text-indigo-500">รายละเอียดเพิ่มเติม (Optional)</span>
+                                                    <FileEdit size={14} className="text-slate-400" />
+                                                    <span className="text-xs font-bold text-slate-500">รายละเอียดเพิ่มเติม (Optional)</span>
                                                 </div>
                                                 <textarea
                                                     value={reasonDetail}
                                                     onChange={(e) => setReasonDetail(e.target.value)}
-                                                    placeholder="เช่น ระบุชื่อโปรเจกต์..."
-                                                    className="w-full bg-white border border-indigo-100 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none h-20 resize-none"
+                                                    placeholder="เช่น ระบุชื่อโปรเจกต์ หรือหมายเลขแจ้งซ่อม..."
+                                                    className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none h-20 resize-none"
                                                 />
                                             </div>
                                         </div>
-                                    </>
-                                )}
-                            </div>
+                                    )}
+                                </div>
 
-                            {/* Cart Footer */}
-                            {cart.length > 0 && (
-                                <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="font-bold text-slate-600">รวมทั้งหมด</span>
-                                        <span className="text-2xl font-black text-indigo-600">{getCartTotal()} ชิ้น</span>
-                                    </div>
+                                {/* Footer */}
+                                <div className="p-4 bg-slate-50 border-t border-slate-200 flex gap-3 flex-shrink-0">
                                     <button
-                                        onClick={executeWithdrawAll}
-                                        className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold py-4 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg flex items-center justify-center gap-2"
+                                        onClick={() => setQtyModal({ isOpen: false, product: null, mode: 'cart' })}
+                                        className="flex-1 bg-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-300 transition-all"
                                     >
-                                        <Check size={20} /> ยืนยันเบิกสินค้า
+                                        ยกเลิก
+                                    </button>
+                                    <button
+                                        onClick={handleQtyConfirm}
+                                        disabled={selectQty > qtyModal.product.CurrentStock || selectQty <= 0}
+                                        className={`flex-1 font-bold py-3 rounded-xl transition-all shadow-lg disabled:opacity-50 ${qtyModal.mode === 'withdraw'
+                                            ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                            }`}
+                                    >
+                                        {qtyModal.mode === 'withdraw' ? 'ยืนยันเบิก' : 'เพิ่มลงตะกร้า'}
                                     </button>
                                 </div>
-                            )}
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
+                    </Portal>
+                )}
+            </AnimatePresence>
+
+            {/* Cart Drawer */}
+            <AnimatePresence>
+                {isCartOpen && (
+                    <Portal>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[70] bg-slate-900/70 backdrop-blur-sm"
+                            onClick={() => setIsCartOpen(false)}
+                        >
+                            <motion.div
+                                initial={{ x: '100%' }}
+                                animate={{ x: 0 }}
+                                exit={{ x: '100%' }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                                className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {/* Cart Header */}
+                                <div className="p-6 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="font-black text-xl text-slate-800">ตะกร้าเบิก</h3>
+                                        <p className="text-slate-500 text-sm">{cart.length} รายการ</p>
+                                    </div>
+                                    <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                                        <X size={20} className="text-slate-600" />
+                                    </button>
+                                </div>
+
+                                {/* Cart Items */}
+                                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                    {cart.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                                            <ShoppingCart size={48} className="mb-3 opacity-30" />
+                                            <p className="font-bold">ตะกร้าว่าง</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Items List */}
+                                            <div className="space-y-3 mb-6">
+                                                {cart.map((item) => (
+                                                    <div key={item.ProductID} className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="font-bold text-slate-800 text-sm truncate">{item.ProductName}</h4>
+                                                                <p className="text-xs text-slate-500">{item.DeviceType}</p>
+                                                            </div>
+                                                            <button onClick={() => removeFromCart(item.ProductID)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => updateCartQty(item.ProductID, item.qty - 1)}
+                                                                className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-100"
+                                                            >
+                                                                <Minus size={14} />
+                                                            </button>
+                                                            <span className="w-12 text-center font-bold text-lg">{item.qty}</span>
+                                                            <button
+                                                                onClick={() => updateCartQty(item.ProductID, item.qty + 1)}
+                                                                className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-100"
+                                                            >
+                                                                <Plus size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* REASON SECTION (For Cart) */}
+                                            <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 space-y-3">
+                                                <label className="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-2">ระบุเหตุผลสำหรับการเบิกครั้งนี้</label>
+                                                <div className="space-y-2">
+                                                    {reasonOptions.map((opt) => (
+                                                        <label key={opt.id} className="flex items-center gap-3 p-2 bg-white rounded-xl border border-indigo-100 cursor-pointer hover:border-indigo-300 transition-all">
+                                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedReason === opt.id ? 'border-indigo-500' : 'border-slate-300'}`}>
+                                                                {selectedReason === opt.id && <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full" />}
+                                                            </div>
+                                                            <input
+                                                                type="radio"
+                                                                name="cartReason"
+                                                                value={opt.id}
+                                                                checked={selectedReason === opt.id}
+                                                                onChange={(e) => setSelectedReason(e.target.value)}
+                                                                className="hidden"
+                                                            />
+                                                            <span className={`text-sm font-medium ${selectedReason === opt.id ? 'text-indigo-700' : 'text-slate-600'}`}>{opt.label}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+
+                                                {/* Optional Detail Input */}
+                                                <div className="mt-3">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <FileEdit size={14} className="text-indigo-400" />
+                                                        <span className="text-xs font-bold text-indigo-500">รายละเอียดเพิ่มเติม (Optional)</span>
+                                                    </div>
+                                                    <textarea
+                                                        value={reasonDetail}
+                                                        onChange={(e) => setReasonDetail(e.target.value)}
+                                                        placeholder="เช่น ระบุชื่อโปรเจกต์..."
+                                                        className="w-full bg-white border border-indigo-100 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none h-20 resize-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                {/* Cart Footer */}
+                                {cart.length > 0 && (
+                                    <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold text-slate-600">รวมทั้งหมด</span>
+                                            <span className="text-2xl font-black text-indigo-600">{getCartTotal()} ชิ้น</span>
+                                        </div>
+                                        <button
+                                            onClick={executeWithdrawAll}
+                                            className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold py-4 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg flex items-center justify-center gap-2"
+                                        >
+                                            <Check size={20} /> ยืนยันเบิกสินค้า
+                                        </button>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </motion.div>
+                    </Portal>
                 )}
             </AnimatePresence>
 
             {/* Result Modal */}
             <AnimatePresence>
                 {resultModal.isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
+                    <Portal>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
                         >
-                            <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : resultModal.type === 'warning' ? 'bg-amber-100' : 'bg-red-100'}`}>
-                                {resultModal.type === 'success' ? (
-                                    <Check size={40} className="text-emerald-600" />
-                                ) : resultModal.type === 'warning' ? (
-                                    <AlertTriangle size={40} className="text-amber-600" />
-                                ) : (
-                                    <X size={40} className="text-red-600" />
-                                )}
-                            </div>
-                            <h3 className="font-black text-2xl text-slate-800 mb-2">{resultModal.title}</h3>
-                            <p className="text-slate-500 mb-6">{resultModal.message}</p>
-                            <button
-                                onClick={() => setResultModal({ ...resultModal, isOpen: false })}
-                                className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all"
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
                             >
-                                ปิด
-                            </button>
+                                <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : resultModal.type === 'warning' ? 'bg-amber-100' : 'bg-red-100'}`}>
+                                    {resultModal.type === 'success' ? (
+                                        <Check size={40} className="text-emerald-600" />
+                                    ) : resultModal.type === 'warning' ? (
+                                        <AlertTriangle size={40} className="text-amber-600" />
+                                    ) : (
+                                        <X size={40} className="text-red-600" />
+                                    )}
+                                </div>
+                                <h3 className="font-black text-2xl text-slate-800 mb-2">{resultModal.title}</h3>
+                                <p className="text-slate-500 mb-6">{resultModal.message}</p>
+                                <button
+                                    onClick={() => setResultModal({ ...resultModal, isOpen: false })}
+                                    className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all"
+                                >
+                                    ปิด
+                                </button>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
+                    </Portal>
                 )}
             </AnimatePresence>
         </div >

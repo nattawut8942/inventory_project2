@@ -208,203 +208,209 @@ const ReceivePage = () => {
             {/* DETAIL MODAL */}
             <AnimatePresence>
                 {selectedPO && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
+                    <Portal>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
                         >
-                            {/* Header */}
-                            <div className="p-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h3 className="font-black text-2xl">{selectedPO.PO_ID}</h3>
-                                        <p className="text-amber-100">{selectedPO.VendorName || 'ไม่ระบุผู้ขาย'}</p>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+                            >
+                                {/* Header */}
+                                <div className="p-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-black text-2xl">{selectedPO.PO_ID}</h3>
+                                            <p className="text-amber-100">{selectedPO.VendorName || 'ไม่ระบุผู้ขาย'}</p>
+                                        </div>
+                                        <button onClick={() => setSelectedPO(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+                                            <X size={20} />
+                                        </button>
                                     </div>
-                                    <button onClick={() => setSelectedPO(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
-                                        <X size={20} />
+                                </div>
+
+                                {/* Body */}
+                                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                                    {/* Info */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-slate-50 p-4 rounded-xl">
+                                            <p className="text-xs text-slate-500 font-bold mb-1">สถานะ</p>
+                                            <span className={`text-sm font-bold px-3 py-1 rounded-full border ${getStatusColor(selectedPO.Status)}`}>
+                                                {selectedPO.Status === 'Open' ? 'Pending' : selectedPO.Status}
+                                            </span>
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-xl">
+                                            <p className="text-xs text-slate-500 font-bold mb-1">วันที่สร้าง</p>
+                                            <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.RequestDate)}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Items */}
+                                    <div>
+                                        <h4 className="font-bold text-slate-800 mb-3">รายการ ({selectedPO.Items?.length || 0})</h4>
+                                        <div className="bg-slate-50 rounded-xl overflow-hidden">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-slate-100">
+                                                    <tr>
+                                                        <th className="text-left p-3 font-bold text-slate-600">ชื่อรายการ</th>
+                                                        <th className="text-center p-3 font-bold text-slate-600 w-28">รับแล้ว / สั่ง</th>
+                                                        <th className="text-right p-3 font-bold text-slate-600 w-24">ราคา</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {selectedPO.Items?.map((item, idx) => {
+                                                        const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || `Item #${idx + 1}`;
+                                                        return (
+                                                            <tr key={idx} className="border-t border-slate-200">
+                                                                <td className="p-3 text-slate-700">{prodName}</td>
+                                                                <td className="p-3 text-center font-mono">
+                                                                    <span className="text-emerald-600">{item.QtyReceived || 0}</span>
+                                                                    <span className="text-slate-400"> / {item.QtyOrdered}</span>
+                                                                </td>
+                                                                <td className="p-3 text-right font-mono text-slate-600">฿{(item.UnitCost || 0).toLocaleString()}</td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Footer */}
+                                <div className="p-4 bg-slate-50 border-t border-slate-200 flex gap-2">
+                                    <button
+                                        onClick={() => setSelectedPO(null)}
+                                        className="flex-1 bg-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-300 transition-all"
+                                    >
+                                        ปิด
+                                    </button>
+                                    <button
+                                        onClick={() => { setActivePo(selectedPO); setSelectedPO(null); setIsModalOpen(true); }}
+                                        className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Check size={18} /> รับของ
                                     </button>
                                 </div>
-                            </div>
-
-                            {/* Body */}
-                            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                                {/* Info */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                        <p className="text-xs text-slate-500 font-bold mb-1">สถานะ</p>
-                                        <span className={`text-sm font-bold px-3 py-1 rounded-full border ${getStatusColor(selectedPO.Status)}`}>
-                                            {selectedPO.Status === 'Open' ? 'Pending' : selectedPO.Status}
-                                        </span>
-                                    </div>
-                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                        <p className="text-xs text-slate-500 font-bold mb-1">วันที่สร้าง</p>
-                                        <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.RequestDate)}</p>
-                                    </div>
-                                </div>
-
-                                {/* Items */}
-                                <div>
-                                    <h4 className="font-bold text-slate-800 mb-3">รายการ ({selectedPO.Items?.length || 0})</h4>
-                                    <div className="bg-slate-50 rounded-xl overflow-hidden">
-                                        <table className="w-full text-sm">
-                                            <thead className="bg-slate-100">
-                                                <tr>
-                                                    <th className="text-left p-3 font-bold text-slate-600">ชื่อรายการ</th>
-                                                    <th className="text-center p-3 font-bold text-slate-600 w-28">รับแล้ว / สั่ง</th>
-                                                    <th className="text-right p-3 font-bold text-slate-600 w-24">ราคา</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {selectedPO.Items?.map((item, idx) => {
-                                                    const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || `Item #${idx + 1}`;
-                                                    return (
-                                                        <tr key={idx} className="border-t border-slate-200">
-                                                            <td className="p-3 text-slate-700">{prodName}</td>
-                                                            <td className="p-3 text-center font-mono">
-                                                                <span className="text-emerald-600">{item.QtyReceived || 0}</span>
-                                                                <span className="text-slate-400"> / {item.QtyOrdered}</span>
-                                                            </td>
-                                                            <td className="p-3 text-right font-mono text-slate-600">฿{(item.UnitCost || 0).toLocaleString()}</td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Footer */}
-                            <div className="p-4 bg-slate-50 border-t border-slate-200 flex gap-2">
-                                <button
-                                    onClick={() => setSelectedPO(null)}
-                                    className="flex-1 bg-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-300 transition-all"
-                                >
-                                    ปิด
-                                </button>
-                                <button
-                                    onClick={() => { setActivePo(selectedPO); setSelectedPO(null); setIsModalOpen(true); }}
-                                    className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
-                                >
-                                    <Check size={18} /> รับของ
-                                </button>
-                            </div>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
+                    </Portal>
                 )}
             </AnimatePresence>
 
             {/* RECEIVE MODAL */}
             {isModalOpen && activePo && (
-                <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
-                    <div className="flex min-h-screen items-center justify-center p-4">
-                        <div className="w-full max-w-2xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl transition-all my-8">
-                            <div className="p-6 bg-white flex justify-between items-center border-b border-slate-200">
-                                <div>
-                                    <h3 className="font-bold text-lg text-slate-800">Receive Invoice - {activePo.PO_ID}</h3>
-                                    <p className="text-slate-500 text-sm">{activePo.VendorName}</p>
-                                </div>
-                                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
-                            </div>
-                            <form onSubmit={(e) => {
-                                e.preventDefault();
-                                const fd = new FormData(e.target);
-                                const items = activePo.Items.map((item, idx) => ({
-                                    DetailID: item.DetailID,
-                                    Qty: parseInt(fd.get(`qty-${idx}`)) || 0
-                                })).filter(i => i.Qty > 0);
-                                handleReceive(activePo.PO_ID, fd.get('InvoiceNo'), items);
-                            }} className="p-6 space-y-6">
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Invoice Number</label>
-                                    <input
-                                        name="InvoiceNo"
-                                        required
-                                        placeholder="INV-XXXX-XXXX"
-                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500 font-mono"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">Items to Receive</label>
-                                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                                        {activePo.Items.map((item, idx) => {
-                                            const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Unknown';
-                                            const remaining = item.QtyOrdered - (item.QtyReceived || 0);
-                                            return (
-                                                <div key={idx} className="flex gap-3 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
-                                                    <div className="flex-1">
-                                                        <p className="font-medium text-sm text-slate-700">{prodName}</p>
-                                                        <p className="text-xs text-slate-400">คงเหลือ: {remaining} / {item.QtyOrdered}</p>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-slate-500 font-bold">จำนวน:</span>
-                                                        <input
-                                                            name={`qty-${idx}`}
-                                                            type="number"
-                                                            min="0"
-                                                            max={remaining}
-                                                            defaultValue={remaining}
-                                                            className="w-16 bg-white border border-slate-200 p-2 rounded-lg text-center text-sm font-mono outline-none focus:border-indigo-500"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                <Portal>
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
+                        <div className="flex min-h-screen items-center justify-center p-4">
+                            <div className="w-full max-w-2xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl transition-all my-8">
+                                <div className="p-6 bg-white flex justify-between items-center border-b border-slate-200">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-800">Receive Invoice - {activePo.PO_ID}</h3>
+                                        <p className="text-slate-500 text-sm">{activePo.VendorName}</p>
                                     </div>
+                                    <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
                                 </div>
-                                <div className="flex gap-3 pt-4">
-                                    <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-all">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" className="flex-[2] bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg flex items-center justify-center gap-2">
-                                        <Check size={18} /> Confirm Receive
-                                    </button>
-                                </div>
-                            </form>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const fd = new FormData(e.target);
+                                    const items = activePo.Items.map((item, idx) => ({
+                                        DetailID: item.DetailID,
+                                        Qty: parseInt(fd.get(`qty-${idx}`)) || 0
+                                    })).filter(i => i.Qty > 0);
+                                    handleReceive(activePo.PO_ID, fd.get('InvoiceNo'), items);
+                                }} className="p-6 space-y-6">
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Invoice Number</label>
+                                        <input
+                                            name="InvoiceNo"
+                                            required
+                                            placeholder="INV-XXXX-XXXX"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500 font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">Items to Receive</label>
+                                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                                            {activePo.Items.map((item, idx) => {
+                                                const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Unknown';
+                                                const remaining = item.QtyOrdered - (item.QtyReceived || 0);
+                                                return (
+                                                    <div key={idx} className="flex gap-3 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                                        <div className="flex-1">
+                                                            <p className="font-medium text-sm text-slate-700">{prodName}</p>
+                                                            <p className="text-xs text-slate-400">คงเหลือ: {remaining} / {item.QtyOrdered}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-slate-500 font-bold">จำนวน:</span>
+                                                            <input
+                                                                name={`qty-${idx}`}
+                                                                type="number"
+                                                                min="0"
+                                                                max={remaining}
+                                                                defaultValue={remaining}
+                                                                className="w-16 bg-white border border-slate-200 p-2 rounded-lg text-center text-sm font-mono outline-none focus:border-indigo-500"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 pt-4">
+                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-all">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" className="flex-[2] bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg flex items-center justify-center gap-2">
+                                            <Check size={18} /> Confirm Receive
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </Portal>
             )}
 
             {/* Result Modal */}
             <AnimatePresence>
                 {resultModal.isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                    >
+                    <Portal>
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
                         >
-                            <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
-                                {resultModal.type === 'success' ? (
-                                    <Check size={32} className="text-emerald-600" />
-                                ) : (
-                                    <X size={32} className="text-red-600" />
-                                )}
-                            </div>
-                            <h3 className="font-black text-xl text-slate-800 mb-2">{resultModal.title}</h3>
-                            <p className="text-slate-500 mb-6">{resultModal.message}</p>
-                            <button
-                                onClick={() => setResultModal({ ...resultModal, isOpen: false })}
-                                className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all"
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
                             >
-                                ปิด
-                            </button>
+                                <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                                    {resultModal.type === 'success' ? (
+                                        <Check size={32} className="text-emerald-600" />
+                                    ) : (
+                                        <X size={32} className="text-red-600" />
+                                    )}
+                                </div>
+                                <h3 className="font-black text-xl text-slate-800 mb-2">{resultModal.title}</h3>
+                                <p className="text-slate-500 mb-6">{resultModal.message}</p>
+                                <button
+                                    onClick={() => setResultModal({ ...resultModal, isOpen: false })}
+                                    className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-all"
+                                >
+                                    ปิด
+                                </button>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
+                    </Portal>
                 )}
             </AnimatePresence>
 
