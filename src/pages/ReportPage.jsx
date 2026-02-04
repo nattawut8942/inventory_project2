@@ -569,7 +569,7 @@ const ReportPage = () => {
                     </div>
                 </motion.div>
 
-                {/* Withdrawals By Category */}
+                {/* Withdrawals By Category - Card Grid */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -585,22 +585,41 @@ const ReportPage = () => {
                             <p className="text-xs text-slate-500">สรุปยอดเบิกแยกตามประเภทสินค้า</p>
                         </div>
                     </div>
-                    <ResponsiveContainer width="100%" height={220}>
-                        <BarChart data={withdrawalsByCategory} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                            <XAxis type="number" stroke="#64748b" />
-                            <YAxis dataKey="name" type="category" stroke="#64748b" width={80} tick={{ fontSize: 11 }} />
-                            <Tooltip
-                                formatter={(value) => [`${value.toLocaleString()} ชิ้น`, 'จำนวนเบิก']}
-                                contentStyle={{
-                                    backgroundColor: 'white',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                }}
-                            />
-                            <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    <div className="space-y-3 max-h-[220px] overflow-y-auto">
+                        {(() => {
+                            const maxValue = Math.max(...withdrawalsByCategory.map(c => c.value), 1);
+                            const categoryColors = ['bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-cyan-500'];
+                            return withdrawalsByCategory.map((cat, idx) => {
+                                const percentage = (cat.value / maxValue) * 100;
+                                return (
+                                    <div key={cat.name} className="relative">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-medium text-slate-700 text-sm">{cat.name || 'ไม่ระบุ'}</span>
+                                            <span className="font-bold text-slate-800 text-sm">{cat.value.toLocaleString()} ชิ้น</span>
+                                        </div>
+                                        <div className="h-6 bg-slate-100 rounded-lg overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${percentage}%` }}
+                                                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                                                className={`h-full ${categoryColors[idx % categoryColors.length]} rounded-lg flex items-center justify-end pr-2`}
+                                            >
+                                                {percentage > 20 && (
+                                                    <span className="text-white text-xs font-bold">{percentage.toFixed(0)}%</span>
+                                                )}
+                                            </motion.div>
+                                        </div>
+                                    </div>
+                                );
+                            });
+                        })()}
+                        {withdrawalsByCategory.length === 0 && (
+                            <div className="text-center py-8 text-slate-400">
+                                <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">ยังไม่มีข้อมูลการเบิก</p>
+                            </div>
+                        )}
+                    </div>
                 </motion.div>
             </div>
 
@@ -624,8 +643,26 @@ const ReportPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left: Data Types Selection */}
                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-3 block tracking-wider">เลือกข้อมูลที่ต้องการ Export</label>
-                        <div className="space-y-2">
+                        <div className="flex items-center justify-between mb-3">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">เลือกข้อมูลที่ต้องการ Export</label>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedTypes(dataOptions.map(o => o.id))}
+                                    className="text-xs px-2 py-1 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 transition-colors font-medium"
+                                >
+                                    เลือกทั้งหมด
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedTypes([])}
+                                    className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors font-medium"
+                                >
+                                    ยกเลิกทั้งหมด
+                                </button>
+                            </div>
+                        </div>
+                        <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
                             {dataOptions.map((option, idx) => {
                                 const isSelected = selectedTypes.includes(option.id);
                                 const Icon = option.icon;
