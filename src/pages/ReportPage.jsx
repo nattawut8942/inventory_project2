@@ -585,7 +585,7 @@ const ReportPage = () => {
                             <p className="text-xs text-slate-500">สรุปยอดเบิกแยกตามประเภทสินค้า</p>
                         </div>
                     </div>
-                    <div className="space-y-3 max-h-[220px] overflow-y-auto">
+                    <div className="space-y-3">
                         {(() => {
                             const maxValue = Math.max(...withdrawalsByCategory.map(c => c.value), 1);
                             const categoryColors = ['bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-cyan-500'];
@@ -662,7 +662,7 @@ const ReportPage = () => {
                                 </button>
                             </div>
                         </div>
-                        <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                        <div className="space-y-2 pr-1">
                             {dataOptions.map((option, idx) => {
                                 const isSelected = selectedTypes.includes(option.id);
                                 const Icon = option.icon;
@@ -766,8 +766,7 @@ const ReportPage = () => {
                 type={alertModal.type}
                 title={alertModal.title}
                 message={alertModal.message}
-                onConfirm={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
-                confirmText="ตกลง"
+                onCancel={() => setAlertModal({ ...alertModal, isOpen: false })}
             />
         </div>
     );
