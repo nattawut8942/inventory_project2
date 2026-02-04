@@ -960,6 +960,125 @@ app.get('/api/report/export', async (req, res) => {
                     }));
                     break;
                 }
+                case 'slowmoving': {
+                    sheetName = '🐢 สินค้าค้างสต็อค';
+                    // Get products with no OUT transactions in last 3 months
+                    const slowResult = await pool.request().query(`
+                        SELECT p.ProductID, p.ProductName, p.DeviceType, p.CurrentStock, p.LastPrice,
+                               p.CurrentStock * ISNULL(p.LastPrice, 0) as StockValue,
+                               (SELECT MAX(t.TransDate) FROM dbo.Stock_Transactions t 
+                                WHERE t.ProductID = p.ProductID AND t.TransType = 'OUT') as LastWithdraw
+                        FROM dbo.Stock_Products p
+                        WHERE p.IsActive = 1 AND p.CurrentStock > 0
+                        AND (NOT EXISTS (
+                            SELECT 1 FROM dbo.Stock_Transactions t 
+                            WHERE t.ProductID = p.ProductID 
+                            AND t.TransType = 'OUT' 
+                            AND t.TransDate >= DATEADD(month, -3, GETDATE())
+                        ))
+                        ORDER BY p.CurrentStock * ISNULL(p.LastPrice, 0) DESC
+                    `);
+                    data = slowResult.recordset.map(row => ({
+                        'รหัสสินค้า': row.ProductID,
+                        'ชื่อสินค้า': row.ProductName,
+                        'ประเภท': row.DeviceType || '-',
+                        'คงเหลือ': row.CurrentStock,
+                        'ราคา/หน่วย (฿)': row.LastPrice || 0,
+                        'มูลค่าค้างสต็อค (฿)': row.StockValue || 0,
+                        'เบิกล่าสุด': row.LastWithdraw ? new Date(row.LastWithdraw).toLocaleDateString('th-TH') : 'ไม่เคยเบิก'
+                    }));
+                    break;
+                }
+                case 'topwithdrawn': {
+                    sheetName = '🔥 สินค้าเบิกมากสุด';
+                    const topRequest = pool.request();
+                    if (startDate) topRequest.input('startDate', sql.DateTime, new Date(startDate));
+                    if (endDate) topRequest.input('endDate', sql.DateTime, new Date(endDate));
+
+                    let topQuery = `
+                        SELECT p.ProductID, p.ProductName, p.DeviceType,
+                               SUM(ABS(t.Qty)) as TotalQty,
+                               COUNT(*) as TransactionCount,
+                               SUM(ABS(t.Qty) * ISNULL(p.LastPrice, 0)) as TotalValue
+                        FROM dbo.Stock_Transactions t
+                        JOIN dbo.Stock_Products p ON t.ProductID = p.ProductID
+                        WHERE t.TransType = 'OUT'
+                    `;
+                    if (startDate) topQuery += ' AND t.TransDate >= @startDate';
+                    if (endDate) topQuery += ' AND t.TransDate <= @endDate';
+                    topQuery += ' GROUP BY p.ProductID, p.ProductName, p.DeviceType ORDER BY TotalQty DESC';
+
+                    const topResult = await topRequest.query(topQuery);
+                    data = topResult.recordset.map((row, idx) => ({
+                        'อันดับ': idx + 1,
+                        'รหัสสินค้า': row.ProductID,
+                        'ชื่อสินค้า': row.ProductName,
+                        'ประเภท': row.DeviceType || '-',
+                        'จำนวนเบิก (รวม)': row.TotalQty,
+                        'จำนวนครั้ง': row.TransactionCount,
+                        'มูลค่าเบิก (฿)': row.TotalValue || 0
+                    }));
+                    break;
+                }
+                case 'topconsumers': {
+                    sheetName = '👤 ผู้เบิกมากสุด';
+                    const consRequest = pool.request();
+                    if (startDate) consRequest.input('startDate', sql.DateTime, new Date(startDate));
+                    if (endDate) consRequest.input('endDate', sql.DateTime, new Date(endDate));
+
+                    let consQuery = `
+                        SELECT t.UserID,
+                               SUM(ABS(t.Qty)) as TotalQty,
+                               COUNT(*) as TransactionCount,
+                               COUNT(DISTINCT t.ProductID) as UniqueProducts
+                        FROM dbo.Stock_Transactions t
+                        WHERE t.TransType = 'OUT' AND t.UserID IS NOT NULL
+                    `;
+                    if (startDate) consQuery += ' AND t.TransDate >= @startDate';
+                    if (endDate) consQuery += ' AND t.TransDate <= @endDate';
+                    consQuery += ' GROUP BY t.UserID ORDER BY TotalQty DESC';
+
+                    const consResult = await consRequest.query(consQuery);
+                    data = consResult.recordset.map((row, idx) => ({
+                        'อันดับ': idx + 1,
+                        'ผู้เบิก': row.UserID,
+                        'จำนวนเบิก (รวม)': row.TotalQty,
+                        'จำนวนครั้ง': row.TransactionCount,
+                        'สินค้าที่เบิก (ชนิด)': row.UniqueProducts
+                    }));
+                    break;
+                }
+                case 'bycategory': {
+                    sheetName = '📂 เบิกตามประเภท';
+                    const catRequest = pool.request();
+                    if (startDate) catRequest.input('startDate', sql.DateTime, new Date(startDate));
+                    if (endDate) catRequest.input('endDate', sql.DateTime, new Date(endDate));
+
+                    let catQuery = `
+                        SELECT p.DeviceType,
+                               SUM(ABS(t.Qty)) as TotalQty,
+                               COUNT(*) as TransactionCount,
+                               COUNT(DISTINCT p.ProductID) as UniqueProducts,
+                               SUM(ABS(t.Qty) * ISNULL(p.LastPrice, 0)) as TotalValue
+                        FROM dbo.Stock_Transactions t
+                        JOIN dbo.Stock_Products p ON t.ProductID = p.ProductID
+                        WHERE t.TransType = 'OUT'
+                    `;
+                    if (startDate) catQuery += ' AND t.TransDate >= @startDate';
+                    if (endDate) catQuery += ' AND t.TransDate <= @endDate';
+                    catQuery += ' GROUP BY p.DeviceType ORDER BY TotalQty DESC';
+
+                    const catResult = await catRequest.query(catQuery);
+                    data = catResult.recordset.map((row, idx) => ({
+                        'อันดับ': idx + 1,
+                        'ประเภท': row.DeviceType || 'ไม่ระบุ',
+                        'จำนวนเบิก (รวม)': row.TotalQty,
+                        'จำนวนครั้ง': row.TransactionCount,
+                        'สินค้าที่เบิก (ชนิด)': row.UniqueProducts,
+                        'มูลค่าเบิก (฿)': row.TotalValue || 0
+                    }));
+                    break;
+                }
             }
 
             if (data.length > 0) {

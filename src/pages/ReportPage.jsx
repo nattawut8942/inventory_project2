@@ -166,12 +166,64 @@ const ReportPage = () => {
             .slice(0, 5);
     }, [transactions, products]);
 
+    // NEW: Top Withdrawn Items (Most withdrawn products)
+    const topWithdrawnItems = useMemo(() => {
+        const itemMap = {};
+        (transactions || []).forEach(t => {
+            const type = (t.TransType || '').toUpperCase().trim();
+            if (type === 'OUT') {
+                const productId = t.ProductID;
+                const product = products.find(p => p.ProductID === productId);
+                if (!itemMap[productId]) {
+                    itemMap[productId] = {
+                        productId,
+                        productName: product?.ProductName || `ID: ${productId}`,
+                        deviceType: product?.DeviceType || '-',
+                        totalQty: 0,
+                        totalValue: 0,
+                        transactionCount: 0
+                    };
+                }
+                const qty = Math.abs(t.Qty);
+                const price = product?.LastPrice || 0;
+                itemMap[productId].totalQty += qty;
+                itemMap[productId].totalValue += qty * price;
+                itemMap[productId].transactionCount += 1;
+            }
+        });
+        return Object.values(itemMap)
+            .sort((a, b) => b.totalQty - a.totalQty)
+            .slice(0, 10);
+    }, [transactions, products]);
+
+    // NEW: Withdrawals By Category
+    const withdrawalsByCategory = useMemo(() => {
+        const catMap = {};
+        (transactions || []).forEach(t => {
+            const type = (t.TransType || '').toUpperCase().trim();
+            if (type === 'OUT') {
+                const product = products.find(p => p.ProductID === t.ProductID);
+                const category = product?.DeviceType || 'ไม่ระบุ';
+                if (!catMap[category]) {
+                    catMap[category] = { name: category, value: 0, transactionCount: 0 };
+                }
+                catMap[category].value += Math.abs(t.Qty);
+                catMap[category].transactionCount += 1;
+            }
+        });
+        return Object.values(catMap).sort((a, b) => b.value - a.value);
+    }, [transactions, products]);
+
     const dataOptions = [
-        { id: 'products', label: 'Inventory / Products', description: 'All active products with stock levels', icon: Package, color: 'from-blue-500 to-blue-600' },
-        { id: 'lowstock', label: 'รายการสินค้าต่ำกว่า Min Stock', description: 'คำนวณ (MaxStock - CurrentStock) × ราคา', icon: TrendingDown, color: 'from-red-500 to-red-600' },
-        { id: 'transactions', label: 'Transaction History', description: 'All inbound/outbound movements', icon: TrendingUp, color: 'from-purple-500 to-purple-600' },
-        { id: 'invoices', label: 'Invoice Records', description: 'All received invoices', icon: Receipt, color: 'from-pink-500 to-pink-600' },
-        { id: 'pos', label: 'Purchase Orders', description: 'All PO records', icon: FileText, color: 'from-orange-500 to-orange-600' }
+        { id: 'products', label: 'Inventory / Products', description: 'สินค้าทั้งหมดและจำนวนคงเหลือ', icon: Package, color: 'from-blue-500 to-blue-600' },
+        { id: 'lowstock', label: 'รายการต่ำกว่า Min Stock', description: 'คำนวณ (MaxStock - CurrentStock) × ราคา', icon: TrendingDown, color: 'from-red-500 to-red-600' },
+        { id: 'transactions', label: 'Transaction History', description: 'ประวัติรับ-เบิกทั้งหมด', icon: TrendingUp, color: 'from-purple-500 to-purple-600' },
+        { id: 'invoices', label: 'Invoice Records', description: 'ข้อมูล Invoice ทั้งหมด', icon: Receipt, color: 'from-pink-500 to-pink-600' },
+        { id: 'pos', label: 'Purchase Orders', description: 'ใบสั่งซื้อทั้งหมด', icon: FileText, color: 'from-orange-500 to-orange-600' },
+        { id: 'slowmoving', label: '🐢 สินค้าค้างสต็อค', description: 'ไม่มีการเบิกใน 3 เดือนล่าสุด (Dead Stock)', icon: Clock, color: 'from-yellow-500 to-yellow-600' },
+        { id: 'topwithdrawn', label: '🔥 สินค้าเบิกมากสุด', description: 'อันดับสินค้าที่ถูกเบิกมากที่สุด', icon: TrendingUp, color: 'from-rose-500 to-rose-600' },
+        { id: 'topconsumers', label: '👤 ผู้เบิกมากสุด', description: 'อันดับผู้ใช้ที่เบิกมากที่สุด', icon: User, color: 'from-cyan-500 to-cyan-600' },
+        { id: 'bycategory', label: '📂 เบิกตามประเภท', description: 'สรุปยอดเบิกแยกตามประเภทสินค้า', icon: PieChart, color: 'from-emerald-500 to-emerald-600' }
     ];
 
     const toggleType = (typeId) => {
@@ -465,6 +517,92 @@ const ReportPage = () => {
                     </RechartsPie>
                 </ResponsiveContainer>
             </motion.div>
+
+            {/* NEW: Top Withdrawn Items & Withdrawals By Category */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Top Withdrawn Items */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center">
+                            <TrendingUp className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800">🔥 สินค้าเบิกมากสุด</h3>
+                            <p className="text-xs text-slate-500">Top 10 รายการที่ถูกเบิกมากที่สุด</p>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-slate-200">
+                                    <th className="text-left py-2 px-2 text-slate-500 font-medium">#</th>
+                                    <th className="text-left py-2 px-2 text-slate-500 font-medium">สินค้า</th>
+                                    <th className="text-center py-2 px-2 text-slate-500 font-medium">ประเภท</th>
+                                    <th className="text-right py-2 px-2 text-slate-500 font-medium">จำนวน</th>
+                                    <th className="text-right py-2 px-2 text-slate-500 font-medium">มูลค่า</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {topWithdrawnItems.length > 0 ? topWithdrawnItems.slice(0, 5).map((item, idx) => (
+                                    <tr key={item.productId} className="border-b border-slate-100 hover:bg-slate-50">
+                                        <td className="py-2 px-2">
+                                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${idx === 0 ? 'bg-rose-500' : idx === 1 ? 'bg-rose-400' : idx === 2 ? 'bg-rose-300' : 'bg-slate-300'}`}>
+                                                {idx + 1}
+                                            </span>
+                                        </td>
+                                        <td className="py-2 px-2 font-medium text-slate-800 truncate max-w-[150px]">{item.productName}</td>
+                                        <td className="py-2 px-2 text-center text-slate-500 text-xs">{item.deviceType}</td>
+                                        <td className="py-2 px-2 text-right font-bold text-rose-600">{item.totalQty.toLocaleString()}</td>
+                                        <td className="py-2 px-2 text-right text-slate-600">฿{item.totalValue.toLocaleString()}</td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan={5} className="text-center py-8 text-slate-400">ยังไม่มีข้อมูลการเบิก</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </motion.div>
+
+                {/* Withdrawals By Category */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                            <BarChart3 className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800">📂 เบิกตามประเภท</h3>
+                            <p className="text-xs text-slate-500">สรุปยอดเบิกแยกตามประเภทสินค้า</p>
+                        </div>
+                    </div>
+                    <ResponsiveContainer width="100%" height={220}>
+                        <BarChart data={withdrawalsByCategory} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis type="number" stroke="#64748b" />
+                            <YAxis dataKey="name" type="category" stroke="#64748b" width={80} tick={{ fontSize: 11 }} />
+                            <Tooltip
+                                formatter={(value) => [`${value.toLocaleString()} ชิ้น`, 'จำนวนเบิก']}
+                                contentStyle={{
+                                    backgroundColor: 'white',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '8px',
+                                }}
+                            />
+                            <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </motion.div>
+            </div>
 
             {/* Export Section */}
             <motion.div
