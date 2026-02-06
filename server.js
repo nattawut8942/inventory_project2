@@ -39,6 +39,33 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// --- AUDIT LOG HELPER ---
+async function logAudit(pool, tableName, recordId, action, oldVal, newVal, user, ip = null) {
+    try {
+        const oldStr = oldVal ? JSON.stringify(oldVal) : null;
+        const newStr = newVal ? JSON.stringify(newVal) : null;
+
+        // Don't log if no changes (for updates)
+        if (action === 'UPDATE' && oldStr === newStr) return;
+
+        await pool.request()
+            .input('TableName', sql.NVarChar, tableName)
+            .input('RecordID', sql.VarChar, String(recordId))
+            .input('ActionType', sql.NVarChar, action)
+            .input('OldValues', sql.NVarChar, oldStr)
+            .input('NewValues', sql.NVarChar, newStr)
+            .input('ChangedBy', sql.NVarChar, user || 'System')
+            .input('IPAddress', sql.NVarChar, ip)
+            .query(`
+                INSERT INTO dbo.Stock_AuditLogs (TableName, RecordID, ActionType, OldValues, NewValues, ChangedBy, IPAddress)
+                VALUES (@TableName, @RecordID, @ActionType, @OldValues, @NewValues, @ChangedBy, @IPAddress)
+            `);
+    } catch (err) {
+        console.error('Audit Log Error:', err);
+        // Fail silently to not block main flow
+    }
+}
+
 // --- AUTHENTICATION (AD API) ---
 app.post('/api/authen', async (req, res) => {
     const { username, password } = req.body;
@@ -264,6 +291,12 @@ app.put('/api/products/:id', async (req, res) => {
             .input('CurrentStock', sql.Int, CurrentStock)
             .input('LastPrice', sql.Decimal(18, 2), LastPrice);
 
+        // Fetch Old Data
+        const oldDataRes = await pool.request()
+            .input('ProductID', sql.Int, id)
+            .query('SELECT * FROM dbo.Stock_Products WHERE ProductID = @ProductID');
+        const oldData = oldDataRes.recordset[0];
+
         let query = `
             UPDATE dbo.Stock_Products 
             SET ProductName = @ProductName, DeviceType = @DeviceType, 
@@ -278,6 +311,15 @@ app.put('/api/products/:id', async (req, res) => {
         query += ` WHERE ProductID = @ProductID`;
 
         await request.query(query);
+
+        // Audit Log
+        const newData = { ...oldData, ProductName, DeviceType, MinStock, MaxStock, CurrentStock, LastPrice };
+        if (req.body.ImageURL !== undefined) newData.ImageURL = req.body.ImageURL;
+
+        const userId = req.body.UserID || 'Admin';
+
+        logAudit(pool, 'Stock_Products', id, 'UPDATE', oldData, newData, userId, req.ip);
+
         res.json({ success: true });
     } catch (err) {
         console.error('Update Product Error:', err);
@@ -291,9 +333,22 @@ app.delete('/api/products/:id', async (req, res) => {
 
     try {
         const pool = getPool();
+
+        // Fetch Old Data
+        const oldDataRes = await pool.request()
+            .input('ProductID', sql.Int, id)
+            .query('SELECT * FROM dbo.Stock_Products WHERE ProductID = @ProductID');
+        const oldData = oldDataRes.recordset[0];
+
         await pool.request()
             .input('ProductID', sql.Int, id)
             .query('UPDATE dbo.Stock_Products SET IsActive = 0 WHERE ProductID = @ProductID');
+
+        // Audit Log
+        if (oldData) {
+            logAudit(pool, 'Stock_Products', id, 'DELETE', oldData, { IsActive: 0 }, 'Admin', req.ip);
+        }
+
         res.json({ success: true });
     } catch (err) {
         console.error('Delete Product Error:', err);
@@ -320,11 +375,20 @@ app.post('/api/products/manual-import', async (req, res) => {
             let productID;
             const checkRes = await new sql.Request(transaction)
                 .input('ProductName', sql.NVarChar, ProductName.trim())
-                .query('SELECT ProductID FROM dbo.Stock_Products WHERE ProductName = @ProductName');
-
             if (checkRes.recordset.length > 0) {
                 // Update Existing
                 productID = checkRes.recordset[0].ProductID;
+
+                // Get Old Data (for Audit) using current transaction
+                // Note: We can't reuse external logAudit if passing transaction? 
+                // Creating a separate request on the same transaction for logging is safer manually here 
+                // or we adapt logAudit to accept transaction/request. 
+                // For simplicity, we'll query old data here.
+                const oldDataRes = await new sql.Request(transaction)
+                    .input('ProductID', sql.Int, productID)
+                    .query('SELECT * FROM dbo.Stock_Products WHERE ProductID = @ProductID');
+                const oldData = oldDataRes.recordset[0];
+
                 await new sql.Request(transaction)
                     .input('ProductID', sql.Int, productID)
                     .input('Qty', sql.Int, qty)
@@ -340,6 +404,18 @@ app.post('/api/products/manual-import', async (req, res) => {
                             IsActive = 1
                         WHERE ProductID = @ProductID
                     `);
+
+                // Manual Log Audit for Transaction Update
+                await new sql.Request(transaction)
+                    .input('TableName', sql.NVarChar, 'Stock_Products')
+                    .input('RecordID', sql.VarChar, String(productID))
+                    .input('ActionType', sql.NVarChar, 'UPDATE')
+                    .input('OldValues', sql.NVarChar, JSON.stringify(oldData))
+                    .input('NewValues', sql.NVarChar, JSON.stringify({ ...oldData, CurrentStock: oldData.CurrentStock + qty, LastPrice: unitCost }))
+                    .input('ChangedBy', sql.NVarChar, UserID)
+                    .input('IPAddress', sql.NVarChar, req.ip)
+                    .query(`INSERT INTO dbo.Stock_AuditLogs (TableName, RecordID, ActionType, OldValues, NewValues, ChangedBy, IPAddress) VALUES (@TableName, @RecordID, @ActionType, @OldValues, @NewValues, @ChangedBy, @IPAddress)`);
+
             } else {
                 // Create New
                 const createRes = await new sql.Request(transaction)
@@ -355,6 +431,17 @@ app.post('/api/products/manual-import', async (req, res) => {
                         SELECT SCOPE_IDENTITY() AS NewID;
                     `);
                 productID = createRes.recordset[0].NewID;
+
+                // Manual Log Audit for Transaction Create
+                await new sql.Request(transaction)
+                    .input('TableName', sql.NVarChar, 'Stock_Products')
+                    .input('RecordID', sql.VarChar, String(productID))
+                    .input('ActionType', sql.NVarChar, 'CREATE')
+                    .input('OldValues', sql.NVarChar, null)
+                    .input('NewValues', sql.NVarChar, JSON.stringify({ ProductName, DeviceType, ...req.body }))
+                    .input('ChangedBy', sql.NVarChar, UserID)
+                    .input('IPAddress', sql.NVarChar, req.ip)
+                    .query(`INSERT INTO dbo.Stock_AuditLogs (TableName, RecordID, ActionType, OldValues, NewValues, ChangedBy, IPAddress) VALUES (@TableName, @RecordID, @ActionType, @OldValues, @NewValues, @ChangedBy, @IPAddress)`);
             }
 
             // 2. Log Transaction
@@ -410,6 +497,17 @@ app.post('/api/products/withdraw', async (req, res) => {
                 .input('ProductID', sql.Int, ProductID)
                 .input('Qty', sql.Int, Qty)
                 .query('UPDATE dbo.Stock_Products SET CurrentStock = CurrentStock - @Qty WHERE ProductID = @ProductID');
+
+            // Audit Log for Withdraw
+            await new sql.Request(transaction)
+                .input('TableName', sql.NVarChar, 'Stock_Products')
+                .input('RecordID', sql.VarChar, String(ProductID))
+                .input('ActionType', sql.NVarChar, 'UPDATE')
+                .input('OldValues', sql.NVarChar, JSON.stringify({ CurrentStock: currentStock }))
+                .input('NewValues', sql.NVarChar, JSON.stringify({ CurrentStock: currentStock - Qty }))
+                .input('ChangedBy', sql.NVarChar, UserID)
+                .input('IPAddress', sql.NVarChar, req.ip)
+                .query(`INSERT INTO dbo.Stock_AuditLogs (TableName, RecordID, ActionType, OldValues, NewValues, ChangedBy, IPAddress) VALUES (@TableName, @RecordID, @ActionType, @OldValues, @NewValues, @ChangedBy, @IPAddress)`);
 
             await new sql.Request(transaction)
                 .input('ProductID', sql.Int, ProductID)
@@ -469,28 +567,7 @@ app.get('/api/pos', async (req, res) => {
 
 
 
-// GET Invoices
-app.get('/api/invoices', async (req, res) => {
-    try {
-        const pool = getPool();
-        const result = await pool.request().query(`
-            SELECT *
-            FROM dbo.Stock_Invoices
-            ORDER BY ReceiveDate DESC
-        `);
 
-
-        const invoices = result.recordset.map(inv => ({
-            ...inv,
-            Items: JSON.parse(inv.Items || '[]')
-        }));
-
-        res.json(invoices);
-    } catch (err) {
-        console.error('Get Invoices Error:', err);
-        res.status(500).json({ error: 'Database error' });
-    }
-});
 
 // CREATE PO
 app.post('/api/pos', async (req, res) => {
@@ -657,6 +734,17 @@ app.post('/api/receive', async (req, res) => {
                                         SELECT SCOPE_IDENTITY() AS NewID;
                                     `);
                                 finalProductID = createRes.recordset[0].NewID;
+
+                                // Audit Log for New Product via Receive
+                                await new sql.Request(transaction)
+                                    .input('TableName', sql.NVarChar, 'Stock_Products')
+                                    .input('RecordID', sql.VarChar, String(finalProductID))
+                                    .input('ActionType', sql.NVarChar, 'CREATE')
+                                    .input('OldValues', sql.NVarChar, null)
+                                    .input('NewValues', sql.NVarChar, JSON.stringify({ ProductName: detail.ItemName.trim(), DeviceType: 'Consumable' }))
+                                    .input('ChangedBy', sql.NVarChar, UserID)
+                                    .input('IPAddress', sql.NVarChar, req.ip)
+                                    .query(`INSERT INTO dbo.Stock_AuditLogs (TableName, RecordID, ActionType, OldValues, NewValues, ChangedBy, IPAddress) VALUES (@TableName, @RecordID, @ActionType, @OldValues, @NewValues, @ChangedBy, @IPAddress)`);
                             }
 
                             // Link PO Detail to this new/found ProductID
@@ -674,10 +762,27 @@ app.post('/api/receive', async (req, res) => {
 
                 // 3. Update Stock Level (only if we have a valid ProductID)
                 if (finalProductID) {
+                    // Get current stock for audit (optional but good for consistency)
+                    const stockCheck = await new sql.Request(transaction)
+                        .input('ProductID', sql.Int, finalProductID)
+                        .query('SELECT CurrentStock FROM dbo.Stock_Products WHERE ProductID = @ProductID');
+                    const currentStock = stockCheck.recordset[0]?.CurrentStock || 0;
+
                     await new sql.Request(transaction)
                         .input('ProductID', sql.Int, finalProductID)
                         .input('Qty', sql.Int, qty)
                         .query('UPDATE dbo.Stock_Products SET CurrentStock = CurrentStock + @Qty WHERE ProductID = @ProductID');
+
+                    // Audit Log for Stock Update via Receive
+                    await new sql.Request(transaction)
+                        .input('TableName', sql.NVarChar, 'Stock_Products')
+                        .input('RecordID', sql.VarChar, String(finalProductID))
+                        .input('ActionType', sql.NVarChar, 'UPDATE')
+                        .input('OldValues', sql.NVarChar, JSON.stringify({ CurrentStock: currentStock }))
+                        .input('NewValues', sql.NVarChar, JSON.stringify({ CurrentStock: currentStock + qty }))
+                        .input('ChangedBy', sql.NVarChar, UserID)
+                        .input('IPAddress', sql.NVarChar, req.ip)
+                        .query(`INSERT INTO dbo.Stock_AuditLogs (TableName, RecordID, ActionType, OldValues, NewValues, ChangedBy, IPAddress) VALUES (@TableName, @RecordID, @ActionType, @OldValues, @NewValues, @ChangedBy, @IPAddress)`);
 
 
                 }
@@ -1182,10 +1287,55 @@ const startServer = async () => {
                  `);
             }
             console.log('✅ Vendors verified/seeded');
+            console.log('✅ Vendors verified/seeded');
 
         } catch (err) {
             console.warn('⚠️ Schema Check Warning:', err.message);
         }
+
+        // --- AUDIT LOGS ---
+        app.get('/api/audit-logs', async (req, res) => {
+            const { startDate, endDate, tableName, actionType, user } = req.query;
+
+            try {
+                const pool = getPool();
+                const request = pool.request();
+                let query = `
+            SELECT LogID, TableName, RecordID, ActionType, OldValues, NewValues, ChangedBy, ChangeDate, IPAddress
+            FROM dbo.Stock_AuditLogs
+            WHERE 1=1
+        `;
+
+                if (startDate) {
+                    request.input('startDate', sql.DateTime, new Date(startDate));
+                    query += ' AND ChangeDate >= @startDate';
+                }
+                if (endDate) {
+                    request.input('endDate', sql.DateTime, new Date(endDate));
+                    query += ' AND ChangeDate <= @endDate';
+                }
+                if (tableName) {
+                    request.input('tableName', sql.NVarChar, tableName);
+                    query += ' AND TableName = @tableName';
+                }
+                if (actionType) {
+                    request.input('actionType', sql.NVarChar, actionType);
+                    query += ' AND ActionType = @actionType';
+                }
+                if (user) {
+                    request.input('user', sql.NVarChar, user);
+                    query += ' AND ChangedBy LIKE @user';
+                }
+
+                query += ' ORDER BY ChangeDate DESC';
+
+                const result = await request.query(query);
+                res.json(result.recordset);
+            } catch (err) {
+                console.error('Get Audit Logs Error:', err);
+                res.status(500).json({ error: 'Database error' });
+            }
+        });
 
         app.listen(PORT, () => {
             console.log(`🚀 Server running on http://localhost:${PORT}`);

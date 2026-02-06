@@ -18,6 +18,7 @@ import HistoryPage from './pages/HistoryPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import ReportPage from './pages/ReportPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AuditLogPage from './pages/AuditLogPage';
 
 // App Routes Component
 const AppRoutes = () => {
@@ -76,6 +77,14 @@ const AppRoutes = () => {
                     element={
                         <ProtectedRoute staffOnly>
                             <AdminUsersPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="audit-logs"
+                    element={
+                        <ProtectedRoute staffOnly>
+                            <AuditLogPage />
                         </ProtectedRoute>
                     }
                 />

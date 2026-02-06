@@ -14,12 +14,13 @@ const DashboardPage = () => {
 
     // 1. Calculate Stats
     const stats = useMemo(() => {
+        const productCount = products.length;
         const totalStock = products.reduce((sum, p) => sum + p.CurrentStock, 0);
         const totalValue = products.reduce((sum, p) => sum + (p.CurrentStock * p.LastPrice), 0);
         const lowStockCount = products.filter(p => p.CurrentStock < p.MinStock).length;
         const activePOs = purchaseOrders.filter(po => po.Status !== 'Completed').length;
 
-        return { totalStock, totalValue, lowStockCount, activePOs };
+        return { productCount, totalStock, totalValue, lowStockCount, activePOs };
     }, [products, purchaseOrders]);
 
     // 2. Prepare Chart Data: Category Distribution
@@ -125,8 +126,8 @@ const DashboardPage = () => {
                 <StatCard
                     icon={Package}
                     title="สินค้าคงคลังทั้งหมด"
-                    value={stats.totalStock.toLocaleString()}
-                    subValue="ชิ้น (รายการ)"
+                    value={stats.productCount.toLocaleString()}
+                    subValue={`รวม ${stats.totalStock.toLocaleString()} ชิ้น`}
                     color="from-blue-500 to-blue-600"
                 />
                 <StatCard

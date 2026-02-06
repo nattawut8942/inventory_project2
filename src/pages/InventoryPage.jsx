@@ -47,6 +47,7 @@ const InventoryPage = () => {
     const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedType, setSelectedType] = useState('all');
+    const [showLowStock, setShowLowStock] = useState(false);
     const [viewMode, setViewMode] = useState('grid');
     const [editItem, setEditItem] = useState(null);
     const [historyItem, setHistoryItem] = useState(null);
@@ -110,7 +111,8 @@ const InventoryPage = () => {
 
     const filteredProducts = products.filter(p =>
         p.ProductName.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        (selectedType === 'all' || p.DeviceType === selectedType)
+        (selectedType === 'all' || p.DeviceType === selectedType) &&
+        (!showLowStock || p.CurrentStock < p.MinStock)
     );
 
     // Stats Calculations
@@ -264,6 +266,16 @@ const InventoryPage = () => {
                         <option value="all">ทุกประเภท</option>
                         {deviceTypes.map(t => <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>)}
                     </select>
+                    <button
+                        onClick={() => setShowLowStock(!showLowStock)}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all font-bold text-sm ${showLowStock
+                                ? 'bg-red-50 text-red-600 border-red-200 shadow-sm ring-2 ring-red-100'
+                                : 'bg-white text-slate-500 border-slate-200 hover:text-red-500 hover:border-red-200'
+                            }`}
+                    >
+                        <AlertTriangle size={16} className={showLowStock ? "fill-current" : ""} />
+                        <span>Low Stock</span>
+                    </button>
                 </div>
             </motion.div>
 
