@@ -165,6 +165,7 @@ const InventoryPage = () => {
         payload.CurrentStock = parseInt(payload.CurrentStock, 10) || 0;
         payload.LastPrice = parseFloat(payload.LastPrice) || 0;
 
+
         try {
             const res = await fetch(`${API_BASE}/products/${editItem.ProductID}`, {
                 method: 'PUT',
@@ -269,8 +270,8 @@ const InventoryPage = () => {
                     <button
                         onClick={() => setShowLowStock(!showLowStock)}
                         className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all font-bold text-sm ${showLowStock
-                                ? 'bg-red-50 text-red-600 border-red-200 shadow-sm ring-2 ring-red-100'
-                                : 'bg-white text-slate-500 border-slate-200 hover:text-red-500 hover:border-red-200'
+                            ? 'bg-red-50 text-red-600 border-red-200 shadow-sm ring-2 ring-red-100'
+                            : 'bg-white text-slate-500 border-slate-200 hover:text-red-500 hover:border-red-200'
                             }`}
                     >
                         <AlertTriangle size={16} className={showLowStock ? "fill-current" : ""} />

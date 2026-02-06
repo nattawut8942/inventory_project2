@@ -18,7 +18,7 @@ import HistoryPage from './pages/HistoryPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import ReportPage from './pages/ReportPage';
 import AdminUsersPage from './pages/AdminUsersPage';
-import AuditLogPage from './pages/AuditLogPage';
+
 
 // App Routes Component
 const AppRoutes = () => {
@@ -81,13 +81,14 @@ const AppRoutes = () => {
                     }
                 />
                 <Route
-                    path="audit-logs"
+                    path="admin-users"
                     element={
                         <ProtectedRoute staffOnly>
-                            <AuditLogPage />
+                            <AdminUsersPage />
                         </ProtectedRoute>
                     }
                 />
+
             </Route>
 
             {/* Catch all - redirect to home */}

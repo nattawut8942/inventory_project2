@@ -69,7 +69,7 @@ const Sidebar = () => {
                         <SidebarItem icon={ArrowDownToLine} label="Receive Items" to="/receive" />
                         <SidebarItem icon={Plus} label="Manual Import" to="/manual-import" />
                         <SidebarItem icon={Shield} label="Admin Users" to="/admin-users" />
-                        <SidebarItem icon={Activity} label="Audit Logs" to="/audit-logs" />
+
                     </>
                 )}
 
