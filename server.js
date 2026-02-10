@@ -562,6 +562,7 @@ app.post('/api/pos', async (req, res) => {
     }
 });
 
+
 // Get Stock History for a Product
 app.get('/api/stock/history/:id', async (req, res) => {
     try {

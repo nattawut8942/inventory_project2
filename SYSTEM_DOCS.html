@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Stock Pro - System Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #1e293b;
+            font-weight: 800;
+        }
+
+        h2 {
+            margin-top: 2rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #334155;
+        }
+
+        p,
+        li {
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        ol {
+            list-style-type: decimal;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        code {
+            background-color: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            rounded: 0.25rem;
+            font-family: monospace;
+            color: #ef4444;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #cbd5e1;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        .mermaid {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto bg-white p-12 shadow-xl rounded-2xl">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl mb-2 text-indigo-900">IT Stock Pro</h1>
+            <p class="text-xl text-slate-500 font-medium">System Documentation (เอกสารระบบฉบับสมบูรณ์)</p>
+            <p class="text-sm text-slate-400 mt-4">Version 2.0 • Last Updated: 2026-02-11</p>
+        </div>
+
+        <section>
+            <h2>1. Project Overview (ภาพรวมระบบ)</h2>
+            <p><strong>IT Stock Pro</strong> คือระบบบริหารจัดการคลังสินค้าสำหรับแผนก IT
+                ที่ออกแบบมาเพื่อรองรับกระบวนการทำงานแบบ End-to-End ตั้งแต่การจัดซื้อ (Procurement), การรับของ
+                (Receiving), การจัดเก็บ (Stocking), ไปจนถึงการเบิกจ่าย (Withdrawal)</p>
+            <br>
+            <h3>ความสามารถหลัก:</h3>
+            <ul>
+                <li><strong>Real-time Tracking:</strong> ตรวจสอบยอดคงเหลือและมูลค่าสต็อคได้ทันที</li>
+                <li><strong>Procurement Cycle:</strong> จัดการ PO และรับของด้วย <strong>AI OCR</strong></li>
+                <li><strong>Distribution:</strong> ควบคุมการเบิกจ่ายพร้อมระบุเหตุผล</li>
+                <li><strong>Audit Trails:</strong> บันทึก Log ทุกการเคลื่อนไหว 100%</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>2. System Architecture & Tech Stack</h2>
+            <p>ระบบถูกออกแบบด้วยสถาปัตยกรรม Modern Web เพื่อความรวดเร็วและรองรับการขยายตัว</p>
+            <ul>
+                <li><strong>Frontend:</strong> React, Vite, Tailwind CSS, Recharts</li>
+                <li><strong>Backend:</strong> Node.js, Express REST API</li>
+                <li><strong>Database:</strong> MSSQL / SQLite</li>
+                <li><strong>Auth:</strong> Corporate AD Integration</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>3. User Roles (สิทธิ์การใช้งาน)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Permissions</th>
+                        <th>Access Scope</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Admin / Staff</strong></td>
+                        <td>Full Access</td>
+                        <td>จัดการสินค้า, PO, รับของ, และสิทธิ์ผู้ใช้</td>
+                    </tr>
+                    <tr>
+                        <td><strong>User</strong></td>
+                        <td>Restricted</td>
+                        <td>ดูสินค้า (Read-only), เบิกของ, ดูประวัติ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>4. Key Workflows (ขั้นตอนการทำงานหลัก)</h2>
+
+            <h3>5.1 Procurement (จัดซื้อ)</h3>
+            <div class="mermaid">
+                1. สร้าง PO (Create PO) -> สถานะ Open<br>
+                2. ส่ง PO ให้ Vendor<br>
+                3. สินค้ามาส่งพร้อม Invoice<br>
+                4. Upload Invoice เข้าระบบ (OCR Scan)<br>
+                5. ระบบตรวจสอบรายการ (Match Items)<br>
+                6. ยืนยันรับของ (Confirm Receive) -> เพิ่ม Stock
+            </div>
+
+            <h3>5.2 Withdrawal (เบิกจ่าย)</h3>
+            <div class="mermaid">
+                1. User สแกนสินค้า / ค้นหา<br>
+                2. หยิบใส่ตะกร้า (Add to Cart)<br>
+                3. Checkout -> ระบุเหตุผล (Reason)<br>
+                4. ยืนยันการเบิก (Confirm)<br>
+                5. ระบบตัด Stock -> บันทึก Log
+            </div>
+        </section>
+
+        <section>
+            <h2>5. Detailed Functions (คู่มือการใช้งานละเอียด)</h2>
+
+            <h3>🛍️ Inventory (จัดการสินค้า)</h3>
+            <ol>
+                <li><strong>เพิ่มสินค้า:</strong> ไปที่หน้า Inventory > กด + Add Product > กรอกรายละเอียด > บันทึก</li>
+                <li><strong>แก้ไข:</strong> คลิกที่สินค้า > แก้ไขราคา/Min Stock > บันทึก</li>
+                <li><strong>พิมพ์บาร์โค้ด:</strong> คลิกปุ่ม QR ที่รูปสินค้า > สั่งพิมพ์ (Ctrl+P)</li>
+            </ol>
+
+            <h3>🛒 PO & Receive (สั่งซื้อและรับของ)</h3>
+            <ol>
+                <li><strong>สร้าง PO:</strong> หน้า PO > + Create PO > เลือก Vendor + สินค้า > Create</li>
+                <li><strong>รับของ (OCR):</strong> หน้า Receive > เลือก PO > Upload รูปบิล > ตรวจสอบความถูกต้อง >
+                    Confirm</li>
+            </ol>
+
+            <h3>📤 Withdraw (เบิกของ)</h3>
+            <ol>
+                <li>ไปที่หน้า Withdraw</li>
+                <li>ยิงบาร์โค้ดสินค้า (ลงตะกร้าอัตโนมัติ)</li>
+                <li>กด Proceed to Checkout</li>
+                <li>ระบุชื่อผู้เบิก + แผนก + เหตุผล</li>
+                <li>กด Confirm Withdraw</li>
+            </ol>
+
+            <h3>📈 Reports (รายงาน)</h3>
+            <ol>
+                <li>ไปที่หน้า Report & Analytics</li>
+                <li>เลือกข้อมูลที่ต้องการ Export (เช่น Products, Transactions)</li>
+                <li>กด <strong>Export to Excel</strong> เพื่อดาวน์โหลดไฟล์ .xlsx</li>
+            </ol>
+        </section>
+
+        <div class="mt-12 pt-8 border-t border-slate-200 text-center text-slate-400 text-sm">
+            &copy; 2026 IT Stock Pro System Documentation
+        </div>
+    </div>
+</body>
+
+</html>

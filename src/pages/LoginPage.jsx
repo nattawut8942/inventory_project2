@@ -42,20 +42,25 @@ const LoginPage = () => {
         <div className="flex h-screen items-center justify-center bg-gray-950 font-sans text-white relative overflow-hidden">
             <div className="absolute inset-0 bg-indigo-900/10 z-0"></div>
             <div className="z-10 w-full max-w-md p-8 bg-black/50 backdrop-blur-xl border border-gray-800 rounded-3xl shadow-2xl">
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-600 mb-4 shadow-lg shadow-indigo-600/50">
-                        <Package size={32} />
-                    </div>
-                    <h1 className="text-3xl font-black tracking-tight">IT STOCK PRO</h1>
-                    <p className="text-gray-400 mt-2 text-sm">Sign in to manage inventory & assets</p>
-                </div>
+                <div className="text-center  mb-8">
+                    <img
 
+                        src="/public/DAIKIN_logo.svg.png"
+                        alt="DAIKIN Logo"
+                        className="h-13 mx-auto mb-6 object-contain"
+                    />
+                    <h2 className="text-3xl font-black text-slate-300">IT INVENTORY</h2>
+                    <p className="text-slate-400 mt-2">MANAGEMENT SYSTEM</p>
+                </div>
+                <p className="mt-8 text-center text-[14px] text-slate-400">
+                    Login ด้วย Username / Password เข้าเครื่องคอมพิวเตอร์ของคุณ
+                </p> <br></br>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Username</label>
                         <input
                             name="username"
-                            placeholder="AD User (e.g. admin)"
+                            placeholder="Aeagon.t"
                             className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 outline-none focus:border-indigo-500 transition-all text-sm"
                             required
                         />
@@ -84,8 +89,9 @@ const LoginPage = () => {
                         {loading ? 'Authenticating...' : 'Secure Sign In'}
                     </button>
                 </form>
-                <p className="mt-8 text-center text-[10px] text-gray-600">
-                    Connects to DCI BudgetRestService for Authentication
+
+                <p className="mt-5 text-center text-[13px] text-gray-500">
+                    © 2026 by: Natthawut.Y <span className="font-bold text-indigo-400">All rights reserved. </span>
                 </p>
             </div>
         </div>

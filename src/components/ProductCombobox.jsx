@@ -24,6 +24,13 @@ const ProductCombobox = ({ products = [], value = {}, onChange }) => {
         p => p.ProductName.toLowerCase() === searchTerm.toLowerCase()
     );
 
+    // Sync searchTerm with value prop (for auto-fill/OCR)
+    useEffect(() => {
+        if (value.ItemName && value.ItemName !== searchTerm) {
+            setSearchTerm(value.ItemName);
+        }
+    }, [value.ItemName]);
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (e) => {

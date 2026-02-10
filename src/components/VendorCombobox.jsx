@@ -23,6 +23,13 @@ const VendorCombobox = ({ vendors = [], value = {}, onChange }) => {
         v => v.VendorName.toLowerCase() === searchTerm.toLowerCase()
     );
 
+    // Sync searchTerm with value prop (for auto-fill/OCR)
+    useEffect(() => {
+        if (value.VendorName && value.VendorName !== searchTerm) {
+            setSearchTerm(value.VendorName);
+        }
+    }, [value.VendorName]);
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (e) => {

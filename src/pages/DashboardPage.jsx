@@ -123,7 +123,7 @@ const DashboardPage = () => {
     }, [transactions]);
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 p-2">
+        <div className="space-y-6 animate-in fade-in duration-500">
             <h2 className="text-3xl font-black text-slate-800 mb-8">Dashboard ภาพรวม</h2>
 
             {/* Stats Grid */}
@@ -169,7 +169,7 @@ const DashboardPage = () => {
                     className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
                 >
                     <h3 className="text-lg font-bold text-slate-800 mb-6">การเคลื่อนไหวสต็อค (6 เดือนล่าสุด)</h3>
-                    <div className="h-[300px] w-full">
+                    <div className="h-[250px] lg:h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={stockData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
@@ -200,7 +200,7 @@ const DashboardPage = () => {
                     className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
                 >
                     <h3 className="text-lg font-bold text-slate-800 mb-6">สัดส่วนสินค้าตามหมวดหมู่</h3>
-                    <div className="h-[300px] w-full">
+                    <div className="h-[250px] lg:h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie

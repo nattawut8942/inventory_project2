@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FileText, Search, Calendar, Eye, X, Package, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Search, Calendar, Eye, X, Package, Check, ArrowDownCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -34,6 +34,30 @@ const ReceivePage = () => {
     const [filterMonth, setFilterMonth] = useState(getCurrentMonth());
     const [selectedPO, setSelectedPO] = useState(null); // For detail view
     const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
+
+    // Selection state for Receive Modal
+    const [selectedItems, setSelectedItems] = useState({});
+
+    // Initialize selection when opening modal
+    useEffect(() => {
+        if (isModalOpen && activePo) {
+            const initial = {};
+            activePo.Items.forEach((item, idx) => {
+                const remaining = item.QtyOrdered - (item.QtyReceived || 0);
+                if (remaining > 0) {
+                    initial[idx] = true; // Default to selected if not fully received
+                }
+            });
+            setSelectedItems(initial);
+        }
+    }, [isModalOpen, activePo]);
+
+    const toggleSelection = (idx) => {
+        setSelectedItems(prev => ({
+            ...prev,
+            [idx]: !prev[idx]
+        }));
+    };
 
     const handleReceive = async (poId, invoiceNo, itemsReceived) => {
         if (!itemsReceived || itemsReceived.length === 0) {
@@ -156,22 +180,24 @@ const ReceivePage = () => {
                                     <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
                                         <Package size={18} />
                                     </div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-800 text-sm">{po.PO_ID}</h4>
-                                        <p className="text-[10px] text-slate-400">{po.VendorName || '-'}</p>
-                                        {po.BudgetNo && (
-                                            <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 mt-0.5 inline-block">
-                                                Budget: {po.BudgetNo}
-                                            </span>
-                                        )}
-                                        {po.PR_No && (
-                                            <span className="text-[9px] bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded border border-indigo-100 mt-0.5 ml-1 inline-block">
-                                                PR: {po.PR_No}
-                                            </span>
-                                        )}
+                                    <div className="min-w-0 flex-1">
+                                        <h4 className="font-bold text-slate-800 text-sm truncate">{po.PO_ID}</h4>
+                                        <p className="text-[10px] text-slate-400 truncate">{po.VendorName || '-'}</p>
+                                        <div className="flex flex-wrap gap-1 mt-0.5">
+                                            {po.BudgetNo && (
+                                                <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 inline-block truncate max-w-full">
+                                                    Budget: {po.BudgetNo}
+                                                </span>
+                                            )}
+                                            {po.PR_No && (
+                                                <span className="text-[9px] bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded border border-indigo-100 inline-block truncate max-w-full">
+                                                    PR: {po.PR_No}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${getStatusColor(po.Status)}`}>
+                                <span className={`shrink-0 text-[9px] font-bold px-2 py-0.5 rounded-full border ${getStatusColor(po.Status)}`}>
                                     {po.Status === 'Open' ? 'Pending' : po.Status}
                                 </span>
                             </div>
@@ -213,7 +239,7 @@ const ReceivePage = () => {
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-700">
                     <FileText className="text-slate-400" /> Invoice History
                 </h2>
-                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50 text-xs text-slate-500 uppercase border-b border-slate-200">
                             <tr>
@@ -307,24 +333,39 @@ const ReceivePage = () => {
                                     {/* Items */}
                                     <div>
                                         <h4 className="font-bold text-slate-800 mb-3">รายการ ({selectedPO.Items?.length || 0})</h4>
-                                        <div className="bg-slate-50 rounded-xl overflow-hidden">
+                                        <div className="bg-slate-50 rounded-xl overflow-hidden overflow-x-auto">
                                             <table className="w-full text-sm">
                                                 <thead className="bg-slate-100">
                                                     <tr>
                                                         <th className="text-left p-3 font-bold text-slate-600">ชื่อรายการ</th>
                                                         <th className="text-center p-3 font-bold text-slate-600 w-28">รับแล้ว / สั่ง</th>
+                                                        <th className="text-center p-3 font-bold text-slate-600 w-28">สถานะ</th>
                                                         <th className="text-right p-3 font-bold text-slate-600 w-24">ราคา</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {selectedPO.Items?.map((item, idx) => {
                                                         const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || `Item #${idx + 1}`;
+                                                        const isFullyReceived = (item.QtyReceived || 0) >= item.QtyOrdered;
                                                         return (
-                                                            <tr key={idx} className="border-t border-slate-200">
-                                                                <td className="p-3 text-slate-700">{prodName}</td>
+                                                            <tr key={idx} className={`border-t ${isFullyReceived ? 'bg-emerald-50/60' : 'border-slate-200'}`}>
+                                                                <td className={`p-3 ${isFullyReceived ? 'text-emerald-700 line-through' : 'text-slate-700'}`}>
+                                                                    {prodName}
+                                                                </td>
                                                                 <td className="p-3 text-center font-mono">
-                                                                    <span className="text-emerald-600">{item.QtyReceived || 0}</span>
+                                                                    <span className="text-emerald-600 font-bold">{item.QtyReceived || 0}</span>
                                                                     <span className="text-slate-400"> / {item.QtyOrdered}</span>
+                                                                </td>
+                                                                <td className="p-3 text-center">
+                                                                    {isFullyReceived ? (
+                                                                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold border border-emerald-200">
+                                                                            <Check size={12} /> รับครบแล้ว
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                                                                            ค้างรับ
+                                                                        </span>
+                                                                    )}
                                                                 </td>
                                                                 <td className="p-3 text-right font-mono text-slate-600">฿{(item.UnitCost || 0).toLocaleString()}</td>
                                                             </tr>
@@ -399,23 +440,68 @@ const ReceivePage = () => {
                                             {activePo.Items.map((item, idx) => {
                                                 const prodName = item.ItemName || products.find(p => p.ProductID === item.ProductID)?.ProductName || 'Unknown';
                                                 const remaining = item.QtyOrdered - (item.QtyReceived || 0);
+                                                const isFullyReceived = remaining <= 0;
                                                 return (
-                                                    <div key={idx} className="flex gap-3 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                                    <div key={idx} className={`flex gap-3 items-center p-3 rounded-xl border transition-all ${isFullyReceived
+                                                        ? 'bg-emerald-50 border-emerald-200 opacity-70'
+                                                        : selectedItems[idx]
+                                                            ? 'bg-white border-indigo-200 shadow-sm'
+                                                            : 'bg-slate-50 border-slate-100 opacity-60'
+                                                        }`}>
+                                                        {/* Checkbox */}
+                                                        {!isFullyReceived && (
+                                                            <div className="flex items-center">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={!!selectedItems[idx]}
+                                                                    onChange={() => toggleSelection(idx)}
+                                                                    className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                                />
+                                                            </div>
+                                                        )}
+
                                                         <div className="flex-1">
-                                                            <p className="font-medium text-sm text-slate-700">{prodName}</p>
-                                                            <p className="text-xs text-slate-400">คงเหลือ: {remaining} / {item.QtyOrdered}</p>
+                                                            <p className={`font-medium text-sm ${isFullyReceived ? 'text-emerald-700 line-through' : 'text-slate-700'}`}>{prodName}</p>
+                                                            <p className="text-xs text-slate-400">
+                                                                {isFullyReceived
+                                                                    ? `รับครบ ${item.QtyOrdered} ชิ้นแล้ว`
+                                                                    : `คงเหลือ: ${remaining} / ${item.QtyOrdered}`
+                                                                }
+                                                            </p>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs text-slate-500 font-bold">จำนวน:</span>
-                                                            <input
-                                                                name={`qty-${idx}`}
-                                                                type="number"
-                                                                min="0"
-                                                                max={remaining}
-                                                                defaultValue={remaining}
-                                                                className="w-16 bg-white border border-slate-200 p-2 rounded-lg text-center text-sm font-mono outline-none focus:border-indigo-500"
-                                                            />
-                                                        </div>
+                                                        {isFullyReceived ? (
+                                                            <>
+                                                                <input type="hidden" name={`qty-${idx}`} value="0" />
+                                                                <span className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">
+                                                                    <Check size={14} /> รับครบแล้ว
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <div className={`flex items-center gap-2 ${!selectedItems[idx] ? 'pointer-events-none opacity-50' : ''}`}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        if (!selectedItems[idx]) toggleSelection(idx);
+                                                                        const el = document.querySelector(`input[name="qty-${idx}"]`);
+                                                                        if (el) el.value = remaining;
+                                                                    }}
+                                                                    className="text-emerald-600 hover:bg-emerald-50 p-1 rounded transition-colors"
+                                                                    title="รับทั้งหมด"
+                                                                >
+                                                                    <ArrowDownCircle size={16} />
+                                                                </button>
+                                                                <span className="text-xs text-slate-500 font-bold">จำนวน:</span>
+                                                                <input
+                                                                    name={`qty-${idx}`}
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max={remaining}
+                                                                    defaultValue={remaining}
+                                                                    disabled={!selectedItems[idx]}
+                                                                    className="w-16 bg-white border border-slate-200 p-2 rounded-lg text-center text-sm font-mono outline-none focus:border-indigo-500 disabled:bg-slate-100"
+                                                                />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             })}

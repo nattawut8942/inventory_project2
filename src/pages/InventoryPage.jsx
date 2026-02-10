@@ -269,7 +269,7 @@ const InventoryPage = () => {
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg"
+                    className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg overflow-x-auto"
                 >
                     <table className="w-full text-left text-sm">
                         <thead className="bg-gradient-to-r from-slate-50 to-slate-100 text-slate-500 uppercase text-[10px] tracking-widest border-b border-slate-200">
@@ -304,7 +304,7 @@ const InventoryPage = () => {
                                                         <Icon size={18} className="text-white" />
                                                     )}
                                                 </div>
-                                                <span className="font-bold text-slate-700">{p.ProductName}</span>
+                                                <span className="font-bold text-slate-700 truncate min-w-0 flex-1">{p.ProductName}</span>
                                             </div>
                                         </td>
                                         <td className="p-4">
@@ -378,8 +378,8 @@ const InventoryPage = () => {
                             {/* Decorative Gradient Background */}
                             <div className={`absolute top-0 left-0 w-full h-20 bg-gradient-to-br ${getColorGradient(p.DeviceType)} opacity-10 z-0`}></div>
 
-                            {/* Actions Overlay */}
-                            <div className="absolute top-2 right-2 z-20 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* Actions Overlay - Always visible on mobile, hover on desktop */}
+                            <div className="absolute top-2 right-2 z-20 flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                                 <button onClick={() => viewHistory(p)} className="p-1.5 bg-white/90 backdrop-blur text-indigo-600 rounded-full shadow-sm hover:bg-indigo-50" title="History"><List size={14} /></button>
                                 <button onClick={() => setBarcodeItem(p)} className="p-1.5 bg-white/90 backdrop-blur text-emerald-600 rounded-full shadow-sm hover:bg-emerald-50" title="Print Barcode"><Printer size={14} /></button>
                                 {isAdmin && (
@@ -438,7 +438,7 @@ const InventoryPage = () => {
                                     </div>
                                     <button onClick={() => setHistoryItem(null)} className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"><X size={20} /></button>
                                 </div>
-                                <div className="max-h-[60vh] overflow-y-auto scrollbar-thin">
+                                <div className="max-h-[60vh] overflow-y-auto overflow-x-auto scrollbar-thin">
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-white text-slate-500 text-[10px] uppercase sticky top-0 border-b border-slate-100 shadow-sm z-10">
                                             <tr>
@@ -458,12 +458,12 @@ const InventoryPage = () => {
                                                     transition={{ delay: i * 0.05 }}
                                                     className="hover:bg-slate-50 transition-colors"
                                                 >
-                                                    <td className="p-4 text-slate-500">{new Date(h.TransDate).toLocaleDateString()} <span className="text-xs text-slate-400">{new Date(h.TransDate).toLocaleTimeString()}</span></td>
+                                                    <td className="p-4 text-slate-500 whitespace-nowrap">{new Date(h.TransDate).toLocaleDateString()} <span className="text-xs text-slate-400">{new Date(h.TransDate).toLocaleTimeString()}</span></td>
                                                     <td className={`p-4 text-center font-bold ${(h.TransType || '').toUpperCase().trim() === 'IN' || (h.RefInfo || '').toLowerCase().includes('invoice') ? 'text-emerald-600' : 'text-red-500'}`}>
                                                         {(h.TransType || '').toUpperCase().trim() === 'IN' || (h.RefInfo || '').toLowerCase().includes('invoice') ? '+' : '-'}{Math.abs(h.Qty)}
                                                     </td>
-                                                    <td className="p-4 text-indigo-600 font-medium">{h.RefInfo}</td>
-                                                    <td className="p-4 text-slate-500 font-mono text-xs">{h.BudgetNo || '-'}</td>
+                                                    <td className="p-4 text-indigo-600 font-medium max-w-[150px] truncate" title={h.RefInfo}>{h.RefInfo}</td>
+                                                    <td className="p-4 text-slate-500 font-mono text-xs max-w-[100px] truncate" title={h.BudgetNo}>{h.BudgetNo || '-'}</td>
                                                     <td className="p-4 text-xs text-slate-400">{h.UserID}</td>
                                                 </motion.tr>
                                             ))}
