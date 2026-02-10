@@ -1,29 +1,61 @@
 import React, { useState, useMemo } from 'react';
+import { Search } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
 const HistoryPage = () => {
     const { transactions } = useData();
     const [filter, setFilter] = useState('ALL'); // ALL, IN, OUT
+    const [searchTerm, setSearchTerm] = useState('');
 
     const filteredTransactions = useMemo(() => {
-        if (filter === 'ALL') return transactions || [];
-        return (transactions || []).filter(t => t.TransType === filter);
-    }, [transactions, filter]);
+        let result = transactions || [];
+
+        // Filter by type
+        if (filter !== 'ALL') {
+            result = result.filter(t => t.TransType === filter);
+        }
+
+        // Filter by search term (UserID, ProductName, or RefInfo)
+        if (searchTerm.trim()) {
+            const term = searchTerm.toLowerCase();
+            result = result.filter(t =>
+                (t.UserID || '').toLowerCase().includes(term) ||
+                (t.ProductName || '').toLowerCase().includes(term) ||
+                (t.RefInfo || '').toLowerCase().includes(term)
+            );
+        }
+
+        return result;
+    }, [transactions, filter, searchTerm]);
 
     return (
         <div className="space-y-6 animate-in slide-in-from-bottom-5">
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-black text-slate-800">Transaction Log</h2>
-                <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                    {['ALL', 'IN', 'OUT'].map(f => (
-                        <button
-                            key={f}
-                            onClick={() => setFilter(f)}
-                            className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${filter === f ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
-                        >
-                            {f === 'ALL' ? 'All Activity' : f === 'IN' ? 'Inbound' : 'Outbound'}
-                        </button>
-                    ))}
+                <div className="flex items-center gap-4">
+                    {/* Search Box */}
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="ค้นหา User, Item, Reference..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 pr-4 py-2 w-64 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+                        />
+                    </div>
+                    {/* Filter Buttons */}
+                    <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                        {['ALL', 'IN', 'OUT'].map(f => (
+                            <button
+                                key={f}
+                                onClick={() => setFilter(f)}
+                                className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${filter === f ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                            >
+                                {f === 'ALL' ? 'All Activity' : f === 'IN' ? 'Inbound' : 'Outbound'}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">

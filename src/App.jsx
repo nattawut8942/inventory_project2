@@ -47,23 +47,9 @@ const AppRoutes = () => {
                 <Route path="history" element={<HistoryPage />} />
                 <Route path="reports" element={<ReportPage />} />
 
-                {/* Staff Only Routes */}
-                <Route
-                    path="purchase-orders"
-                    element={
-                        <ProtectedRoute staffOnly>
-                            <PurchaseOrdersPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="receive"
-                    element={
-                        <ProtectedRoute staffOnly>
-                            <ReceivePage />
-                        </ProtectedRoute>
-                    }
-                />
+                {/* PO and Receive - viewable by all, actions restricted in components */}
+                <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
+                <Route path="receive" element={<ReceivePage />} />
                 <Route
                     path="manual-import"
                     element={

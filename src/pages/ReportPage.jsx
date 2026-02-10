@@ -4,10 +4,11 @@ import { BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, Cartes
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import AlertModal from '../components/AlertModal';
+import { getChartColor } from '../utils/styleHelpers';
 
 const API_BASE = 'http://localhost:3001/api';
 
-const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+// const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
 // StatCard Component
 const StatCard = ({ icon: Icon, title, value, subtitle, color }) => (
@@ -48,7 +49,7 @@ const ReportPage = () => {
     const categoryData = deviceTypes.map((t, idx) => ({
         name: t.Label,
         value: products.filter(p => p.DeviceType === t.TypeId).length,
-        color: COLORS[idx % COLORS.length]
+        color: getChartColor(t.TypeId)
     })).filter(c => c.value > 0);
 
     // Calculate real stock movement from transactions (quantity-based)
@@ -510,7 +511,7 @@ const ReportPage = () => {
                             dataKey="value"
                         >
                             {categoryData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                         </Pie>
                         <Tooltip />

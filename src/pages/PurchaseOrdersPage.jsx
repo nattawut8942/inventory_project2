@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Plus, X, Eye, Search, Calendar, Filter, Check } from 'lucide-react';
+import { ShoppingCart, Plus, X, Eye, Search, Calendar, Filter, Check, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -28,7 +28,12 @@ const PurchaseOrdersPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [poItems, setPoItems] = useState([{ ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterDate, setFilterDate] = useState('');
+    // Default to current month (YYYY-MM format)
+    const getCurrentMonth = () => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    };
+    const [filterMonth, setFilterMonth] = useState(getCurrentMonth());
     const [filterStatus, setFilterStatus] = useState('all');
     const [selectedPO, setSelectedPO] = useState(null); // For detail modal
     const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
@@ -62,15 +67,31 @@ const PurchaseOrdersPage = () => {
         e.preventDefault();
         const fd = new FormData(e.target);
 
+        // Validation - Require PO, Vendor, Budget, and PR No
+        if (!fd.get('PO_ID') || !selectedVendor.VendorName || !fd.get('BudgetNo') || !fd.get('PR_No')) {
+            setResultModal({
+                isOpen: true,
+                type: 'error',
+                title: 'ข้อมูลไม่ครบถ้วน',
+                message: 'กรุณาระบุ PO Number, PR No, Vendor และ Budget No. ให้ครบถ้วน'
+            });
+            return;
+        }
+
         const payload = {
             PO_ID: fd.get('PO_ID'),
+            PR_No: fd.get('PR_No'),
             VendorName: selectedVendor.VendorName,
             DueDate: fd.get('DueDate'),
             RequestedBy: user.username,
             Section: fd.get('Section'),
+            BudgetNo: fd.get('BudgetNo'),
             Remark: fd.get('Remark'),
             Items: poItems.filter(i => i.ItemName.trim() !== '')
         };
+
+        console.log('[DEBUG Frontend] handleSubmit payload:', payload);
+        console.log('[DEBUG Frontend] BudgetNo value:', payload.BudgetNo);
 
         try {
             const res = await fetch(`${API_BASE}/pos`, {
@@ -126,22 +147,25 @@ const PurchaseOrdersPage = () => {
     const filteredPOs = purchaseOrders.filter(po => {
         const matchSearch = po.PO_ID.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (po.VendorName && po.VendorName.toLowerCase().includes(searchTerm.toLowerCase()));
-        const matchDate = !filterDate || (po.RequestDate && po.RequestDate.includes(filterDate));
+        // Month filter: check if RequestDate starts with YYYY-MM
+        const matchMonth = !filterMonth || (po.RequestDate && po.RequestDate.startsWith(filterMonth));
         const matchStatus = filterStatus === 'all' || po.Status === filterStatus ||
             (filterStatus === 'Pending' && (po.Status === 'Pending' || po.Status === 'Open'));
-        return matchSearch && matchDate && matchStatus;
+        return matchSearch && matchMonth && matchStatus;
     });
 
     return (
         <div className="space-y-6 animate-in fade-in">
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-black text-slate-800">Purchase Orders</h2>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-3 rounded-xl transition-all shadow-lg shadow-indigo-200"
-                >
-                    <Plus size={18} /> Create New PO
-                </button>
+                {user?.role === 'Staff' && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-3 rounded-xl transition-all shadow-lg shadow-indigo-200"
+                    >
+                        <Plus size={18} /> Create New PO
+                    </button>
+                )}
             </div>
 
             {/* Dashboard Stats */}
@@ -183,10 +207,10 @@ const PurchaseOrdersPage = () => {
                 <div className="flex gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                     <Calendar size={18} className="text-slate-400 self-center" />
                     <input
-                        type="date"
+                        type="month"
                         className="bg-transparent border-none outline-none text-sm text-slate-700"
-                        value={filterDate}
-                        onChange={(e) => setFilterDate(e.target.value)}
+                        value={filterMonth}
+                        onChange={(e) => setFilterMonth(e.target.value)}
                     />
                 </div>
                 <div className="flex gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm">
@@ -203,9 +227,9 @@ const PurchaseOrdersPage = () => {
                         <option value="Cancelled">Cancelled</option>
                     </select>
                 </div>
-                {(searchTerm || filterDate || filterStatus !== 'all') && (
+                {(searchTerm || filterMonth !== getCurrentMonth() || filterStatus !== 'all') && (
                     <button
-                        onClick={() => { setSearchTerm(''); setFilterDate(''); setFilterStatus('all'); }}
+                        onClick={() => { setSearchTerm(''); setFilterMonth(getCurrentMonth()); setFilterStatus('all'); }}
                         className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                     >
                         ล้างตัวกรอง
@@ -232,6 +256,11 @@ const PurchaseOrdersPage = () => {
                                 <div>
                                     <h4 className="font-bold text-slate-800 text-sm">{po.PO_ID}</h4>
                                     <p className="text-[10px] text-slate-400">{po.VendorName || '-'}</p>
+                                    {po.BudgetNo && (
+                                        <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 mt-0.5 inline-block">
+                                            Budget: {po.BudgetNo}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                             <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${getStatusColor(po.Status)}`}>
@@ -322,6 +351,12 @@ const PurchaseOrdersPage = () => {
                                                 <p className="text-sm font-bold text-slate-800">{selectedPO.PR_No}</p>
                                             </div>
                                         )}
+                                        {selectedPO.BudgetNo && (
+                                            <div className="bg-slate-50 p-4 rounded-xl">
+                                                <p className="text-xs text-slate-500 font-bold mb-1">Budget No.</p>
+                                                <p className="text-sm font-bold text-slate-800">{selectedPO.BudgetNo}</p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Items List */}
@@ -397,12 +432,24 @@ const PurchaseOrdersPage = () => {
                                             <VendorCombobox
                                                 vendors={vendors}
                                                 value={selectedVendor}
-                                                onChange={setSelectedVendor}
+                                                onChange={(v) => {
+                                                    console.log('Selected Vendor:', v);
+                                                    setSelectedVendor(v);
+                                                }}
                                             />
+
                                         </div>
                                         <div>
                                             <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Section</label>
                                             <input name="Section" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Budget No.</label>
+                                            <input name="BudgetNo" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500" placeholder="ระบุเลขงบประมาณ" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">PR No.</label>
+                                            <input name="PR_No" className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500" placeholder="ระบุเลข PR" />
                                         </div>
                                         <div>
                                             <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">Due Date</label>

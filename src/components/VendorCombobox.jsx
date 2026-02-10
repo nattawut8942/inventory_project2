@@ -70,7 +70,7 @@ const VendorCombobox = ({ vendors = [], value = {}, onChange }) => {
 
     const selectVendor = (vendor) => {
         setSearchTerm(vendor.VendorName);
-        onChange({ VendorID: vendor.VendorID, VendorName: vendor.VendorName });
+        onChange({ VendorID: vendor.VendorID, VendorName: vendor.VendorName, ContactInfo: vendor.ContactInfo });
         setIsOpen(false);
         setHighlightIndex(-1);
     };
@@ -86,9 +86,8 @@ const VendorCombobox = ({ vendors = [], value = {}, onChange }) => {
         setSearchTerm(val);
         setIsOpen(true);
         setHighlightIndex(-1);
-        if (value.VendorID) {
-            onChange({ VendorID: null, VendorName: val });
-        }
+        // Always update parent to ensure custom vendor names are captured
+        onChange({ VendorID: null, VendorName: val });
     };
 
     return (

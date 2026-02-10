@@ -51,8 +51,7 @@ CREATE TABLE dbo.Stock_PurchaseOrders (
     Tel NVARCHAR(50),                         -- Contact phone
     Remark NVARCHAR(MAX),                     -- General notes
     Status NVARCHAR(50) DEFAULT 'Open',       -- Open, Partial, Completed, Cancelled
-    
-
+    BudgetNo NVARCHAR(100)                    -- Budget Number (Optional)
 );
 
 -- =====================================================
@@ -134,24 +133,7 @@ INSERT INTO dbo.Stock_Vendors (VendorName) VALUES
 ('SAMAPHAN TECHNOLOGIES'),
 ('NITHIKASEM TELECOM');
 
--- =====================================================
--- 9. Audit Logs (System Activity Tracking)
--- =====================================================
-CREATE TABLE dbo.Stock_AuditLogs (
-    LogID INT IDENTITY(1,1) PRIMARY KEY,
-    TableName NVARCHAR(50),      -- Target Table (e.g., Stock_Products)
-    RecordID VARCHAR(50),        -- FK/ID of target record
-    ActionType NVARCHAR(20),     -- CREATE, UPDATE, DELETE, LOGIN, ETC
-    OldValues NVARCHAR(MAX),     -- JSON string of previous state
-    NewValues NVARCHAR(MAX),     -- JSON string of new state
-    ChangedBy NVARCHAR(100),     -- Username
-    ChangeDate DATETIME DEFAULT GETDATE(),
-    IPAddress NVARCHAR(50)       -- Client IP (Optional)
-);
 
-CREATE INDEX IX_AuditLogs_TableName ON dbo.Stock_AuditLogs(TableName);
-CREATE INDEX IX_AuditLogs_ChangeDate ON dbo.Stock_AuditLogs(ChangeDate);
-CREATE INDEX IX_AuditLogs_RecordID ON dbo.Stock_AuditLogs(RecordID);
 
 -- =====================================================
 -- SUMMARY OF TABLES
@@ -166,5 +148,5 @@ CREATE INDEX IX_AuditLogs_RecordID ON dbo.Stock_AuditLogs(RecordID);
 -- Stock_Transactions       | Log: All stock movements (IN/OUT)
 -- Stock_UserRole           | Access: List of Admin/Staff users
 -- Stock_Vendors            | Master: Vendor/Supplier list
--- Stock_AuditLogs          | System: Full change history (JSON diff)
+
 -- =====================================================

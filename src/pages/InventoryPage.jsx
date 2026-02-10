@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { Search, Monitor, Network, Archive, Database, Package, List, LayoutGrid, Edit2, Trash2, X, TrendingUp, TrendingDown, AlertTriangle, DollarSign, HardDrive, Mouse, Droplet } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Search, Monitor, Network, Archive, Database, Package, List, LayoutGrid, Edit2, Trash2, X, TrendingUp, TrendingDown, AlertTriangle, DollarSign, HardDrive, Mouse, Droplet, Printer } from 'lucide-react';
+import Barcode from 'react-barcode';
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import AlertModal from '../components/AlertModal';
 import Portal from '../components/Portal';
+import { getBadgeStyle, getColorGradient, getChartColor } from '../utils/styleHelpers';
 
 const API_BASE = 'http://localhost:3001/api';
 const API_URL = 'http://localhost:3001';
@@ -70,6 +72,8 @@ const InventoryPage = () => {
     };
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+    const [barcodeItem, setBarcodeItem] = useState(null);
+    const printRef = useRef();
 
     const isAdmin = user?.role === 'Staff';
 
@@ -85,39 +89,19 @@ const InventoryPage = () => {
         }
     };
 
-    const getColorGradient = (type) => {
-        switch (type) {
-            case 'Monitor': return 'from-blue-500 to-blue-600';
-            case 'Network': return 'from-purple-500 to-purple-600';
-            case 'Asset': return 'from-amber-500 to-amber-600';
-            case 'Consumable': return 'from-emerald-500 to-emerald-600';
-            case 'Storage': return 'from-orange-500 to-orange-600';
-            case 'Peripheral': return 'from-cyan-500 to-cyan-600';
-            default: return 'from-slate-500 to-slate-600';
-        }
-    };
 
-    const getBadgeStyle = (type) => {
-        switch (type) {
-            case 'Monitor': return 'bg-blue-50 text-blue-600 border-blue-100';
-            case 'Network': return 'bg-purple-50 text-purple-600 border-purple-100';
-            case 'Asset': return 'bg-amber-50 text-amber-600 border-amber-100';
-            case 'Consumable': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-            case 'Storage': return 'bg-orange-50 text-orange-600 border-orange-100';
-            case 'Peripheral': return 'bg-cyan-50 text-cyan-600 border-cyan-100';
-            default: return 'bg-slate-50 text-slate-600 border-slate-100';
-        }
-    };
+
+
 
     const filteredProducts = products.filter(p =>
         p.ProductName.toLowerCase().includes(searchTerm.toLowerCase()) &&
         (selectedType === 'all' || p.DeviceType === selectedType) &&
-        (!showLowStock || p.CurrentStock < p.MinStock)
+        (!showLowStock || p.CurrentStock <= p.MinStock)
     );
 
     // Stats Calculations
     const totalProducts = products.length;
-    const lowStockCount = products.filter(p => p.CurrentStock < p.MinStock).length;
+    const lowStockCount = products.filter(p => p.CurrentStock <= p.MinStock).length;
     const totalValue = products.reduce((sum, p) => sum + (p.CurrentStock * (p.LastPrice || 0)), 0);
     const typeDistribution = deviceTypes.map(t => ({
         name: t.Label,
@@ -324,17 +308,17 @@ const InventoryPage = () => {
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            <span className={`flex items-center w-fit gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${getBadgeStyle(p.DeviceType)}`}>
+                                            <span className="flex items-center w-fit gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm text-white" style={{ backgroundColor: getChartColor(p.DeviceType) }}>
                                                 {p.DeviceType}
                                             </span>
                                         </td>
                                         <td className="p-4 text-slate-500 font-mono">฿{p.LastPrice?.toLocaleString()}</td>
-                                        <td className={`p-4 text-center font-mono font-bold text-lg ${p.CurrentStock < p.MinStock ? 'text-red-500' : 'text-emerald-600'}`}>
+                                        <td className={`p-4 text-center font-mono font-bold text-lg ${p.CurrentStock <= p.MinStock ? 'text-red-500' : 'text-emerald-600'}`}>
                                             {p.CurrentStock}
                                         </td>
                                         <td className="p-4 text-center text-slate-400 font-mono">{p.MinStock}</td>
                                         <td className="p-4">
-                                            {p.CurrentStock < p.MinStock ?
+                                            {p.CurrentStock <= p.MinStock ?
                                                 <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg border border-red-100 flex items-center gap-1 w-fit">
                                                     <AlertTriangle size={12} /> LOW
                                                 </span> :
@@ -342,9 +326,14 @@ const InventoryPage = () => {
                                             }
                                         </td>
                                         <td className="p-4 text-center">
-                                            <button onClick={() => viewHistory(p)} className="text-slate-400 hover:text-indigo-600 transition-colors p-1.5 hover:bg-indigo-50 rounded-lg">
-                                                <Search size={16} />
-                                            </button>
+                                            <div className="flex justify-center gap-1">
+                                                <button onClick={() => viewHistory(p)} className="text-slate-400 hover:text-indigo-600 transition-colors p-1.5 hover:bg-indigo-50 rounded-lg" title="History">
+                                                    <Search size={16} />
+                                                </button>
+                                                <button onClick={() => setBarcodeItem(p)} className="text-slate-400 hover:text-emerald-600 transition-colors p-1.5 hover:bg-emerald-50 rounded-lg" title="Print Barcode">
+                                                    <Printer size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                         {isAdmin && (
                                             <td className="p-4">
@@ -391,7 +380,8 @@ const InventoryPage = () => {
 
                             {/* Actions Overlay */}
                             <div className="absolute top-2 right-2 z-20 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => viewHistory(p)} className="p-1.5 bg-white/90 backdrop-blur text-indigo-600 rounded-full shadow-sm hover:bg-indigo-50"><List size={14} /></button>
+                                <button onClick={() => viewHistory(p)} className="p-1.5 bg-white/90 backdrop-blur text-indigo-600 rounded-full shadow-sm hover:bg-indigo-50" title="History"><List size={14} /></button>
+                                <button onClick={() => setBarcodeItem(p)} className="p-1.5 bg-white/90 backdrop-blur text-emerald-600 rounded-full shadow-sm hover:bg-emerald-50" title="Print Barcode"><Printer size={14} /></button>
                                 {isAdmin && (
                                     <>
                                         <button onClick={() => setEditItem(p)} className="p-1.5 bg-white/90 backdrop-blur text-amber-500 rounded-full shadow-sm hover:bg-amber-50"><Edit2 size={14} /></button>
@@ -411,7 +401,7 @@ const InventoryPage = () => {
                                 </div>
 
                                 <h3 className="font-bold text-slate-800 text-sm mb-1 line-clamp-2 min-h-[2.5rem]">{p.ProductName}</h3>
-                                <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border mb-2 ${getBadgeStyle(p.DeviceType)}`}>{p.DeviceType}</span>
+                                <span className="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full mb-2 shadow-sm text-white" style={{ backgroundColor: getChartColor(p.DeviceType) }}>{p.DeviceType}</span>
 
                                 <div className="grid grid-cols-2 gap-2 w-full pt-2 border-t border-slate-100">
                                     <div>
@@ -439,7 +429,7 @@ const InventoryPage = () => {
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="w-full max-w-2xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl"
+                                className="w-full max-w-4xl transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl"
                             >
                                 <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-500 flex justify-between items-center">
                                     <div>
@@ -455,6 +445,7 @@ const InventoryPage = () => {
                                                 <th className="p-4 bg-slate-50/90 backdrop-blur">Date</th>
                                                 <th className="p-4 text-center bg-slate-50/90 backdrop-blur">Qty</th>
                                                 <th className="p-4 bg-slate-50/90 backdrop-blur">Source Ref</th>
+                                                <th className="p-4 bg-slate-50/90 backdrop-blur">Budget</th>
                                                 <th className="p-4 bg-slate-50/90 backdrop-blur">User</th>
                                             </tr>
                                         </thead>
@@ -472,6 +463,7 @@ const InventoryPage = () => {
                                                         {(h.TransType || '').toUpperCase().trim() === 'IN' || (h.RefInfo || '').toLowerCase().includes('invoice') ? '+' : '-'}{Math.abs(h.Qty)}
                                                     </td>
                                                     <td className="p-4 text-indigo-600 font-medium">{h.RefInfo}</td>
+                                                    <td className="p-4 text-slate-500 font-mono text-xs">{h.BudgetNo || '-'}</td>
                                                     <td className="p-4 text-xs text-slate-400">{h.UserID}</td>
                                                 </motion.tr>
                                             ))}
@@ -581,6 +573,80 @@ const InventoryPage = () => {
                                 <div className="flex gap-3">
                                     <button onClick={() => setShowDeleteConfirm(null)} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors">Cancel</button>
                                     <button onClick={() => handleDelete(showDeleteConfirm)} className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-xl font-bold hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-200 transition-colors">Delete</button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </div>
+                </Portal>
+            )}
+
+            {/* BARCODE PRINT MODAL */}
+            {barcodeItem && (
+                <Portal>
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm">
+                        <div className="flex min-h-screen items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="w-full max-w-md transform overflow-hidden rounded-3xl bg-white text-left align-middle shadow-2xl"
+                            >
+                                <div className="p-6 bg-gradient-to-r from-emerald-500 to-teal-500 flex justify-between items-center print:hidden">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-white">Print Barcode Label</h3>
+                                        <p className="text-xs text-emerald-100">{barcodeItem.ProductName}</p>
+                                    </div>
+                                    <button onClick={() => setBarcodeItem(null)} className="p-2 hover:bg-white/20 rounded-full text-white transition-colors"><X size={20} /></button>
+                                </div>
+                                <div ref={printRef} className="p-8 flex flex-col items-center gap-4" id="barcode-print-area">
+                                    <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center gap-3 w-full">
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">IT STOCK PRO</p>
+                                        <h4 className="text-base font-bold text-slate-800 text-center leading-tight">{barcodeItem.ProductName}</h4>
+                                        <Barcode
+                                            value={barcodeItem.ProductID}
+                                            width={1.5}
+                                            height={50}
+                                            fontSize={12}
+                                            margin={0}
+                                            displayValue={true}
+                                        />
+                                        <div className="flex gap-4 text-[10px] text-slate-400 font-medium">
+                                            <span>Type: {barcodeItem.DeviceType}</span>
+                                            <span>Min: {barcodeItem.MinStock}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-slate-50 border-t border-slate-200 flex gap-2 print:hidden">
+                                    <button
+                                        onClick={() => setBarcodeItem(null)}
+                                        className="flex-1 bg-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-300 transition-all"
+                                    >
+                                        ปิด
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const printContents = document.getElementById('barcode-print-area').innerHTML;
+                                            const win = window.open('', '_blank', 'width=400,height=300');
+                                            win.document.write(`
+                                                <html><head><title>Barcode - ${barcodeItem.ProductName}</title>
+                                                <style>
+                                                    body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+                                                    .label { border: 2px dashed #e2e8f0; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+                                                    .title { font-size: 10px; font-weight: bold; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; }
+                                                    .name { font-size: 14px; font-weight: bold; color: #1e293b; text-align: center; }
+                                                    .meta { font-size: 9px; color: #94a3b8; display: flex; gap: 16px; }
+                                                    @media print { body { margin: 0; } .label { border: none; } }
+                                                </style></head><body>
+                                                <div class="label">${printContents}</div>
+                                                </body></html>
+                                            `);
+                                            win.document.close();
+                                            win.focus();
+                                            win.print();
+                                        }}
+                                        className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Printer size={18} /> พิมพ์
+                                    </button>
                                 </div>
                             </motion.div>
                         </div>

@@ -5,8 +5,9 @@ import { Package, TrendingUp, TrendingDown, AlertTriangle, DollarSign, ShoppingC
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import StatCard from '../components/StatCard';
+import { getChartColor, getBadgeStyle } from '../utils/styleHelpers';
 
-const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1'];
+// const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1'];
 
 const DashboardPage = () => {
     const { products, transactions, purchaseOrders } = useData();
@@ -17,7 +18,7 @@ const DashboardPage = () => {
         const productCount = products.length;
         const totalStock = products.reduce((sum, p) => sum + p.CurrentStock, 0);
         const totalValue = products.reduce((sum, p) => sum + (p.CurrentStock * p.LastPrice), 0);
-        const lowStockCount = products.filter(p => p.CurrentStock < p.MinStock).length;
+        const lowStockCount = products.filter(p => p.CurrentStock <= p.MinStock).length;
         const activePOs = purchaseOrders.filter(po => po.Status !== 'Completed').length;
 
         return { productCount, totalStock, totalValue, lowStockCount, activePOs };
@@ -28,9 +29,13 @@ const DashboardPage = () => {
         const map = {};
         products.forEach(p => {
             if (!map[p.DeviceType]) map[p.DeviceType] = 0;
-            map[p.DeviceType] += p.CurrentStock;
+            map[p.DeviceType] += 1; // Count items, not stock quantity
         });
-        return Object.keys(map).map(key => ({ name: key, value: map[key] }));
+        return Object.keys(map).map(key => ({
+            name: key,
+            value: map[key],
+            fill: getChartColor(key)
+        }));
     }, [products]);
 
     // 3. Prepare Chart Data: Stock Movement (Last 6 Months)
@@ -203,12 +208,13 @@ const DashboardPage = () => {
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={60}
-                                    outerRadius={100}
+                                    outerRadius={80}
                                     paddingAngle={5}
                                     dataKey="value"
+                                    label={({ name, value }) => `${name} (${value})`}
                                 >
                                     {categoryData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
+                                        <Cell key={`cell-${index}`} fill={entry.fill} strokeWidth={0} />
                                     ))}
                                 </Pie>
                                 <Tooltip
@@ -219,7 +225,12 @@ const DashboardPage = () => {
                                         boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
                                     }}
                                 />
-                                <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" />
+                                <Legend
+                                    verticalAlign="middle"
+                                    align="right"
+                                    layout="vertical"
+                                    iconType="circle"
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>

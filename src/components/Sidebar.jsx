@@ -60,16 +60,17 @@ const Sidebar = () => {
                 <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/" />
                 <SidebarItem icon={Database} label="Inventory Master" to="/inventory" />
 
+                {/* PO and Receive - viewable by all */}
+                <SidebarItem icon={ShoppingCart} label="Purchase Orders" to="/purchase-orders" />
+                <SidebarItem icon={ArrowDownToLine} label="Receive Items" to="/receive" />
+
                 {user?.role === 'Staff' && (
                     <>
                         <div className="pt-6 pb-2 text-[10px] font-bold uppercase text-slate-500 tracking-wider pl-3">
                             Staff Controls
                         </div>
-                        <SidebarItem icon={ShoppingCart} label="Purchase Orders" to="/purchase-orders" />
-                        <SidebarItem icon={ArrowDownToLine} label="Receive Items" to="/receive" />
                         <SidebarItem icon={Plus} label="Manual Import" to="/manual-import" />
                         <SidebarItem icon={Shield} label="Admin Users" to="/admin-users" />
-
                     </>
                 )}
 

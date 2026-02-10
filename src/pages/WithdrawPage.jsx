@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { ShoppingBag, AlertTriangle, Monitor, Network, Archive, Database, Package, X, Minus, Plus, ShoppingCart, Trash2, Check, Search, List, LayoutGrid, HardDrive, Mouse, Droplet, FileEdit } from 'lucide-react';
+import { ShoppingBag, AlertTriangle, Monitor, Network, Archive, Database, Package, X, Minus, Plus, ShoppingCart, Trash2, Check, Search, List, LayoutGrid, HardDrive, Mouse, Droplet, FileEdit, ScanLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Portal from '../components/Portal';
 
@@ -38,6 +38,12 @@ const WithdrawPage = () => {
 
     // Result Modal
     const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
+
+    // Scan Modal State
+    const [scanModal, setScanModal] = useState({ isOpen: false, scannedCode: '', foundProduct: null, error: '' });
+    const [scanQty, setScanQty] = useState(1);
+    const [scanReason, setScanReason] = useState('New Withdrawal');
+    const [scanReasonDetail, setScanReasonDetail] = useState('');
 
     const getIcon = (type) => {
         switch (type) {
@@ -200,6 +206,50 @@ const WithdrawPage = () => {
         });
     };
 
+    // Scan Handler
+    const handleScanLookup = (code) => {
+        if (!code.trim()) return;
+        const found = products.find(p => String(p.ProductID) === code.trim() || p.ProductName.toLowerCase() === code.trim().toLowerCase());
+        if (found) {
+            setScanModal(prev => ({ ...prev, foundProduct: found, error: '' }));
+            setScanQty(1);
+            setScanReason('New Withdrawal');
+            setScanReasonDetail('');
+        } else {
+            setScanModal(prev => ({ ...prev, foundProduct: null, error: `ไม่พบสินค้ารหัส "${code.trim()}"` }));
+        }
+    };
+
+    const handleScanWithdraw = async () => {
+        const product = scanModal.foundProduct;
+        if (!product || scanQty <= 0 || scanQty > product.CurrentStock) return;
+
+        let refInfo = scanReason;
+        if (scanReasonDetail.trim()) refInfo += `: ${scanReasonDetail.trim()}`;
+
+        try {
+            const res = await fetch(`${API_BASE}/products/withdraw`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ProductID: product.ProductID,
+                    Qty: scanQty,
+                    UserID: user.username,
+                    RefInfo: refInfo
+                })
+            });
+            if (res.ok) {
+                setResultModal({ isOpen: true, type: 'success', title: 'เบิกสำเร็จ', message: `เบิก ${product.ProductName} จำนวน ${scanQty} ชิ้น` });
+                refreshData();
+                setScanModal({ isOpen: false, scannedCode: '', foundProduct: null, error: '' });
+            } else {
+                setResultModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด', message: 'ไม่สามารถเบิกสินค้าได้' });
+            }
+        } catch {
+            setResultModal({ isOpen: true, type: 'error', title: 'Connection Error', message: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้' });
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header with Controls */}
@@ -214,6 +264,13 @@ const WithdrawPage = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
+                    {/* Scan Button */}
+                    <button
+                        onClick={() => setScanModal({ isOpen: true, scannedCode: '', foundProduct: null, error: '' })}
+                        className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-200 hover:from-emerald-600 hover:to-teal-600 transition-all"
+                    >
+                        <ScanLine size={18} /> สแกนเบิก
+                    </button>
                     {/* View Toggle */}
                     <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                         <button
@@ -235,10 +292,11 @@ const WithdrawPage = () => {
                         <Search size={18} className="text-slate-400 self-center" />
                         <input
                             type="text"
-                            placeholder="ค้นหาสินค้า..."
+                            placeholder="ค้นหาสินค้า... (พร้อมสแกน)"
                             className="bg-transparent border-none outline-none text-sm w-40 text-slate-700 placeholder-slate-400"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            autoFocus
                         />
                     </div>
 
@@ -671,6 +729,162 @@ const WithdrawPage = () => {
                                             className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold py-4 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg flex items-center justify-center gap-2"
                                         >
                                             <Check size={20} /> ยืนยันเบิกสินค้า
+                                        </button>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </motion.div>
+                    </Portal>
+                )}
+            </AnimatePresence>
+
+            {/* Scan Modal */}
+            <AnimatePresence>
+                {scanModal.isOpen && (
+                    <Portal>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
+                            onClick={() => setScanModal({ isOpen: false, scannedCode: '', foundProduct: null, error: '' })}
+                        >
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {/* Header */}
+                                <div className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 flex justify-between items-center flex-shrink-0">
+                                    <div>
+                                        <h3 className="font-bold text-white flex items-center gap-2"><ScanLine size={18} /> สแกนเบิกสินค้า</h3>
+                                    </div>
+                                    <button onClick={() => setScanModal({ isOpen: false, scannedCode: '', foundProduct: null, error: '' })} className="p-1.5 hover:bg-white/20 rounded-full text-white transition-colors"><X size={18} /></button>
+                                </div>
+
+                                {/* Scan Input */}
+                                <div className="px-5 py-3 border-b border-slate-100">
+                                    <div className="flex gap-2">
+                                        <div className="flex-1 flex items-center gap-2 bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2.5 focus-within:border-emerald-500 transition-all">
+                                            <ScanLine size={16} className="text-slate-400" />
+                                            <input
+                                                type="text"
+                                                autoFocus
+                                                placeholder="สแกนบาร์โค้ด หรือพิมพ์รหัสสินค้า..."
+                                                value={scanModal.scannedCode}
+                                                onChange={(e) => setScanModal(prev => ({ ...prev, scannedCode: e.target.value, error: '' }))}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') handleScanLookup(scanModal.scannedCode); }}
+                                                className="flex-1 bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400 font-mono"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={() => handleScanLookup(scanModal.scannedCode)}
+                                            className="bg-emerald-600 text-white px-4 rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all"
+                                        >
+                                            ค้นหา
+                                        </button>
+                                    </div>
+                                    {scanModal.error && (
+                                        <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1"><AlertTriangle size={12} /> {scanModal.error}</p>
+                                    )}
+                                </div>
+
+                                {/* Body */}
+                                <div className="flex-1">
+                                    {scanModal.foundProduct ? (
+                                        <div className="px-5 py-4 space-y-3">
+                                            {/* Product Info + Stats Row */}
+                                            <div className="flex gap-3 items-start">
+                                                <div className={`w-14 h-14 flex-shrink-0 rounded-xl bg-gradient-to-br ${getColorGradient(scanModal.foundProduct.DeviceType)} flex items-center justify-center shadow-md overflow-hidden`}>
+                                                    {scanModal.foundProduct.ImageURL ? (
+                                                        <img src={`${API_URL}${scanModal.foundProduct.ImageURL}`} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        React.createElement(getIcon(scanModal.foundProduct.DeviceType), { size: 24, className: 'text-white' })
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-bold text-slate-800 text-sm truncate">{scanModal.foundProduct.ProductName}</h4>
+                                                    <p className="text-[11px] text-slate-400">{scanModal.foundProduct.DeviceType} • รหัส: {scanModal.foundProduct.ProductID}</p>
+                                                    <div className="flex gap-2 mt-2">
+                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${scanModal.foundProduct.CurrentStock <= scanModal.foundProduct.MinStock ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                            คงเหลือ: {scanModal.foundProduct.CurrentStock}
+                                                        </span>
+                                                        <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-500">
+                                                            ขั้นต่ำ: {scanModal.foundProduct.MinStock}
+                                                        </span>
+                                                        <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-blue-50 text-blue-600">
+                                                            ฿{scanModal.foundProduct.LastPrice?.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Qty Selector - compact */}
+                                            <div className="flex items-center justify-between bg-slate-50 rounded-xl p-3 border border-slate-200">
+                                                <span className="text-xs font-bold text-slate-500 uppercase">จำนวน</span>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => setScanQty(Math.max(1, scanQty - 1))} className="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"><Minus size={16} /></button>
+                                                    <input
+                                                        type="number"
+                                                        value={scanQty}
+                                                        onChange={(e) => setScanQty(Math.max(1, Math.min(scanModal.foundProduct.CurrentStock, parseInt(e.target.value) || 1)))}
+                                                        className="w-16 text-center text-xl font-black py-1.5 bg-white border-2 border-slate-200 rounded-lg outline-none focus:border-emerald-500"
+                                                    />
+                                                    <button onClick={() => setScanQty(Math.min(scanModal.foundProduct.CurrentStock, scanQty + 1))} className="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"><Plus size={16} /></button>
+                                                </div>
+                                            </div>
+                                            {scanQty > scanModal.foundProduct.CurrentStock && (
+                                                <p className="text-red-500 text-xs flex items-center gap-1"><AlertTriangle size={12} /> ไม่สามารถเบิกเกินสต็อก</p>
+                                            )}
+
+                                            {/* Reason - compact 2-col grid */}
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">เหตุผลการเบิก</label>
+                                                <div className="grid grid-cols-2 gap-1.5">
+                                                    {reasonOptions.map((opt) => (
+                                                        <label key={opt.id} className={`flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-all text-xs font-medium border ${scanReason === opt.id ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200'}`}>
+                                                            <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${scanReason === opt.id ? 'border-emerald-500' : 'border-slate-300'}`}>
+                                                                {scanReason === opt.id && <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />}
+                                                            </div>
+                                                            <input type="radio" name="scanReason" value={opt.id} checked={scanReason === opt.id} onChange={(e) => setScanReason(e.target.value)} className="hidden" />
+                                                            <span className="truncate">{opt.label}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                                <textarea
+                                                    value={scanReasonDetail}
+                                                    onChange={(e) => setScanReasonDetail(e.target.value)}
+                                                    placeholder="รายละเอียดเพิ่มเติม (Optional)..."
+                                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:border-emerald-500 outline-none h-12 resize-none mt-2"
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="py-10 text-center text-slate-400">
+                                            <ScanLine size={40} className="mx-auto mb-2 opacity-30" />
+                                            <p className="font-bold text-sm">สแกนบาร์โค้ดหรือพิมพ์รหัสสินค้า</p>
+                                            <p className="text-xs mt-0.5">ระบบจะแสดงข้อมูลสินค้าอัตโนมัติ</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Footer */}
+                                {scanModal.foundProduct && (
+                                    <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex gap-3 flex-shrink-0">
+                                        <button
+                                            onClick={() => setScanModal({ isOpen: false, scannedCode: '', foundProduct: null, error: '' })}
+                                            className="flex-1 bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl hover:bg-slate-300 transition-all text-sm"
+                                        >
+                                            ยกเลิก
+                                        </button>
+                                        <button
+                                            onClick={handleScanWithdraw}
+                                            disabled={scanQty > scanModal.foundProduct.CurrentStock || scanQty <= 0}
+                                            className="flex-[2] bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-2.5 rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                                        >
+                                            <Check size={16} /> ยืนยันเบิก
                                         </button>
                                     </div>
                                 )}

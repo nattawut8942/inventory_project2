@@ -39,44 +39,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// --- AUDIT LOG HELPER ---
-async function logAudit(pool, tableName, recordId, action, oldVal, newVal, user, ip = null) {
-    console.log(`[DEBUG] logAudit called: ${tableName}, ID: ${recordId}, Action: ${action}, User: ${user}`);
-    try {
-        const oldStr = oldVal ? JSON.stringify(oldVal) : null;
-        const newStr = newVal ? JSON.stringify(newVal) : null;
-
-        // Don't log if no changes (for updates)
-        if (action === 'UPDATE' && oldStr === newStr) {
-            console.log('[DEBUG] logAudit skipped: No changes detected');
-            return;
-        }
-
-        const request = pool.request();
-        // Log parameters for debugging
-        // console.log('Audit Params:', { tableName, recordId, action, user, ip });
-
-        await request
-            .input('TableName', sql.NVarChar, tableName)
-            .input('RecordID', sql.VarChar, String(recordId))
-            .input('ActionType', sql.NVarChar, action)
-            .input('OldValues', sql.NVarChar, oldStr)
-            .input('NewValues', sql.NVarChar, newStr)
-            .input('ChangedBy', sql.NVarChar, user || 'System')
-            .input('IPAddress', sql.NVarChar, ip)
-            .query(`
-                INSERT INTO dbo.Stock_AuditLogs (TableName, RecordID, ActionType, OldValues, NewValues, ChangedBy, IPAddress)
-                VALUES (@TableName, @RecordID, @ActionType, @OldValues, @NewValues, @ChangedBy, @IPAddress)
-            `);
-        console.log('[DEBUG] logAudit success');
-    } catch (err) {
-        console.error('[ERROR] Audit Log Failed:', err);
-        console.error('Failed Params:', { tableName, recordId, action, user });
-    }
-}
-
-
-// --- AUDIT LOGS ENDPOINT ---
 
 
 // --- AUTHENTICATION (AD API) ---
@@ -379,6 +341,7 @@ app.post('/api/products/manual-import', async (req, res) => {
             let productID;
             const checkRes = await new sql.Request(transaction)
                 .input('ProductName', sql.NVarChar, ProductName.trim())
+                .query('SELECT ProductID FROM dbo.Stock_Products WHERE ProductName = @ProductName');
             if (checkRes.recordset.length > 0) {
                 // Update Existing
                 productID = checkRes.recordset[0].ProductID;
@@ -507,7 +470,7 @@ app.get('/api/pos', async (req, res) => {
         const pool = getPool();
         const { status } = req.query;
 
-        let query = `SELECT PO_ID, VendorName, RequestDate, DueDate, RequestedBy, Section, Status, Remark FROM dbo.Stock_PurchaseOrders`;
+        let query = `SELECT PO_ID, PR_No, VendorName, RequestDate, DueDate, RequestedBy, Section, Status, Remark, BudgetNo FROM dbo.Stock_PurchaseOrders`;
         if (status) {
             query += ` WHERE Status = '${status}'`;
         }
@@ -540,7 +503,12 @@ app.get('/api/pos', async (req, res) => {
 
 // CREATE PO
 app.post('/api/pos', async (req, res) => {
-    const { PO_ID, VendorName, DueDate, RequestedBy, Section, Remark, Items } = req.body;
+    const { PO_ID, VendorName, DueDate, RequestedBy, Section, Remark, Items, BudgetNo } = req.body;
+    console.log('====== CREATE PO REQUEST ======');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('BudgetNo received:', BudgetNo, '| Type:', typeof BudgetNo);
+    console.log('Full body:', JSON.stringify(req.body, null, 2));
+    console.log('===============================');
 
     try {
         const pool = getPool();
@@ -548,6 +516,8 @@ app.post('/api/pos', async (req, res) => {
         await transaction.begin();
 
         try {
+            console.log('About to INSERT with BudgetNo:', BudgetNo);
+
             // Insert PO Header
             await new sql.Request(transaction)
                 .input('PO_ID', sql.NVarChar, PO_ID)
@@ -557,10 +527,13 @@ app.post('/api/pos', async (req, res) => {
                 .input('RequestedBy', sql.NVarChar, RequestedBy)
                 .input('Section', sql.NVarChar, Section)
                 .input('Remark', sql.NVarChar, Remark)
+                .input('BudgetNo', sql.NVarChar, BudgetNo || null)
                 .query(`
-                    INSERT INTO dbo.Stock_PurchaseOrders (PO_ID, PR_No, VendorName, DueDate, RequestedBy, Section, Remark, Status)
-                    VALUES (@PO_ID, @PR_No, @VendorName, @DueDate, @RequestedBy, @Section, @Remark, 'Open')
+                    INSERT INTO dbo.Stock_PurchaseOrders (PO_ID, PR_No, VendorName, DueDate, RequestedBy, Section, Remark, Status, BudgetNo)
+                    VALUES (@PO_ID, @PR_No, @VendorName, @DueDate, @RequestedBy, @Section, @Remark, 'Open', @BudgetNo)
                 `);
+
+            console.log('INSERT completed successfully');
 
             // Insert PO Details
             for (const item of Items) {
@@ -601,7 +574,13 @@ app.get('/api/stock/history/:id', async (req, res) => {
                     t.Qty,
                     t.TransType,
                     t.RefInfo,
-                    t.UserID
+                    t.UserID,
+                    (
+                        SELECT TOP 1 po.BudgetNo 
+                        FROM dbo.Stock_Invoices inv
+                        JOIN dbo.Stock_PurchaseOrders po ON inv.PO_ID = po.PO_ID
+                        WHERE t.RefInfo LIKE '%Invoice: ' + inv.InvoiceNo + '%'
+                    ) AS BudgetNo
                 FROM dbo.Stock_Transactions t
                 WHERE t.ProductID = @ProductID
                 ORDER BY t.TransDate DESC
@@ -618,9 +597,10 @@ app.get('/api/invoices', async (req, res) => {
     try {
         const pool = getPool();
         const result = await pool.request().query(`
-            SELECT InvoiceID, InvoiceNo, PO_ID, ReceiveDate, ReceivedBy
-            FROM dbo.Stock_Invoices
-            ORDER BY ReceiveDate DESC
+            SELECT i.InvoiceID, i.InvoiceNo, i.PO_ID, i.ReceiveDate, i.ReceivedBy, po.BudgetNo, po.VendorName, po.RequestedBy
+            FROM dbo.Stock_Invoices i
+            LEFT JOIN dbo.Stock_PurchaseOrders po ON i.PO_ID = po.PO_ID
+            ORDER BY i.ReceiveDate DESC
         `);
         res.json(result.recordset);
     } catch (err) {
@@ -960,7 +940,7 @@ app.get('/api/report/export', async (req, res) => {
 
                     let invQuery = `
                         SELECT i.InvoiceID, i.InvoiceNo, i.PO_ID, i.ReceiveDate, i.ReceivedBy,
-                               po.VendorName, po.RequestedBy
+                               po.VendorName, po.RequestedBy, po.BudgetNo
                         FROM dbo.Stock_Invoices i
                         LEFT JOIN dbo.Stock_PurchaseOrders po ON i.PO_ID = po.PO_ID
                         WHERE 1=1
@@ -974,6 +954,7 @@ app.get('/api/report/export', async (req, res) => {
                         'เลข Invoice': row.InvoiceNo || '-',
                         'วันที่รับ': row.ReceiveDate ? new Date(row.ReceiveDate).toLocaleDateString('th-TH') : '-',
                         'เลข PO': row.PO_ID || '-',
+                        'Budget No.': row.BudgetNo || '-',
                         'Vendor': row.VendorName || '-',
                         'ผู้สั่งซื้อ': row.RequestedBy || '-',
                         'ผู้รับ': row.ReceivedBy || '-'
@@ -988,7 +969,7 @@ app.get('/api/report/export', async (req, res) => {
 
                     let poQuery = `
                         SELECT po.PO_ID, po.PR_No, po.VendorName, po.RequestDate, po.DueDate,
-                               po.RequestedBy, po.Section, po.Status, po.Remark,
+                               po.RequestedBy, po.Section, po.Status, po.Remark, po.BudgetNo,
                                (SELECT SUM(d.QtyOrdered * ISNULL(d.UnitCost, 0)) 
                                 FROM dbo.Stock_PODetails d 
                                 WHERE d.PO_ID = po.PO_ID) as TotalAmount
@@ -1001,11 +982,12 @@ app.get('/api/report/export', async (req, res) => {
 
                     const poResult = await poRequest.query(poQuery);
                     data = poResult.recordset.map(row => ({
-                        'เลข PO': row.PO_ID,
-                        'เลข PR': row.PR_No || '-',
-                        'วันที่สร้าง': row.RequestDate ? new Date(row.RequestDate).toLocaleDateString('th-TH') : '-',
-                        'วันกำหนดส่ง': row.DueDate ? new Date(row.DueDate).toLocaleDateString('th-TH') : '-',
+                        'เลขที่ PO': row.PO_ID,
+                        'เลขที่ PR': row.PR_No || '-',
+                        'Budget No.': row.BudgetNo || '-',
                         'Vendor': row.VendorName || '-',
+                        'วันที่สั่ง': row.RequestDate ? new Date(row.RequestDate).toLocaleDateString('th-TH') : '-',
+                        'กำหนดส่ง': row.DueDate ? new Date(row.DueDate).toLocaleDateString('th-TH') : '-',
                         'สถานะ': row.Status === 'Open' ? 'รอดำเนินการ' :
                             row.Status === 'Partial' ? 'รับบางส่วน' :
                                 row.Status === 'Completed' ? 'เสร็จสิ้น' : row.Status,
@@ -1195,6 +1177,14 @@ const startServer = async () => {
                 END
             `);
 
+            // Check BudgetNo in Stock_PurchaseOrders
+            await pool.request().query(`
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Stock_PurchaseOrders' AND COLUMN_NAME = 'BudgetNo')
+                BEGIN
+                    ALTER TABLE dbo.Stock_PurchaseOrders ADD BudgetNo NVARCHAR(100) NULL;
+                END
+            `);
+
 
             console.log('✅ Schema Check: ImageURL and MaxStock columns verified');
 
@@ -1244,7 +1234,7 @@ const startServer = async () => {
             console.warn('⚠️ Schema Check Warning:', err.message);
         }
 
-        // --- AUDIT LOGS ---
+
 
 
         app.listen(PORT, () => {

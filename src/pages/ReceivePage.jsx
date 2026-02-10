@@ -26,7 +26,12 @@ const ReceivePage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activePo, setActivePo] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterDate, setFilterDate] = useState('');
+    // Default to current month (YYYY-MM format)
+    const getCurrentMonth = () => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    };
+    const [filterMonth, setFilterMonth] = useState(getCurrentMonth());
     const [selectedPO, setSelectedPO] = useState(null); // For detail view
     const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
@@ -73,8 +78,31 @@ const ReceivePage = () => {
         .filter(po => {
             const matchSearch = po.PO_ID.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (po.VendorName && po.VendorName.toLowerCase().includes(searchTerm.toLowerCase()));
-            const matchDate = !filterDate || (po.RequestDate && po.RequestDate.includes(filterDate));
-            return matchSearch && matchDate;
+
+            // Month filter: check if RequestDate starts with YYYY-MM
+            // Debugging
+            // console.log(`[DEBUG Date Filter] Filter: ${filterMonth} | PO Date: ${po.RequestDate} | Match: ${!filterMonth || (po.RequestDate && po.RequestDate.startsWith(filterMonth))}`);
+
+            // Month filter: check if RequestDate starts with YYYY-MM
+            const reqDate = po.RequestDate ? new Date(po.RequestDate).toISOString().slice(0, 7) : '';
+            const matchMonth = !filterMonth || reqDate === filterMonth;
+
+            return matchSearch && matchMonth;
+
+        });
+
+    // Filter Invoices
+    const filteredInvoices = (Array.isArray(invoices) ? invoices : [])
+        .filter(inv => {
+            const matchSearch = (inv.InvoiceNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (inv.PO_ID || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (inv.BudgetNo || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+            // Month filter: check if ReceiveDate starts with YYYY-MM
+            const recvDate = inv.ReceiveDate ? new Date(inv.ReceiveDate).toISOString().slice(0, 7) : '';
+            const matchMonth = !filterMonth || recvDate === filterMonth;
+
+            return matchSearch && matchMonth;
         });
 
     return (
@@ -97,15 +125,15 @@ const ReceivePage = () => {
                     <div className="flex gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                         <Calendar size={18} className="text-slate-400 self-center" />
                         <input
-                            type="date"
+                            type="month"
                             className="bg-transparent border-none outline-none text-sm text-slate-700"
-                            value={filterDate}
-                            onChange={(e) => setFilterDate(e.target.value)}
+                            value={filterMonth}
+                            onChange={(e) => setFilterMonth(e.target.value)}
                         />
                     </div>
-                    {(searchTerm || filterDate) && (
+                    {(searchTerm || filterMonth !== getCurrentMonth()) && (
                         <button
-                            onClick={() => { setSearchTerm(''); setFilterDate(''); }}
+                            onClick={() => { setSearchTerm(''); setFilterMonth(getCurrentMonth()); }}
                             className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                         >
                             ล้างตัวกรอง
@@ -131,6 +159,16 @@ const ReceivePage = () => {
                                     <div>
                                         <h4 className="font-bold text-slate-800 text-sm">{po.PO_ID}</h4>
                                         <p className="text-[10px] text-slate-400">{po.VendorName || '-'}</p>
+                                        {po.BudgetNo && (
+                                            <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 mt-0.5 inline-block">
+                                                Budget: {po.BudgetNo}
+                                            </span>
+                                        )}
+                                        {po.PR_No && (
+                                            <span className="text-[9px] bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded border border-indigo-100 mt-0.5 ml-1 inline-block">
+                                                PR: {po.PR_No}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${getStatusColor(po.Status)}`}>
@@ -147,12 +185,14 @@ const ReceivePage = () => {
                                 >
                                     <Eye size={14} /> ดูรายละเอียด
                                 </button>
-                                <button
-                                    onClick={() => { setActivePo(po); setIsModalOpen(true); }}
-                                    className="flex-1 bg-emerald-600 text-white font-bold py-2 rounded-lg text-xs hover:bg-emerald-700 transition-all flex items-center justify-center gap-1"
-                                >
-                                    <Check size={14} /> รับของ
-                                </button>
+                                {user?.role === 'Staff' && (
+                                    <button
+                                        onClick={() => { setActivePo(po); setIsModalOpen(true); }}
+                                        className="flex-1 bg-emerald-600 text-white font-bold py-2 rounded-lg text-xs hover:bg-emerald-700 transition-all flex items-center justify-center gap-1"
+                                    >
+                                        <Check size={14} /> รับของ
+                                    </button>
+                                )}
                             </div>
                         </motion.div>
                     ))}
@@ -179,25 +219,27 @@ const ReceivePage = () => {
                             <tr>
                                 <th className="p-4">Invoice No</th>
                                 <th className="p-4">PO Ref</th>
+                                <th className="p-4">Budget No</th>
                                 <th className="p-4">Date & Time</th>
                                 <th className="p-4">Received By</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {(Array.isArray(invoices) ? invoices : []).slice(0, 10).map((inv, i) => (
+                            {filteredInvoices.map((inv, i) => (
                                 <tr
                                     key={inv.InvoiceID || i}
                                     className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
                                 >
                                     <td className="p-4 font-mono font-bold text-slate-700">{inv.InvoiceNo}</td>
                                     <td className="p-4 text-indigo-600 font-bold">{inv.PO_ID}</td>
+                                    <td className="p-4 text-slate-500">{inv.BudgetNo || '-'}</td>
                                     <td className="p-4 text-slate-500">{formatDateTime(inv.ReceiveDate)}</td>
                                     <td className="p-4 text-slate-600">{inv.ReceivedBy}</td>
                                 </tr>
                             ))}
-                            {invoices.length === 0 && (
+                            {filteredInvoices.length === 0 && (
                                 <tr>
-                                    <td colSpan="4" className="p-8 text-center text-slate-400">No invoices recorded yet.</td>
+                                    <td colSpan="5" className="p-8 text-center text-slate-400">No invoices recorded yet.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -248,6 +290,18 @@ const ReceivePage = () => {
                                             <p className="text-xs text-slate-500 font-bold mb-1">วันที่สร้าง</p>
                                             <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.RequestDate)}</p>
                                         </div>
+                                        {selectedPO.BudgetNo && (
+                                            <div className="bg-slate-50 p-4 rounded-xl">
+                                                <p className="text-xs text-slate-500 font-bold mb-1">Budget No.</p>
+                                                <p className="text-sm font-bold text-slate-800">{selectedPO.BudgetNo}</p>
+                                            </div>
+                                        )}
+                                        {selectedPO.PR_No && (
+                                            <div className="bg-slate-50 p-4 rounded-xl">
+                                                <p className="text-xs text-slate-500 font-bold mb-1">PR No.</p>
+                                                <p className="text-sm font-bold text-slate-800">{selectedPO.PR_No}</p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Items */}
@@ -290,12 +344,14 @@ const ReceivePage = () => {
                                     >
                                         ปิด
                                     </button>
-                                    <button
-                                        onClick={() => { setActivePo(selectedPO); setSelectedPO(null); setIsModalOpen(true); }}
-                                        className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <Check size={18} /> รับของ
-                                    </button>
+                                    {user?.role === 'Staff' && (
+                                        <button
+                                            onClick={() => { setActivePo(selectedPO); setSelectedPO(null); setIsModalOpen(true); }}
+                                            className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <Check size={18} /> รับของ
+                                        </button>
+                                    )}
                                 </div>
                             </motion.div>
                         </motion.div>
@@ -312,7 +368,10 @@ const ReceivePage = () => {
                                 <div className="p-6 bg-white flex justify-between items-center border-b border-slate-200">
                                     <div>
                                         <h3 className="font-bold text-lg text-slate-800">Receive Invoice - {activePo.PO_ID}</h3>
-                                        <p className="text-slate-500 text-sm">{activePo.VendorName}</p>
+                                        <p className="text-slate-500 text-sm">
+                                            {activePo.VendorName}
+                                            {activePo.PR_No && <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-100 ml-2 font-bold">PR: {activePo.PR_No}</span>}
+                                        </p>
                                     </div>
                                     <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
                                 </div>
