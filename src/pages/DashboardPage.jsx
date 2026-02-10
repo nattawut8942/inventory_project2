@@ -4,6 +4,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { Package, TrendingUp, TrendingDown, AlertTriangle, DollarSign, ShoppingCart, Clock, ArrowRight, Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
+import { formatThaiDate } from '../utils/formatDate';
 import StatCard from '../components/StatCard';
 import { getChartColor, getBadgeStyle } from '../utils/styleHelpers';
 
@@ -410,7 +411,7 @@ const DashboardPage = () => {
                                     <div className="flex justify-between items-center mt-1">
                                         <p className="text-xs text-slate-500 truncate">{t.RefInfo || 'No reference'}</p>
                                         <p className="text-xs text-slate-400 font-mono">
-                                            {new Date(t.TransDate).toLocaleDateString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                            {formatThaiDate(t.TransDate)}
                                         </p>
                                     </div>
                                 </div>

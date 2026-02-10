@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import AlertModal from '../components/AlertModal';
 import Portal from '../components/Portal';
 import { getBadgeStyle, getColorGradient, getChartColor } from '../utils/styleHelpers';
+import { formatThaiDate } from '../utils/formatDate';
 
 const API_BASE = 'http://localhost:3001/api';
 const API_URL = 'http://localhost:3001';
@@ -458,7 +459,7 @@ const InventoryPage = () => {
                                                     transition={{ delay: i * 0.05 }}
                                                     className="hover:bg-slate-50 transition-colors"
                                                 >
-                                                    <td className="p-4 text-slate-500 whitespace-nowrap">{new Date(h.TransDate).toLocaleDateString()} <span className="text-xs text-slate-400">{new Date(h.TransDate).toLocaleTimeString()}</span></td>
+                                                    <td className="p-4 text-slate-500 whitespace-nowrap">{formatThaiDate(h.TransDate)}</td>
                                                     <td className={`p-4 text-center font-bold ${(h.TransType || '').toUpperCase().trim() === 'IN' || (h.RefInfo || '').toLowerCase().includes('invoice') ? 'text-emerald-600' : 'text-red-500'}`}>
                                                         {(h.TransType || '').toUpperCase().trim() === 'IN' || (h.RefInfo || '').toLowerCase().includes('invoice') ? '+' : '-'}{Math.abs(h.Qty)}
                                                     </td>

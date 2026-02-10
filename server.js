@@ -14,6 +14,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Helper to get current Date
+const getThaiDate = () => {
+    return new Date();
+};
+
 app.use(cors());
 app.use(express.json());
 
@@ -386,15 +391,17 @@ app.post('/api/products/manual-import', async (req, res) => {
             }
 
             // 2. Log Transaction
+            const now = getThaiDate();
             await new sql.Request(transaction)
                 .input('ProductID', sql.Int, productID)
                 .input('TransType', sql.VarChar, 'IN')
                 .input('Qty', sql.Int, qty)
                 .input('RefInfo', sql.NVarChar, Remark || 'Manual Import')
                 .input('UserID', sql.NVarChar, UserID)
+                .input('TransDate', sql.DateTime, now)
                 .query(`
-                    INSERT INTO dbo.Stock_Transactions (ProductID, TransType, Qty, RefInfo, UserID)
-                    VALUES (@ProductID, @TransType, @Qty, @RefInfo, @UserID)
+                    INSERT INTO dbo.Stock_Transactions (ProductID, TransType, Qty, RefInfo, UserID, TransDate)
+                    VALUES (@ProductID, @TransType, @Qty, @RefInfo, @UserID, @TransDate)
                 `);
 
             await transaction.commit();
@@ -441,15 +448,17 @@ app.post('/api/products/withdraw', async (req, res) => {
 
 
 
+            const now = getThaiDate();
             await new sql.Request(transaction)
                 .input('ProductID', sql.Int, ProductID)
                 .input('TransType', sql.VarChar, 'OUT')
                 .input('Qty', sql.Int, Qty)
                 .input('RefInfo', sql.NVarChar, RefInfo || 'Internal Withdrawal')
                 .input('UserID', sql.NVarChar, UserID)
+                .input('TransDate', sql.DateTime, now)
                 .query(`
-                    INSERT INTO dbo.Stock_Transactions (ProductID, TransType, Qty, RefInfo, UserID)
-                    VALUES (@ProductID, @TransType, @Qty, @RefInfo, @UserID)
+                    INSERT INTO dbo.Stock_Transactions (ProductID, TransType, Qty, RefInfo, UserID, TransDate)
+                    VALUES (@ProductID, @TransType, @Qty, @RefInfo, @UserID, @TransDate)
                 `);
 
             await transaction.commit();
@@ -622,13 +631,15 @@ app.post('/api/receive', async (req, res) => {
 
         try {
             // 1. Create Invoice Record
+            const now = getThaiDate();
             const newInvoices = await new sql.Request(transaction)
                 .input('InvoiceNo', sql.NVarChar, InvoiceNo)
                 .input('PO_ID', sql.NVarChar, PO_ID)
+                .input('ReceiveDate', sql.DateTime, now)
                 .input('ReceivedBy', sql.NVarChar, UserID)
                 .query(`
-                    INSERT INTO dbo.Stock_Invoices (InvoiceNo, PO_ID, ReceivedBy)
-                    VALUES (@InvoiceNo, @PO_ID, @ReceivedBy);
+                    INSERT INTO dbo.Stock_Invoices (InvoiceNo, PO_ID, ReceiveDate, ReceivedBy)
+                    VALUES (@InvoiceNo, @PO_ID, @ReceiveDate, @ReceivedBy);
                     SELECT SCOPE_IDENTITY() AS InvoiceID;
                 `);
 
@@ -736,15 +747,17 @@ app.post('/api/receive', async (req, res) => {
 
                 // 5. Log Transaction (only if finalProductID exists)
                 if (finalProductID) {
+                    const now = getThaiDate();
                     await new sql.Request(transaction)
                         .input('ProductID', sql.Int, finalProductID)
                         .input('TransType', sql.VarChar, 'IN')
                         .input('Qty', sql.Int, qty)
                         .input('RefInfo', sql.NVarChar, `Invoice: ${InvoiceNo} (PO: ${PO_ID})`)
                         .input('UserID', sql.NVarChar, UserID)
+                        .input('TransDate', sql.DateTime, now)
                         .query(`
-                        INSERT INTO dbo.Stock_Transactions (ProductID, TransType, Qty, RefInfo, UserID)
-                        VALUES (@ProductID, @TransType, @Qty, @RefInfo, @UserID)
+                        INSERT INTO dbo.Stock_Transactions (ProductID, TransType, Qty, RefInfo, UserID, TransDate)
+                        VALUES (@ProductID, @TransType, @Qty, @RefInfo, @UserID, @TransDate)
                     `);
                 }
             }

@@ -22,18 +22,7 @@ try {
 
 const API_BASE = 'http://localhost:3001/api';
 
-// Format datetime with time
-const formatDateTime = (dateStr) => {
-    if (!dateStr) return '-';
-    const d = new Date(dateStr);
-    return d.toLocaleString('th-TH', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
+import { formatThaiDate } from '../utils/formatDate';
 
 const PurchaseOrdersPage = () => {
     const { purchaseOrders, products, vendors, refreshData } = useData();
@@ -547,7 +536,7 @@ const PurchaseOrdersPage = () => {
                             </span>
                         </div>
                         <div className="flex justify-between items-center text-xs text-slate-500 pt-2 border-t border-slate-100">
-                            <span>{formatDateTime(po.RequestDate)}</span>
+                            <span>{formatThaiDate(po.RequestDate)}</span>
                             <button className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-medium">
                                 <Eye size={14} /> ดูรายละเอียด
                             </button>
@@ -604,7 +593,7 @@ const PurchaseOrdersPage = () => {
                                         </div>
                                         <div className="bg-slate-50 p-4 rounded-xl">
                                             <p className="text-xs text-slate-500 font-bold mb-1">วันที่สร้าง</p>
-                                            <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.RequestDate)}</p>
+                                            <p className="text-sm font-bold text-slate-800">{formatThaiDate(selectedPO.RequestDate)}</p>
                                         </div>
                                     </div>
 
@@ -621,7 +610,7 @@ const PurchaseOrdersPage = () => {
                                         {selectedPO.DueDate && (
                                             <div className="bg-slate-50 p-4 rounded-xl">
                                                 <p className="text-xs text-slate-500 font-bold mb-1">กำหนดส่ง</p>
-                                                <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.DueDate)}</p>
+                                                <p className="text-sm font-bold text-slate-800">{formatThaiDate(selectedPO.DueDate)}</p>
                                             </div>
                                         )}
                                         {selectedPO.PR_No && (

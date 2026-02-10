@@ -8,7 +8,8 @@ const config = {
     options: {
         encrypt: false, // Set to true for Azure
         trustServerCertificate: true, // Allow self-signed certs
-        enableArithAbort: true
+        enableArithAbort: true,
+        useUTC: false // Treat DB dates as local time
     },
     pool: {
         max: 10,

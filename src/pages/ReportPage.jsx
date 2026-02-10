@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import AlertModal from '../components/AlertModal';
 import { getChartColor } from '../utils/styleHelpers';
+import { formatThaiDateShort } from '../utils/formatDate';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -734,7 +735,7 @@ const ReportPage = () => {
                             <p className="text-sm text-slate-600">
                                 <span className="font-bold text-indigo-600">{selectedTypes.length}</span> ประเภทข้อมูลที่เลือก
                                 {startDate && endDate && (
-                                    <span className="text-slate-400"> • {startDate} ถึง {endDate}</span>
+                                    <span className="text-slate-400"> • {formatThaiDateShort(startDate)} ถึง {formatThaiDateShort(endDate)}</span>
                                 )}
                             </p>
                         </div>

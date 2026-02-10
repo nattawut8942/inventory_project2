@@ -7,18 +7,7 @@ import Portal from '../components/Portal';
 
 const API_BASE = 'http://localhost:3001/api';
 
-// Format datetime with time
-const formatDateTime = (dateStr) => {
-    if (!dateStr) return '-';
-    const d = new Date(dateStr);
-    return d.toLocaleString('th-TH', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
+import { formatThaiDate } from '../utils/formatDate';
 
 const ReceivePage = () => {
     const { purchaseOrders, invoices, products, refreshData } = useData();
@@ -259,7 +248,7 @@ const ReceivePage = () => {
                                     <td className="p-4 font-mono font-bold text-slate-700">{inv.InvoiceNo}</td>
                                     <td className="p-4 text-indigo-600 font-bold">{inv.PO_ID}</td>
                                     <td className="p-4 text-slate-500">{inv.BudgetNo || '-'}</td>
-                                    <td className="p-4 text-slate-500">{formatDateTime(inv.ReceiveDate)}</td>
+                                    <td className="p-4 text-slate-500">{formatThaiDate(inv.ReceiveDate)}</td>
                                     <td className="p-4 text-slate-600">{inv.ReceivedBy}</td>
                                 </tr>
                             ))}
@@ -314,7 +303,7 @@ const ReceivePage = () => {
                                         </div>
                                         <div className="bg-slate-50 p-4 rounded-xl">
                                             <p className="text-xs text-slate-500 font-bold mb-1">วันที่สร้าง</p>
-                                            <p className="text-sm font-bold text-slate-800">{formatDateTime(selectedPO.RequestDate)}</p>
+                                            <p className="text-sm font-bold text-slate-800">{formatThaiDate(selectedPO.RequestDate)}</p>
                                         </div>
                                         {selectedPO.BudgetNo && (
                                             <div className="bg-slate-50 p-4 rounded-xl">

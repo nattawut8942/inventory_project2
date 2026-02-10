@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { formatThaiDate } from '../utils/formatDate';
 
 const HistoryPage = () => {
     const { transactions } = useData();
@@ -76,7 +77,7 @@ const HistoryPage = () => {
                             const isIn = (t.TransType || '').toUpperCase().trim() === 'IN' || (t.RefInfo || '').toLowerCase().includes('invoice');
                             return (
                                 <tr key={t.TransID} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-4 pl-6 text-slate-500 font-mono text-xs whitespace-nowrap">{new Date(t.TransDate).toLocaleString()}</td>
+                                    <td className="p-4 pl-6 text-slate-500 font-mono text-xs whitespace-nowrap">{formatThaiDate(t.TransDate)}</td>
                                     <td className="p-4">
                                         <span className={`font-bold px-2.5 py-1 rounded-full text-[10px] border ${isIn ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
                                             {t.TransType}
@@ -118,7 +119,7 @@ const HistoryPage = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-slate-800 text-sm line-clamp-1">{t.ProductName}</h4>
-                                        <p className="text-xs text-slate-500">{new Date(t.TransDate).toLocaleString()}</p>
+                                        <p className="text-xs text-slate-500">{formatThaiDate(t.TransDate)}</p>
                                     </div>
                                 </div>
                                 <span className={`font-bold px-2 py-0.5 rounded-lg text-[10px] border ${isIn ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
