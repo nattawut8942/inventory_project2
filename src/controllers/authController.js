@@ -5,7 +5,17 @@ import { sql, getPool } from '../config/db.js';
 const SECRET_KEY = process.env.JWT_SECRET || 'your-secret-key-change-this-in-env';
 
 export const login = async (req, res) => {
-    const { username, password } = req.body;
+    // Handle both body and query parameters (for URL login support)
+    const body = req.body || {};
+    const query = req.query || {};
+
+    // Case-insensitive check
+    const username = body.username || body.Username || query.username || query.Username;
+    const password = body.password || body.Password || query.password || query.Password;
+
+    if (!username || !password) {
+        return res.status(401).json({ success: false, message: 'Invalid username or password' });
+    }
 
     try {
         const apiUrl = 'http://websrv01.dci.daikin.co.jp/BudgetCharts/BudgetRestService/api/authen';
