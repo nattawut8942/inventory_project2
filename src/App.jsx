@@ -17,7 +17,7 @@ import WithdrawPage from './pages/WithdrawPage';
 import HistoryPage from './pages/HistoryPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import ReportPage from './pages/ReportPage';
-import AdminUsersPage from './pages/AdminUsersPage';
+import ManagementPage from './pages/ManagementPage';
 
 
 // App Routes Component
@@ -59,18 +59,10 @@ const AppRoutes = () => {
                     }
                 />
                 <Route
-                    path="admin-users"
+                    path="management"
                     element={
                         <ProtectedRoute staffOnly>
-                            <AdminUsersPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="admin-users"
-                    element={
-                        <ProtectedRoute staffOnly>
-                            <AdminUsersPage />
+                            <ManagementPage />
                         </ProtectedRoute>
                     }
                 />

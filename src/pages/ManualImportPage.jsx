@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import Portal from '../components/Portal';
+import AlertModal from '../components/AlertModal';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -77,14 +78,14 @@ const ManualImportPage = () => {
                     isOpen: true,
                     type: 'success',
                     title: 'นำเข้าสำเร็จ!',
-                    message: 'รายการสินค้าถูกเพิ่มเข้าสู่ระบบเรียบร้อยแล้ว'
+                    message: 'รายการอุปกรณ์ถูกเพิ่มเข้าสู่ระบบเรียบร้อยแล้ว'
                 });
             } else {
                 setResultModal({
                     isOpen: true,
                     type: 'error',
                     title: 'เกิดข้อผิดพลาด',
-                    message: 'ไม่สามารถนำเข้าสินค้าได้ กรุณาลองใหม่อีกครั้ง'
+                    message: 'ไม่สามารถนำเข้าอุปกรณ์ได้ กรุณาลองใหม่อีกครั้ง'
                 });
             }
         } catch (err) {
@@ -106,143 +107,157 @@ const ManualImportPage = () => {
 
     return (
         <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4"
-            >
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                    <Plus size={28} className="text-white" />
-                </div>
-                <div>
-                    <h2 className="text-3xl font-black text-slate-800">Manual Import</h2>
-                    <p className="text-slate-500">นำเข้าสินค้าใหม่โดยไม่อ้างอิง PO</p>
-                </div>
-            </motion.div>
+            {/* Premium Header */}
+            <div className="mb-6">
+                <h2 className="text-3xl font-black mb-2  text-slate-800">Manual Stock Import</h2>
+                <p className="text-slate-500 font-medium">เพิ่มไอเทมโดยไม่ต้องใช้ PO </p>
+            </div>
 
             {/* Form Card - Full Width */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white border border-slate-200 rounded-3xl shadow-xl overflow-hidden"
+                transition={{ delay: 0.1 }}
+                className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
             >
                 <form onSubmit={handleSubmit}>
-                    {/* Form Body */}
-                    <div className="p-8 space-y-6">
-                        {/* Product Name - Full Row */}
-                        <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">ชื่อสินค้า *</label>
-                            <input
-                                list="product-suggestions"
-                                name="ProductName"
-                                value={formData.ProductName}
-                                onChange={handleChange}
-                                required
-                                className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-800 font-medium placeholder:text-slate-400 text-lg"
-                                placeholder="พิมพ์ชื่อเพื่อค้นหา หรือสร้างใหม่..."
-                                autoComplete="off"
-                            />
-                            <datalist id="product-suggestions">
-                                {products.map(p => (
-                                    <option key={p.ProductID} value={p.ProductName} />
-                                ))}
-                            </datalist>
-                        </div>
+                    <div className="flex flex-col lg:flex-row">
+                        {/* LEFT COLUMN: Main Info */}
+                        <div className="flex-1 p-8 space-y-6 border-b lg:border-b-0 lg:border-r border-slate-100">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                                <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm">1</span>
+                                Product Details
+                            </h3>
 
-                        {/* 2 Column Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">ประเภท *</label>
-                                <select
-                                    name="DeviceType"
-                                    value={formData.DeviceType}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
-                                >
-                                    <option value="">-- เลือกประเภท --</option>
-                                    {deviceTypes.map(t => <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">ราคา (บาท) *</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">ชื่ออุปกรณ์</label>
                                 <input
-                                    name="LastPrice"
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.LastPrice}
+                                    list="product-suggestions"
+                                    name="ProductName"
+                                    value={formData.ProductName}
                                     onChange={handleChange}
                                     required
-                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
-                                    placeholder="0.00"
+                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-cyan-100 focus:border-cyan-500 outline-none transition-all text-slate-800 font-bold placeholder:text-slate-400 text-lm"
+                                    placeholder="พิมพ์ชื่ออุปกรณ์เพื่อเลือกหรือเพิ่มใหม่"
+                                    autoComplete="off"
                                 />
+                                <datalist id="product-suggestions">
+                                    {products.map(p => (
+                                        <option key={p.ProductID} value={p.ProductName} />
+                                    ))}
+                                </datalist>
                             </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">จำนวนที่นำเข้า *</label>
-                                <input
-                                    name="Quantity"
-                                    type="number"
-                                    value={formData.Quantity}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
-                                    placeholder="0"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">Min Stock Alert *</label>
-                                <input
-                                    name="MinStock"
-                                    type="number"
-                                    value={formData.MinStock}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
-                                    placeholder="0"
-                                />
-                            </div>
-                        </div>
 
-                        {/* Additional Fields Row */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">Max Stock (Optional)</label>
-                                <input
-                                    name="MaxStock"
-                                    type="number"
-                                    value={formData.MaxStock}
-                                    onChange={handleChange}
-                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
-                                    placeholder="0"
-                                />
+                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">หมวดหมู่</label>
+                                <div className="relative">
+                                    <select
+                                        name="DeviceType"
+                                        value={formData.DeviceType}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-cyan-100 focus:border-cyan-500 outline-none text-slate-800 font-medium appearance-none"
+                                    >
+                                        <option value="">-- เลือก Category --</option>
+                                        {deviceTypes.map(t => <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>)}
+                                    </select>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                    </div>
+                                </div>
                             </div>
+
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">หมายเหตุ (Optional)</label>
-                                <input
+                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">รายละเอียด / Remark</label>
+                                <textarea
                                     name="Remark"
-                                    type="text"
+                                    rows={3}
                                     value={formData.Remark}
                                     onChange={handleChange}
-                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-800 font-medium"
-                                    placeholder="รายละเอียดเพิ่มเติม..."
+                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-cyan-100 focus:border-cyan-500 outline-none text-slate-800 font-medium resize-none"
+                                    placeholder="Optional details..."
                                 />
+                            </div>
+                        </div>
+
+                        {/* RIGHT COLUMN: Stock & Price */}
+                        <div className="flex-1 p-8 space-y-6 bg-slate-50/50">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                                <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm">2</span>
+                                Stock & Pricing
+                            </h3>
+
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">จำนวน </label>
+                                    <input
+                                        name="Quantity"
+                                        type="number"
+                                        value={formData.Quantity}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full bg-white border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none text-slate-800 font-bold text-xl"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">ราคาต่อชิ้น</label>
+                                    <input
+                                        name="LastPrice"
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.LastPrice}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full bg-white border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none text-slate-800 font-bold text-xl"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100 space-y-4">
+                                <h4 className="text-sm font-bold text-orange-800 uppercase tracking-wide">Stock Limits</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-orange-600/70 uppercase mb-1 block">สต็อกขั้นต่ำ</label>
+                                        <input
+                                            name="MinStock"
+                                            type="number"
+                                            value={formData.MinStock}
+                                            onChange={handleChange}
+                                            required
+                                            className="w-full bg-white border border-orange-200 p-3 rounded-xl focus:ring-2 focus:ring-orange-100 focus:border-orange-500 outline-none text-slate-800 font-bold"
+                                            placeholder="Min"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-orange-600/70 uppercase mb-1 block">สต็อกสูงสุด</label>
+                                        <input
+                                            name="MaxStock"
+                                            type="number"
+                                            value={formData.MaxStock}
+                                            onChange={handleChange}
+                                            className="w-full bg-white border border-orange-200 p-3 rounded-xl focus:ring-2 focus:ring-orange-100 focus:border-orange-500 outline-none text-slate-800 font-bold"
+                                            placeholder="Max"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Form Footer */}
-                    <div className="px-8 py-6 bg-slate-50 border-t border-slate-200 flex gap-4">
+                    <div className="px-8 py-6 bg-slate-50 border-t border-slate-200 flex justify-end gap-4">
                         <button
                             type="button"
                             onClick={() => navigate(-1)}
-                            className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-4 rounded-xl hover:bg-slate-100 transition-all"
+                            className="px-8 py-4 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all"
                         >
                             ยกเลิก
                         </button>
                         <button
                             type="submit"
-                            className="flex-[2] bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:from-indigo-600 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
+                            className="px-10 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:from-cyan-700 hover:to-blue-700 hover:shadow-cyan-200/50 transition-all flex items-center gap-2 transform active:scale-95"
                         >
                             <Package size={20} />
                             ยืนยันการนำเข้า
@@ -252,41 +267,15 @@ const ManualImportPage = () => {
             </motion.div>
 
             {/* Result Modal - Centered */}
-            <AnimatePresence>
-                {resultModal.isOpen && (
-                    <Portal>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                        >
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                className="bg-white rounded-3xl p-8 text-center max-w-md w-full shadow-2xl"
-                            >
-                                <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : 'bg-red-100'}`}>
-                                    {resultModal.type === 'success' ? (
-                                        <Check size={40} className="text-emerald-600" />
-                                    ) : (
-                                        <X size={40} className="text-red-600" />
-                                    )}
-                                </div>
-                                <h3 className="font-black text-2xl text-slate-800 mb-2">{resultModal.title}</h3>
-                                <p className="text-slate-500 mb-6">{resultModal.message}</p>
-                                <button
-                                    onClick={handleCloseResult}
-                                    className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all"
-                                >
-                                    {resultModal.type === 'success' ? 'ไปหน้า Inventory' : 'ปิด'}
-                                </button>
-                            </motion.div>
-                        </motion.div>
-                    </Portal>
-                )}
-            </AnimatePresence>
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={resultModal.isOpen}
+                onConfirm={handleCloseResult}
+                type={resultModal.type}
+                title={resultModal.title}
+                message={resultModal.message}
+                confirmText={resultModal.type === 'success' ? 'ไปหน้า Inventory' : 'ปิด'}
+            />
         </div>
     );
 };

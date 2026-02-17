@@ -4,12 +4,14 @@ import { useAuth } from '../context/AuthContext';
 import { ShoppingBag, AlertTriangle, Monitor, Network, Archive, Database, Package, X, Minus, Plus, ShoppingCart, Trash2, Check, Search, List, LayoutGrid, HardDrive, Mouse, Droplet, FileEdit, ScanLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Portal from '../components/Portal';
+import AlertModal from '../components/AlertModal';
+import LoadingState from '../components/LoadingState';
 
 const API_BASE = 'http://localhost:3001/api';
 const API_URL = 'http://localhost:3001';
 
 const WithdrawPage = () => {
-    const { products, deviceTypes, refreshData } = useData();
+    const { products, deviceTypes, refreshData, loading } = useData();
     const { user } = useAuth();
 
     // Filter & View State
@@ -142,7 +144,7 @@ const WithdrawPage = () => {
                         isOpen: true,
                         type: 'error',
                         title: 'เกิดข้อผิดพลาด',
-                        message: 'ไม่สามารถเบิกสินค้าได้'
+                        message: 'ไม่สามารถเบิกอุปกรณ์ได้'
                     });
                 }
             } catch (err) {
@@ -216,7 +218,7 @@ const WithdrawPage = () => {
             setScanReason('New Withdrawal');
             setScanReasonDetail('');
         } else {
-            setScanModal(prev => ({ ...prev, foundProduct: null, error: `ไม่พบสินค้ารหัส "${code.trim()}"` }));
+            setScanModal(prev => ({ ...prev, foundProduct: null, error: `ไม่พบอุปกรณ์รหัส "${code.trim()}"` }));
         }
     };
 
@@ -243,12 +245,16 @@ const WithdrawPage = () => {
                 refreshData();
                 setScanModal({ isOpen: false, scannedCode: '', foundProduct: null, error: '' });
             } else {
-                setResultModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด', message: 'ไม่สามารถเบิกสินค้าได้' });
+                setResultModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด', message: 'ไม่สามารถเบิกอุปกรณ์ได้' });
             }
         } catch {
             setResultModal({ isOpen: true, type: 'error', title: 'Connection Error', message: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้' });
         }
     };
+
+    if (loading && products.length === 0) {
+        return <LoadingState message="กำลังโหลดข้อมูลอุปกรณ์..." />;
+    }
 
     return (
         <div className="space-y-6">
@@ -259,18 +265,12 @@ const WithdrawPage = () => {
                 className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4"
             >
                 <div>
-                    <h2 className="text-3xl font-black text-slate-800">เบิกสินค้า</h2>
-                    <p className="text-slate-500">เลือกสินค้าที่ต้องการเบิก</p>
+                    <h2 className="text-3xl font-black text-slate-800 mb-2">เบิกอุปกรณ์</h2>
+                    <p className="text-slate-500">เลือกอุปกรณ์ที่ต้องการเบิก</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
-                    {/* Scan Button */}
-                    <button
-                        onClick={() => setScanModal({ isOpen: true, scannedCode: '', foundProduct: null, error: '' })}
-                        className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-200 hover:from-emerald-600 hover:to-teal-600 transition-all"
-                    >
-                        <ScanLine size={18} /> สแกนเบิก
-                    </button>
+
                     {/* View Toggle */}
                     <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                         <button
@@ -292,7 +292,7 @@ const WithdrawPage = () => {
                         <Search size={18} className="text-slate-400 self-center" />
                         <input
                             type="text"
-                            placeholder="ค้นหาสินค้า... (พร้อมสแกน)"
+                            placeholder="ค้นหาอุปกรณ์... (พร้อมสแกน)"
                             className="bg-transparent border-none outline-none text-sm w-40 text-slate-700 placeholder-slate-400"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -327,6 +327,13 @@ const WithdrawPage = () => {
                             </span>
                         )}
                     </button>
+                    {/* Scan Button */}
+                    <button
+                        onClick={() => setScanModal({ isOpen: true, scannedCode: '', foundProduct: null, error: '' })}
+                        className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-200 hover:from-emerald-600 hover:to-teal-600 transition-all"
+                    >
+                        <ScanLine size={18} /> สแกนเบิก
+                    </button>
                 </div>
             </motion.div>
 
@@ -340,7 +347,7 @@ const WithdrawPage = () => {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-4 font-bold text-slate-600">สินค้า</th>
+                                <th className="px-6 py-4 font-bold text-slate-600">อุปกรณ์</th>
                                 <th className="px-4 py-4 font-bold text-slate-600">ประเภท</th>
                                 <th className="px-4 py-4 font-bold text-slate-600 text-center">คงเหลือ</th>
                                 <th className="px-4 py-4 font-bold text-slate-600 text-right">Actions</th>
@@ -447,7 +454,7 @@ const WithdrawPage = () => {
                                 <h3 className="font-bold text-slate-800 text-sm mb-1 line-clamp-2 min-h-[2.5rem]">{p.ProductName}</h3>
 
                                 <div className="flex items-baseline gap-2 mb-3">
-                                    <span className="text-[10px] text-slate-400 font-bold">คงเหลือ:</span>
+                                    <span className="text-[12px] text-slate-400 font-bold">คงเหลือ:</span>
                                     <span className={`text-xl font-black ${isLow ? 'text-red-500' : 'text-emerald-500'}`}>{p.CurrentStock}</span>
                                     {isLow && <AlertTriangle size={12} className="text-red-500" />}
                                 </div>
@@ -728,7 +735,7 @@ const WithdrawPage = () => {
                                             onClick={executeWithdrawAll}
                                             className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold py-4 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg flex items-center justify-center gap-2"
                                         >
-                                            <Check size={20} /> ยืนยันเบิกสินค้า
+                                            <Check size={20} /> ยืนยันเบิกอุปกรณ์
                                         </button>
                                     </div>
                                 )}
@@ -759,7 +766,7 @@ const WithdrawPage = () => {
                                 {/* Header */}
                                 <div className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 flex justify-between items-center flex-shrink-0">
                                     <div>
-                                        <h3 className="font-bold text-white flex items-center gap-2"><ScanLine size={18} /> สแกนเบิกสินค้า</h3>
+                                        <h3 className="font-bold text-white flex items-center gap-2"><ScanLine size={18} /> สแกนเบิกอุปกรณ์</h3>
                                     </div>
                                     <button onClick={() => setScanModal({ isOpen: false, scannedCode: '', foundProduct: null, error: '' })} className="p-1.5 hover:bg-white/20 rounded-full text-white transition-colors"><X size={18} /></button>
                                 </div>
@@ -772,7 +779,7 @@ const WithdrawPage = () => {
                                             <input
                                                 type="text"
                                                 autoFocus
-                                                placeholder="สแกนบาร์โค้ด หรือพิมพ์รหัสสินค้า..."
+                                                placeholder="สแกนบาร์โค้ด หรือพิมพ์รหัสอุปกรณ์..."
                                                 value={scanModal.scannedCode}
                                                 onChange={(e) => setScanModal(prev => ({ ...prev, scannedCode: e.target.value, error: '' }))}
                                                 onKeyDown={(e) => { if (e.key === 'Enter') handleScanLookup(scanModal.scannedCode); }}
@@ -864,8 +871,8 @@ const WithdrawPage = () => {
                                     ) : (
                                         <div className="py-10 text-center text-slate-400">
                                             <ScanLine size={40} className="mx-auto mb-2 opacity-30" />
-                                            <p className="font-bold text-sm">สแกนบาร์โค้ดหรือพิมพ์รหัสสินค้า</p>
-                                            <p className="text-xs mt-0.5">ระบบจะแสดงข้อมูลสินค้าอัตโนมัติ</p>
+                                            <p className="font-bold text-sm">สแกนบาร์โค้ดหรือพิมพ์รหัสอุปกรณ์</p>
+                                            <p className="text-xs mt-0.5">ระบบจะแสดงข้อมูลอุปกรณ์อัตโนมัติ</p>
                                         </div>
                                     )}
                                 </div>
@@ -895,43 +902,18 @@ const WithdrawPage = () => {
             </AnimatePresence>
 
             {/* Result Modal */}
-            <AnimatePresence>
-                {resultModal.isOpen && (
-                    <Portal>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[80] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
-                        >
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
-                            >
-                                <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${resultModal.type === 'success' ? 'bg-emerald-100' : resultModal.type === 'warning' ? 'bg-amber-100' : 'bg-red-100'}`}>
-                                    {resultModal.type === 'success' ? (
-                                        <Check size={40} className="text-emerald-600" />
-                                    ) : resultModal.type === 'warning' ? (
-                                        <AlertTriangle size={40} className="text-amber-600" />
-                                    ) : (
-                                        <X size={40} className="text-red-600" />
-                                    )}
-                                </div>
-                                <h3 className="font-black text-2xl text-slate-800 mb-2">{resultModal.title}</h3>
-                                <p className="text-slate-500 mb-6">{resultModal.message}</p>
-                                <button
-                                    onClick={() => setResultModal({ ...resultModal, isOpen: false })}
-                                    className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all"
-                                >
-                                    ปิด
-                                </button>
-                            </motion.div>
-                        </motion.div>
-                    </Portal>
-                )}
-            </AnimatePresence>
+            {/* ALERT MODAL (Replaces ResultModal) */}
+            <AlertModal
+                isOpen={resultModal.isOpen}
+                onConfirm={() => {
+                    const onClose = resultModal.onClose || (() => setResultModal({ ...resultModal, isOpen: false }));
+                    onClose();
+                }}
+                type={resultModal.type}
+                title={resultModal.title}
+                message={resultModal.message}
+                confirmText="ตกลง (OK)"
+            />
         </div >
     );
 };

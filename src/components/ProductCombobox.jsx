@@ -115,7 +115,7 @@ const ProductCombobox = ({ products = [], value = {}, onChange }) => {
                     onChange={handleInputChange}
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={handleKeyDown}
-                    placeholder="🔍 ค้นหาหรือพิมพ์ชื่อสินค้า..."
+                    placeholder="🔍 ค้นหาหรือพิมพ์ชื่ออุปกรณ์..."
                     className={`w-full bg-white border p-2.5 pr-10 rounded-lg text-sm outline-none transition-all ${value.ProductID
                         ? 'border-emerald-300 bg-emerald-50'
                         : 'border-slate-200 focus:border-indigo-500'
@@ -135,7 +135,7 @@ const ProductCombobox = ({ products = [], value = {}, onChange }) => {
                     {filteredProducts.length > 0 && (
                         <div className="py-1">
                             <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                สินค้าใน Master
+                                อุปกรณ์ใน Master
                             </div>
                             {filteredProducts.slice(0, 10).map((product, idx) => (
                                 <button
@@ -181,7 +181,7 @@ const ProductCombobox = ({ products = [], value = {}, onChange }) => {
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-sm font-medium text-amber-700">
-                                        สร้างสินค้าใหม่: "{searchTerm}"
+                                        สร้างอุปกรณ์ใหม่: "{searchTerm}"
                                     </p>
                                     <p className="text-[10px] text-amber-500">
                                         รายการนี้จะถูกสร้างเมื่อรับของ
@@ -195,7 +195,7 @@ const ProductCombobox = ({ products = [], value = {}, onChange }) => {
                     {filteredProducts.length === 0 && !isNewItem && searchTerm && (
                         <div className="px-4 py-6 text-center text-slate-400">
                             <Package size={24} className="mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">ไม่พบสินค้า</p>
+                            <p className="text-sm">ไม่พบอุปกรณ์</p>
                         </div>
                     )}
                 </div>

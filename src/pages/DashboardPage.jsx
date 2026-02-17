@@ -6,12 +6,13 @@ import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { formatThaiDate } from '../utils/formatDate';
 import StatCard from '../components/StatCard';
+import LoadingState from '../components/LoadingState';
 import { getChartColor, getBadgeStyle } from '../utils/styleHelpers';
 
 // const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1'];
 
 const DashboardPage = () => {
-    const { products, transactions, purchaseOrders } = useData();
+    const { products, transactions, purchaseOrders, loading } = useData();
     const navigate = useNavigate();
 
     // 1. Calculate Stats
@@ -123,38 +124,44 @@ const DashboardPage = () => {
             .slice(0, 5);
     }, [transactions]);
 
+    if (loading && products.length === 0) {
+        return <LoadingState message="กำลังประมวลผลข้อมูล Dashboard... (Loading Dashboard...)" />;
+    }
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <h2 className="text-3xl font-black text-slate-800 mb-8">Dashboard ภาพรวม</h2>
-
+            <div>
+                <h2 className="text-3xl font-black text-slate-800 mb-2">Dashboard</h2>
+                <p className="text-slate-500 font-medium">สรุปข้อมูลและสถานะคลังอุปกรณ์</p>
+            </div>
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     icon={Package}
-                    title="สินค้าคงคลังทั้งหมด"
+                    title="อุปกรณ์ทั้งหมด "
                     value={stats.productCount.toLocaleString()}
-                    subValue={`รวม ${stats.totalStock.toLocaleString()} ชิ้น`}
+                    subValue={`รวม ${stats.totalStock.toLocaleString()} ชิ้น `}
                     color="from-blue-500 to-blue-600"
                 />
                 <StatCard
                     icon={ShoppingCart}
-                    title="ใบสั่งซื้อรอส่ง (Active PO)"
+                    title="ใบสั่งซื้อรอส่ง "
                     value={stats.activePOs}
-                    subValue="รายการ"
+                    subValue="รายการ "
                     color="from-purple-500 to-purple-600"
                 />
                 <StatCard
                     icon={DollarSign}
-                    title="มูลค่าสต็อคปัจจุบัน"
+                    title="มูลค่าสต็อคปัจจุบัน "
                     value={`฿${(stats.totalValue / 1000000).toFixed(2)}M`}
-                    subValue={`฿${stats.totalValue.toLocaleString()}`}
+                    subValue={`รวมมูลค่า ฿${stats.totalValue.toLocaleString()}`}
                     color="from-pink-500 to-pink-600"
                 />
                 <StatCard
                     icon={AlertTriangle}
-                    title="สินค้าใกล้หมด"
+                    title="สต็อกต่ำ "
                     value={stats.lowStockCount}
-                    subValue="รายการที่ต้องเติม"
+                    subValue="รายการที่ต้องเติม "
                     changeType="down"
                     color="from-orange-500 to-orange-600"
                     isAlert={stats.lowStockCount > 0}
@@ -169,7 +176,7 @@ const DashboardPage = () => {
                     animate={{ opacity: 1, x: 0 }}
                     className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
                 >
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">การเคลื่อนไหวสต็อค (6 เดือนล่าสุด)</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-6">ความเคลื่อนไหวสต็อค 6 เดือน </h3>
                     <div className="h-[250px] lg:h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={stockData}>
@@ -187,20 +194,20 @@ const DashboardPage = () => {
                                     cursor={{ fill: '#f1f5f9' }}
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                <Bar dataKey="inbound" fill="#3b82f6" name="สินค้าเข้า" radius={[6, 6, 0, 0]} barSize={20} />
-                                <Bar dataKey="outbound" fill="#8b5cf6" name="เบิกจ่าย" radius={[6, 6, 0, 0]} barSize={20} />
+                                <Bar dataKey="inbound" fill="#3b82f6" name="รับเข้า (Inbound)" radius={[6, 6, 0, 0]} barSize={20} />
+                                <Bar dataKey="outbound" fill="#8b5cf6" name="เบิกจ่าย (Outbound)" radius={[6, 6, 0, 0]} barSize={20} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </motion.div>
 
-                {/* Category Distribution */}
+                {/* Category Distribution (Count) */}
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
                 >
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">สัดส่วนสินค้าตามหมวดหมู่</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-6">สัดส่วนอุปกรณ์ </h3>
                     <div className="h-[250px] lg:h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -236,6 +243,61 @@ const DashboardPage = () => {
                         </ResponsiveContainer>
                     </div>
                 </motion.div>
+
+                {/* NEW: Stock Value Distribution */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="col-span-1 lg:col-span-2 bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+                >
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-bold text-slate-800">มูลค่าสต็อกตามหมวดหมู่ </h3>
+                        <div className="text-sm font-bold text-slate-500">
+                            มูลค่ารวม : ฿{stats.totalValue.toLocaleString()}
+                        </div>
+                    </div>
+                    <div className="h-[300px] w-full">
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                {(() => {
+                                    const stockValueData = categoryData.map(c => {
+                                        const value = products
+                                            .filter(p => p.DeviceType === c.name)
+                                            .reduce((sum, p) => sum + (p.CurrentStock * p.LastPrice), 0);
+                                        return { ...c, totalValue: value };
+                                    }).sort((a, b) => b.totalValue - a.totalValue);
+
+                                    return (
+                                        <BarChart
+                                            data={stockValueData}
+                                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                            <XAxis dataKey="name" stroke="#64748b" tickLine={false} axisLine={false} />
+                                            <YAxis stroke="#64748b" tickLine={false} axisLine={false} tickFormatter={(value) => `฿${(value / 1000).toFixed(0)}k`} />
+                                            <Tooltip
+                                                cursor={{ fill: '#f8fafc' }}
+                                                formatter={(value) => [`฿${value.toLocaleString()}`, 'มูลค่ารวม (Value)']}
+                                                contentStyle={{
+                                                    backgroundColor: 'white',
+                                                    borderRadius: '12px',
+                                                    border: 'none',
+                                                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                                                }}
+                                            />
+                                            <Bar dataKey="totalValue" radius={[6, 6, 0, 0]} barSize={40}>
+                                                {stockValueData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    );
+                                })()}
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </motion.div>
             </div>
 
             {/* NEW: Operational Insights Grid */}
@@ -252,10 +314,10 @@ const DashboardPage = () => {
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
                                 <AlertTriangle className="w-5 h-5 text-white" />
                             </div>
-                            <h3 className="font-bold text-slate-800">สินค้าต้องเติมด่วน</h3>
+                            <h3 className="font-bold text-slate-800">สต็อกวิกฤต </h3>
                         </div>
                         <button onClick={() => navigate('/inventory')} className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
-                            ดูทั้งหมด <ArrowRight size={14} />
+                            ดูทั้งหมด  <ArrowRight size={14} />
                         </button>
                     </div>
                     <div className="space-y-3">
@@ -269,16 +331,16 @@ const DashboardPage = () => {
                             >
                                 <div className="flex-1 min-w-0">
                                     <p className="font-medium text-sm text-slate-800 truncate">{item.ProductName}</p>
-                                    <p className="text-xs text-red-500">คงเหลือ: {item.CurrentStock} / Min: {item.MinStock}</p>
+                                    <p className="text-xs text-red-500">คงเหลือ: {item.CurrentStock} | ขั้นต่ำ : {item.MinStock}</p>
                                 </div>
                                 <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-lg">
-                                    ขาด {item.MinStock - item.CurrentStock}
+                                    ขาด  {item.MinStock - item.CurrentStock}
                                 </span>
                             </motion.div>
                         )) : (
                             <div className="text-center py-8 text-slate-400">
                                 <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">สต็อกเพียงพอ 👍</p>
+                                <p className="text-sm">สต็อกเพียงพอ (Stock OK) 👍</p>
                             </div>
                         )}
                     </div>
@@ -296,10 +358,10 @@ const DashboardPage = () => {
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
                                 <Clock className="w-5 h-5 text-white" />
                             </div>
-                            <h3 className="font-bold text-slate-800">PO รอรับของ</h3>
+                            <h3 className="font-bold text-slate-800">รอรับของ </h3>
                         </div>
                         <button onClick={() => navigate('/receive')} className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
-                            รับของ <ArrowRight size={14} />
+                            รับอุปกรณ์ <ArrowRight size={14} />
                         </button>
                     </div>
                     <div className="space-y-3">
@@ -313,16 +375,16 @@ const DashboardPage = () => {
                             >
                                 <div className="flex-1 min-w-0">
                                     <p className="font-bold text-sm text-slate-800">{po.PO_ID}</p>
-                                    <p className="text-xs text-amber-600 truncate">{po.VendorName || 'ไม่ระบุผู้ขาย'}</p>
+                                    <p className="text-xs text-amber-600 truncate">{po.VendorName || 'ไม่ระบุผู้ขาย (Unknown Vendor)'}</p>
                                 </div>
                                 <span className={`text-xs font-bold px-2 py-1 rounded-lg ${po.daysAgo > 7 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
-                                    {po.daysAgo} วัน
+                                    {po.daysAgo} วัน 
                                 </span>
                             </motion.div>
                         )) : (
                             <div className="text-center py-8 text-slate-400">
                                 <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">ไม่มี PO ค้าง ✅</p>
+                                <p className="text-sm">ไม่มี PO ค้าง (No Pending) ✅</p>
                             </div>
                         )}
                     </div>
@@ -340,7 +402,7 @@ const DashboardPage = () => {
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center">
                                 <Flame className="w-5 h-5 text-white" />
                             </div>
-                            <h3 className="font-bold text-slate-800">เบิกเยอะสุด (เดือนนี้)</h3>
+                            <h3 className="font-bold text-slate-800">เบิกสูงสุดเดือนนี้ </h3>
                         </div>
                     </div>
                     <div className="space-y-3">
@@ -359,13 +421,13 @@ const DashboardPage = () => {
                                     <p className="font-medium text-sm text-slate-800 truncate">{item.ProductName}</p>
                                 </div>
                                 <span className="text-sm font-bold text-purple-600 font-mono">
-                                    {item.totalQty} ชิ้น
+                                    {item.totalQty} ชิ้น 
                                 </span>
                             </motion.div>
                         )) : (
                             <div className="text-center py-8 text-slate-400">
                                 <TrendingDown className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">ยังไม่มีการเบิกเดือนนี้</p>
+                                <p className="text-sm">ยังไม่มีข้อมูลการเบิกเดือนนี้ (No data)</p>
                             </div>
                         )}
                     </div>
@@ -379,9 +441,9 @@ const DashboardPage = () => {
                 className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200"
             >
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-slate-800">กิจกรรมล่าสุด</h3>
+                    <h3 className="text-xl font-bold text-slate-800">กิจกรรมล่าสุด </h3>
                     <button onClick={() => navigate('/history')} className="text-indigo-600 text-sm font-bold hover:underline flex items-center gap-1">
-                        ดูทั้งหมด <ArrowRight size={14} />
+                        ดูทั้งหมด  <ArrowRight size={14} />
                     </button>
                 </div>
 
@@ -409,7 +471,7 @@ const DashboardPage = () => {
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center mt-1">
-                                        <p className="text-xs text-slate-500 truncate">{t.RefInfo || 'No reference'}</p>
+                                        <p className="text-xs text-slate-500 truncate">{t.RefInfo || 'ไม่มีข้อมูลอ้างอิง (No reference)'}</p>
                                         <p className="text-xs text-slate-400 font-mono">
                                             {formatThaiDate(t.TransDate)}
                                         </p>
@@ -426,7 +488,7 @@ const DashboardPage = () => {
                     {recentTransactions.length === 0 && (
                         <div className="text-center py-12 text-slate-400">
                             <Package className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                            <p>ยังไม่มีรายการเคลื่อนไหว</p>
+                            <p>ไม่มีข้อมูล (No Data)</p>
                         </div>
                     )}
                 </div>

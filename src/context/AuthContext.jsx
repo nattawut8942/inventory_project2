@@ -9,8 +9,11 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
         try {
             const saved = localStorage.getItem('it_stock_user');
+            if (saved === "undefined" || saved === "null") return null;
             return saved ? JSON.parse(saved) : null;
-        } catch {
+        } catch (e) {
+            console.error("AuthContext: Failed to parse user data", e);
+            localStorage.removeItem('it_stock_user');
             return null;
         }
     });

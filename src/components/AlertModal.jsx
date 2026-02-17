@@ -9,7 +9,8 @@ const AlertModal = ({ isOpen, type = 'info', title, message, onConfirm, onCancel
         success: { icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-100', btn: 'bg-emerald-600 hover:bg-emerald-700' },
         error: { icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-100', btn: 'bg-red-600 hover:bg-red-700' },
         confirm: { icon: HelpCircle, color: 'text-indigo-500', bg: 'bg-indigo-100', btn: 'bg-indigo-600 hover:bg-indigo-700' },
-        info: { icon: AlertCircle, color: 'text-slate-500', bg: 'bg-slate-100', btn: 'bg-slate-800 hover:bg-slate-900' }
+        info: { icon: AlertCircle, color: 'text-slate-500', bg: 'bg-slate-100', btn: 'bg-slate-800 hover:bg-slate-900' },
+        danger: { icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50', btn: 'bg-red-600 hover:bg-red-700' }
     };
 
     const { icon: Icon, color, bg, btn } = config[type];

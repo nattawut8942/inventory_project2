@@ -5,6 +5,8 @@ const config = {
     server: process.env.DB_SERVER || '192.168.226.86',
     database: process.env.DB_DATABASE || 'dbITMS',
     port: parseInt(process.env.DB_PORT) || 1433,
+    connectionTimeout: 60000, // Increase timeout to 60s
+    requestTimeout: 60000,
     options: {
         encrypt: false, // Set to true for Azure
         trustServerCertificate: true, // Allow self-signed certs

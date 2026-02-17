@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { FileSpreadsheet, Calendar, Download, CheckSquare, Square, Package, TrendingUp, TrendingDown, BarChart3, PieChart, FileText, Receipt, DollarSign, Clock, User, AlertCircle } from 'lucide-react';
-import { BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, LabelList } from 'recharts';
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import AlertModal from '../components/AlertModal';
@@ -217,15 +217,15 @@ const ReportPage = () => {
     }, [transactions, products]);
 
     const dataOptions = [
-        { id: 'products', label: 'Inventory / Products', description: 'สินค้าทั้งหมดและจำนวนคงเหลือ', icon: Package, color: 'from-blue-500 to-blue-600' },
+        { id: 'products', label: 'Inventory / Products', description: 'อุปกรณ์ทั้งหมดและจำนวนคงเหลือ', icon: Package, color: 'from-blue-500 to-blue-600' },
         { id: 'lowstock', label: 'รายการต่ำกว่า Min Stock', description: 'คำนวณ (MaxStock - CurrentStock) × ราคา', icon: TrendingDown, color: 'from-red-500 to-red-600' },
         { id: 'transactions', label: 'Transaction History', description: 'ประวัติรับ-เบิกทั้งหมด', icon: TrendingUp, color: 'from-purple-500 to-purple-600' },
         { id: 'invoices', label: 'Invoice Records', description: 'ข้อมูล Invoice ทั้งหมด', icon: Receipt, color: 'from-pink-500 to-pink-600' },
         { id: 'pos', label: 'Purchase Orders', description: 'ใบสั่งซื้อทั้งหมด', icon: FileText, color: 'from-orange-500 to-orange-600' },
-        { id: 'slowmoving', label: '🐢 สินค้าค้างสต็อค', description: 'ไม่มีการเบิกใน 3 เดือนล่าสุด (Dead Stock)', icon: Clock, color: 'from-yellow-500 to-yellow-600' },
-        { id: 'topwithdrawn', label: '🔥 สินค้าเบิกมากสุด', description: 'อันดับสินค้าที่ถูกเบิกมากที่สุด', icon: TrendingUp, color: 'from-rose-500 to-rose-600' },
+        { id: 'slowmoving', label: '🐢 อุปกรณ์ค้างสต็อค', description: 'ไม่มีการเบิกใน 3 เดือนล่าสุด (Dead Stock)', icon: Clock, color: 'from-yellow-500 to-yellow-600' },
+        { id: 'topwithdrawn', label: '🔥 อุปกรณ์เบิกมากสุด', description: 'อันดับอุปกรณ์ที่ถูกเบิกมากที่สุด', icon: TrendingUp, color: 'from-rose-500 to-rose-600' },
         { id: 'topconsumers', label: '👤 ผู้เบิกมากสุด', description: 'อันดับผู้ใช้ที่เบิกมากที่สุด', icon: User, color: 'from-cyan-500 to-cyan-600' },
-        { id: 'bycategory', label: '📂 เบิกตามประเภท', description: 'สรุปยอดเบิกแยกตามประเภทสินค้า', icon: PieChart, color: 'from-emerald-500 to-emerald-600' }
+        { id: 'bycategory', label: '📂 เบิกตามประเภท', description: 'สรุปยอดเบิกแยกตามประเภทอุปกรณ์', icon: PieChart, color: 'from-emerald-500 to-emerald-600' }
     ];
 
     const toggleType = (typeId) => {
@@ -280,7 +280,7 @@ const ReportPage = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <StatCard
                     icon={Package}
-                    title="สินค้าทั้งหมด"
+                    title="อุปกรณ์ทั้งหมด"
                     value={totalProducts.toLocaleString()}
                     subtitle="รายการในคลัง"
                     color="from-blue-500 to-blue-600"
@@ -294,7 +294,7 @@ const ReportPage = () => {
                 />
                 <StatCard
                     icon={TrendingDown}
-                    title="สินค้าใกล้หมด"
+                    title="อุปกรณ์ใกล้หมด"
                     value={lowStockCount}
                     subtitle="ต่ำกว่า Min Stock"
                     color="from-red-500 to-red-600"
@@ -317,7 +317,7 @@ const ReportPage = () => {
                     icon={PieChart}
                     title="หมวดหมู่"
                     value={deviceTypes.length}
-                    subtitle="ประเภทสินค้า"
+                    subtitle="ประเภทอุปกรณ์"
                     color="from-pink-500 to-pink-600"
                 />
             </div>
@@ -344,8 +344,8 @@ const ReportPage = () => {
                                 }}
                             />
                             <Legend />
-                            <Bar dataKey="inbound" fill="#3b82f6" name="สินค้าเข้า" radius={[8, 8, 0, 0]} />
-                            <Bar dataKey="outbound" fill="#8b5cf6" name="สินค้าออก" radius={[8, 8, 0, 0]} />
+                            <Bar dataKey="inbound" fill="#3b82f6" name="อุปกรณ์เข้า" radius={[8, 8, 0, 0]} />
+                            <Bar dataKey="outbound" fill="#8b5cf6" name="อุปกรณ์ออก" radius={[8, 8, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </motion.div>
@@ -396,7 +396,7 @@ const ReportPage = () => {
                                 <Clock className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-slate-800">สินค้าค้างสต็อก (Dead Stock)</h3>
+                                <h3 className="font-bold text-slate-800">อุปกรณ์ค้างสต็อก (Dead Stock)</h3>
                                 <p className="text-xs text-slate-500">ไม่มีการเบิกใน 3 เดือนที่ผ่านมา</p>
                             </div>
                         </div>
@@ -409,7 +409,7 @@ const ReportPage = () => {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b border-slate-200">
-                                    <th className="text-left py-2 px-3 text-slate-500 font-medium">สินค้า</th>
+                                    <th className="text-left py-2 px-3 text-slate-500 font-medium">อุปกรณ์</th>
                                     <th className="text-center py-2 px-3 text-slate-500 font-medium">ประเภท</th>
                                     <th className="text-center py-2 px-3 text-slate-500 font-medium">คงเหลือ</th>
                                     <th className="text-right py-2 px-3 text-slate-500 font-medium">มูลค่า</th>
@@ -437,7 +437,7 @@ const ReportPage = () => {
                                     <tr>
                                         <td colSpan="4" className="py-8 text-center text-slate-400">
                                             <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                            ไม่มีสินค้าค้างสต็อก 👍
+                                            ไม่มีอุปกรณ์ค้างสต็อก 👍
                                         </td>
                                     </tr>
                                 )}
@@ -533,8 +533,8 @@ const ReportPage = () => {
                             <TrendingUp className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-800">🔥 สินค้าเบิกมากสุด</h3>
-                            <p className="text-xs text-slate-500">Top 10 รายการที่ถูกเบิกมากที่สุด</p>
+                            <h3 className="font-bold text-slate-800">🔥 อุปกรณ์เบิกมากสุด</h3>
+                            <p className="text-xs text-slate-500">Top 5 รายการที่ถูกเบิกมากที่สุด</p>
                         </div>
                     </div>
                     <div className="overflow-x-auto">
@@ -542,7 +542,7 @@ const ReportPage = () => {
                             <thead>
                                 <tr className="border-b border-slate-200">
                                     <th className="text-left py-2 px-2 text-slate-500 font-medium">#</th>
-                                    <th className="text-left py-2 px-2 text-slate-500 font-medium">สินค้า</th>
+                                    <th className="text-left py-2 px-2 text-slate-500 font-medium">อุปกรณ์</th>
                                     <th className="text-center py-2 px-2 text-slate-500 font-medium">ประเภท</th>
                                     <th className="text-right py-2 px-2 text-slate-500 font-medium">จำนวน</th>
                                     <th className="text-right py-2 px-2 text-slate-500 font-medium">มูลค่า</th>
@@ -584,44 +584,57 @@ const ReportPage = () => {
                         </div>
                         <div>
                             <h3 className="font-bold text-slate-800">📂 เบิกตามประเภท</h3>
-                            <p className="text-xs text-slate-500">สรุปยอดเบิกแยกตามประเภทสินค้า</p>
+                            <p className="text-xs text-slate-500">สรุปยอดเบิกแยกตามประเภทอุปกรณ์</p>
                         </div>
                     </div>
-                    <div className="space-y-3">
-                        {(() => {
-                            const maxValue = Math.max(...withdrawalsByCategory.map(c => c.value), 1);
-                            const categoryColors = ['bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-cyan-500'];
-                            return withdrawalsByCategory.map((cat, idx) => {
-                                const percentage = (cat.value / maxValue) * 100;
-                                return (
-                                    <div key={cat.name} className="relative">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="font-medium text-slate-700 text-sm">{cat.name || 'ไม่ระบุ'}</span>
-                                            <span className="font-bold text-slate-800 text-sm">{cat.value.toLocaleString()} ชิ้น</span>
-                                        </div>
-                                        <div className="h-6 bg-slate-100 rounded-lg overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${percentage}%` }}
-                                                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                                                className={`h-full ${categoryColors[idx % categoryColors.length]} rounded-lg flex items-center justify-end pr-2`}
-                                            >
-                                                {percentage > 20 && (
-                                                    <span className="text-white text-xs font-bold">{percentage.toFixed(0)}%</span>
-                                                )}
-                                            </motion.div>
-                                        </div>
-                                    </div>
-                                );
-                            });
-                        })()}
-                        {withdrawalsByCategory.length === 0 && (
-                            <div className="text-center py-8 text-slate-400">
-                                <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">ยังไม่มีข้อมูลการเบิก</p>
-                            </div>
-                        )}
-                    </div>
+
+                    {withdrawalsByCategory.length > 0 ? (
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    layout="vertical"
+                                    data={withdrawalsByCategory.slice(0, 10).map((item, index) => ({
+                                        ...item,
+                                        fill: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4'][index % 6]
+                                    }))}
+                                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                                    <XAxis type="number" stroke="#64748b" />
+                                    <YAxis
+                                        type="category"
+                                        dataKey="name"
+                                        width={100}
+                                        stroke="#475569"
+                                        tick={{ fontSize: 12 }}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: '#f1f5f9' }}
+                                        contentStyle={{
+                                            backgroundColor: 'white',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                                        }}
+                                        formatter={(value) => [`${value} ชิ้น`, 'จำนวนที่เบิก']}
+                                    />
+                                    <Bar
+                                        dataKey="value"
+                                        radius={[0, 4, 4, 0]}
+                                        barSize={24}
+                                        name="จำนวนที่เบิก"
+                                    >
+                                        <LabelList dataKey="value" position="right" style={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} formatter={(val) => `${val} ชิ้น`} />
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-slate-400">
+                            <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                            <p className="text-sm">ยังไม่มีข้อมูลการเบิก</p>
+                        </div>
+                    )}
                 </motion.div>
             </div>
 
@@ -768,7 +781,7 @@ const ReportPage = () => {
                 type={alertModal.type}
                 title={alertModal.title}
                 message={alertModal.message}
-                onCancel={() => setAlertModal({ ...alertModal, isOpen: false })}
+                onConfirm={() => setAlertModal({ ...alertModal, isOpen: false })}
             />
         </div>
     );

@@ -9,14 +9,7 @@ CREATE TABLE dbo.Stock_DeviceTypes (
     Label NVARCHAR(100)                       -- Display label
 );
 
--- Insert Default Device Types
-INSERT INTO dbo.Stock_DeviceTypes (TypeId, Label) VALUES
-('Asset', 'General Asset'),
-('Consumable', 'Consumable Stock'),
-('Monitor', 'Monitor'),
-('Network', 'Network Device'),
-('Peripheral', 'Peripheral Devices'),
-('Storage', 'Storage Stock');
+
 
 -- =====================================================
 -- 2. Products / Inventory Master Table
@@ -128,10 +121,7 @@ CREATE TABLE dbo.Stock_Vendors (
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
--- Insert Default Vendors
-INSERT INTO dbo.Stock_Vendors (VendorName) VALUES
-('SAMAPHAN TECHNOLOGIES'),
-('NITHIKASEM TELECOM');
+
 
 
 

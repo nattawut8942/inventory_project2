@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import Header from './Header';
 
 const Layout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -15,23 +15,8 @@ const Layout = () => {
             />
 
             <main className="flex-1 flex flex-col h-full relative w-full">
-                {/* Mobile Header */}
-                <div className="lg:hidden bg-slate-900 text-white p-4 flex items-center justify-between shadow-md z-30 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <img
-                            src="/public/DAIKIN_logo.svg.png"
-                            alt="DAIKIN"
-                            className="h-6 w-auto object-contain"
-                        />
-                        <span className="font-bold tracking-wider">IT INVENTORY</span>
-                    </div>
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                    >
-                        <Menu size={24} />
-                    </button>
-                </div>
+                {/* Global Header (Sticky) */}
+                <Header onMenuClick={() => setIsSidebarOpen(true)} />
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">

@@ -44,13 +44,13 @@ const LoginPage = () => {
             <div className="z-10 w-full max-w-md p-8 bg-black/50 backdrop-blur-xl border border-gray-800 rounded-3xl shadow-2xl">
                 <div className="text-center  mb-8">
                     <img
-
-                        src="/public/DAIKIN_logo.svg.png"
+                    
+                        src="./public/DAIKIN_logo.svg.png"
                         alt="DAIKIN Logo"
-                        className="h-13 mx-auto mb-6 object-contain"
+                        className="h-12 mx-auto mb-6 object-contain"
                     />
-                    <h2 className="text-3xl font-black text-slate-300">IT INVENTORY</h2>
-                    <p className="text-slate-400 mt-2">MANAGEMENT SYSTEM</p>
+                    <h2 className="text-4xl font-black tracking-tight text-white leading-none ">IT INVENTORY</h2>
+                    <p className="font-bold text-indigo-300 mt-2">MANAGEMENT SYSTEM</p>
                 </div>
                 <p className="mt-8 text-center text-[14px] text-slate-400">
                     Login ด้วย Username / Password เข้าเครื่องคอมพิวเตอร์ของคุณ
@@ -89,7 +89,7 @@ const LoginPage = () => {
                         {loading ? 'Authenticating...' : 'Secure Sign In'}
                     </button>
                 </form>
-
+                
                 <p className="mt-5 text-center text-[13px] text-gray-500">
                     © 2026 by: Natthawut.Y <span className="font-bold text-indigo-400">All rights reserved. </span>
                 </p>

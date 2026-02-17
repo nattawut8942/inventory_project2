@@ -1,4 +1,3 @@
-
 // Use these color mappings across the application for consistency
 
 export const getDeviceTypeColor = (type) => {
@@ -9,7 +8,7 @@ export const getDeviceTypeColor = (type) => {
                 text: 'text-blue-600',
                 border: 'border-blue-100',
                 gradient: 'from-blue-500 to-blue-600',
-                hex: '#3b82f6' // approximate for charts
+                hex: '#10b981' // approximate for charts
             };
         case 'Asset': // General Asset
             return {
@@ -17,7 +16,7 @@ export const getDeviceTypeColor = (type) => {
                 text: 'text-amber-600',
                 border: 'border-amber-100',
                 gradient: 'from-amber-500 to-amber-600',
-                hex: '#f59e0b'
+                hex: '#8b5cf6'
             };
         case 'Consumable':
             return {
@@ -25,7 +24,7 @@ export const getDeviceTypeColor = (type) => {
                 text: 'text-emerald-600',
                 border: 'border-emerald-100',
                 gradient: 'from-emerald-500 to-emerald-600',
-                hex: '#10b981'
+                hex: '#06b6d4'
             };
         case 'Storage':
             return {
@@ -33,7 +32,7 @@ export const getDeviceTypeColor = (type) => {
                 text: 'text-indigo-600',
                 border: 'border-indigo-100',
                 gradient: 'from-indigo-500 to-indigo-600',
-                hex: '#f13e26ff'
+                hex: '#ec4899'
             };
         case 'Network':
             return {
@@ -41,7 +40,7 @@ export const getDeviceTypeColor = (type) => {
                 text: 'text-purple-600',
                 border: 'border-purple-100',
                 gradient: 'from-purple-500 to-purple-600',
-                hex: '#8b5cf6'
+                hex: '#3b82f6'
             };
         case 'Peripheral':
             return {
@@ -49,7 +48,7 @@ export const getDeviceTypeColor = (type) => {
                 text: 'text-cyan-600',
                 border: 'border-cyan-100',
                 gradient: 'from-cyan-500 to-cyan-600',
-                hex: '#06b6d4'
+                hex: '#f59e0b'
             };
         default:
             return {

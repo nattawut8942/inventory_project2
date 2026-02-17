@@ -51,8 +51,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         <button
             onClick={() => handleNavigation(to)}
             className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-300 font-medium ${window.location.pathname === to
-                    ? 'bg-white text-indigo-900 shadow-xl shadow-indigo-900/10 scale-105'
-                    : 'text-indigo-100/70 hover:bg-white/10 hover:text-white hover:backdrop-blur-lg'
+                ? 'bg-white text-indigo-900 shadow-xl shadow-indigo-900/10 scale-105'
+                : 'text-indigo-100/70 hover:bg-white/10 hover:text-white hover:backdrop-blur-lg'
                 }`}
         >
             <Icon size={18} />
@@ -106,7 +106,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
                 <nav className="relative z-10 flex-1 space-y-1.5 overflow-y-auto scrollbar-none pr-2">
                     <NavItem icon={LayoutDashboard} label="Dashboard" to="/" />
-                    <NavItem icon={Database} label="Inventory Master" to="/inventory" />
+                    <NavItem icon={Database} label="Inventory" to="/inventory" />
 
                     {/* PO and Receive - viewable by all */}
                     <NavItem icon={ShoppingCart} label="Purchase Orders" to="/purchase-orders" />
@@ -118,12 +118,12 @@ const Sidebar = ({ isOpen, onClose }) => {
                                 Staff Controls
                             </div>
                             <NavItem icon={Plus} label="Manual Import" to="/manual-import" />
-                            <NavItem icon={Shield} label="Admin Users" to="/admin-users" />
+                            <NavItem icon={Shield} label="Management" to="/management" />
                         </>
                     )}
 
                     <div className="pt-6 pb-2 text-[10px] font-bold uppercase text-slate-500 tracking-wider pl-3">
-                        General
+                        ทั่วไป (General)
                     </div>
                     <NavItem icon={ArrowUpFromLine} label="Withdraw Items" to="/withdraw" />
                     <NavItem icon={History} label="History Log" to="/history" />
@@ -136,7 +136,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                             <img
                                 src={user.empPic}
                                 alt={user?.name || 'User'}
-                                className="w-12 h-12 rounded-xl object-cover shadow-lg ring-2 ring-white/10 group-hover:scale-105 transition-transform"
+                                className="w-14 h-14 rounded-xl object-cover shadow-lg ring-2 ring-white/10 group-hover:scale-105 transition-transform"
                             />
                         ) : (
                             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-lg font-bold shadow-lg ring-2 ring-white/10 group-hover:scale-105 transition-transform">
@@ -144,7 +144,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                             </div>
                         )}
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-bold truncate text-white group-hover:text-indigo-200 transition-colors">{user?.name}</p>
+                            <p className="text-xs font-bold truncate text-white group-hover:text-indigo-200 transition-colors">{user?.name}</p>
                             <p className="text-[10px] text-slate-400 font-medium group-hover:text-indigo-300 transition-colors">{user?.empcode}</p>
                             <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider">{user?.role}</p>
                         </div>

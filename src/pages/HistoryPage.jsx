@@ -1,12 +1,31 @@
 import React, { useState, useMemo } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Calendar } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { formatThaiDate } from '../utils/formatDate';
+import EmptyState from '../components/EmptyState';
+import LoadingState from '../components/LoadingState';
+import Pagination from '../components/Pagination';
 
 const HistoryPage = () => {
-    const { transactions } = useData();
+    const { transactions, loading } = useData();
     const [filter, setFilter] = useState('ALL'); // ALL, IN, OUT
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(20);
+
+    // Default to current month date range
+    const getDefaultDateRange = () => {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth();
+        const startDate = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+        const lastDay = new Date(y, m + 1, 0).getDate();
+        const endDate = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        return { startDate, endDate };
+    };
+    const defaultRange = getDefaultDateRange();
+    const [dateFrom, setDateFrom] = useState(defaultRange.startDate);
+    const [dateTo, setDateTo] = useState(defaultRange.endDate);
 
     const filteredTransactions = useMemo(() => {
         let result = transactions || [];
@@ -26,89 +45,186 @@ const HistoryPage = () => {
             );
         }
 
+        // Date range filter
+        result = result.filter(t => {
+            if (!t.TransDate) return true;
+            const d = t.TransDate.slice(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+        });
+
         return result;
-    }, [transactions, filter, searchTerm]);
+        return result;
+    }, [transactions, filter, searchTerm, dateFrom, dateTo]);
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+    const currentTransactions = filteredTransactions.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Reset page when filters change
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [filter, searchTerm, dateFrom, dateTo]);
+
+    if (loading && transactions.length === 0) {
+        return <LoadingState message="กำลังโหลดประวัติการใช้งาน..." />;
+    }
 
     return (
         <div className="space-y-6 animate-in slide-in-from-bottom-5">
             <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-black text-slate-800">Transaction Log</h2>
+                <div>
+                    <h2 className="text-3xl font-black mb-2 text-slate-800">Transaction History</h2>
+                    <p className="text-slate-500 font-medium">ประวัติการทำรายการย้อนหลัง</p>
+                </div>
                 <div className="flex items-center gap-4">
-                    {/* Search Box */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <select
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        className="bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-sm text-slate-600 outline-none focus:border-indigo-500 font-bold"
+                    >
+                        <option value="ALL">ทุกประเภท (All)</option>
+                        <option value="IN">รับเข้า (Inbound)</option>
+                        <option value="OUT">เบิกออก (Outbound)</option>
+                    </select>
+                    <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                        <Search size={18} className="text-slate-400" />
                         <input
                             type="text"
-                            placeholder="ค้นหา User, Item, Reference..."
+                            placeholder="ค้นหาชื่ออุปกรณ์ / User..."
+                            className="bg-transparent border-none outline-none text-sm w-32 lg:w-48 text-slate-700 placeholder-slate-400"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 py-2 w-64 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
                         />
-                    </div>
-                    {/* Filter Buttons */}
-                    <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                        {['ALL', 'IN', 'OUT'].map(f => (
-                            <button
-                                key={f}
-                                onClick={() => setFilter(f)}
-                                className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${filter === f ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
-                            >
-                                {f === 'ALL' ? 'All Activity' : f === 'IN' ? 'Inbound' : 'Outbound'}
-                            </button>
-                        ))}
                     </div>
                 </div>
             </div>
-            {/* Desktop Table View */}
-            <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-widest border-b border-slate-200">
-                        <tr>
-                            <th className="p-4 pl-6">Timestamp</th>
-                            <th className="p-4">Type</th>
-                            <th className="p-4">Item Name</th>
-                            <th className="p-4 text-center">Qty</th>
-                            <th className="p-4">Reference</th>
-                            <th className="p-4">User</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {filteredTransactions.map(t => {
-                            const isIn = (t.TransType || '').toUpperCase().trim() === 'IN' || (t.RefInfo || '').toLowerCase().includes('invoice');
-                            return (
-                                <tr key={t.TransID} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-4 pl-6 text-slate-500 font-mono text-xs whitespace-nowrap">{formatThaiDate(t.TransDate)}</td>
-                                    <td className="p-4">
-                                        <span className={`font-bold px-2.5 py-1 rounded-full text-[10px] border ${isIn ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
-                                            {t.TransType}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 font-bold text-slate-700 max-w-[200px] truncate" title={t.ProductName}>{t.ProductName}</td>
-                                    <td className={`p-4 text-center font-bold font-mono text-sm ${isIn ? 'text-emerald-600' : 'text-red-500'}`}>
-                                        {isIn ? '+' : '-'}{Math.abs(t.Qty)}
-                                    </td>
-                                    <td className="p-4 text-slate-500 text-xs max-w-[150px] truncate" title={t.RefInfo}>{t.RefInfo}</td>
-                                    <td className="p-4">
-                                        <span className="flex items-center gap-2 text-xs text-slate-600 font-medium">
-                                            <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">
-                                                {t.UserID?.[0]}
-                                            </div>
-                                            {t.UserID}
-                                        </span>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-                {filteredTransactions.length === 0 && (
-                    <div className="text-center py-10 text-slate-400">No transactions found</div>
+
+            {/* Date Range Filter */}
+            <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <Calendar size={18} className="text-slate-400 shrink-0" />
+                    <span className="text-xs text-slate-400 shrink-0">เริ่ม</span>
+                    <input
+                        type="date"
+                        className="bg-transparent border-none outline-none text-sm text-slate-700"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                    />
+                </div>
+                <span className="text-slate-400 font-bold">—</span>
+                <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <Calendar size={18} className="text-slate-400 shrink-0" />
+                    <span className="text-xs text-slate-400 shrink-0">สิ้นสุด</span>
+                    <input
+                        type="date"
+                        className="bg-transparent border-none outline-none text-sm text-slate-700"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                    />
+                </div>
+                {(dateFrom !== defaultRange.startDate || dateTo !== defaultRange.endDate || searchTerm !== '' || filter !== 'ALL') && (
+                    <button
+                        onClick={() => { setSearchTerm(''); setDateFrom(defaultRange.startDate); setDateTo(defaultRange.endDate); setFilter('ALL'); }}
+                        className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                        ล้างตัวกรอง
+                    </button>
                 )}
             </div>
 
+            {/* Desktop Table View */}
+           <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+    <table className="w-full text-left text-lg min-w-max table-auto">
+        <thead className="bg-slate-50 text-slate-500 uppercase text-[12px] tracking-widest border-b border-slate-200">
+            <tr>
+                <th className="p-4 pl-6 whitespace-nowrap">บันทึกวันเวลา</th>
+                <th className="p-4 whitespace-nowrap">หมวดหมู่</th>
+                <th className="p-4 whitespace-nowrap">รายการ</th>
+                <th className="p-4 text-center whitespace-nowrap">จำนวน</th>
+                <th className="p-4 whitespace-nowrap">อ้างอิง</th>
+                <th className="p-4 whitespace-nowrap">ผู้ใช้งาน</th>
+            </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+            {currentTransactions.map((t) => {
+                const isIn =
+                    (t.TransType || "").toUpperCase().trim() === "IN" ||
+                    (t.RefInfo || "").toLowerCase().includes("invoice");
+                return (
+                    <tr key={t.TransID} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-4 pl-6 text-slate-500 font-mono text-xs whitespace-nowrap">
+                            {formatThaiDate(t.TransDate)}
+                        </td>
+                        <td className="p-4 whitespace-nowrap">
+                            <span
+                                className={`font-bold px-2.5 py-1 rounded-full text-[10px] border ${
+                                    isIn
+                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                        : "bg-red-50 text-red-600 border-red-100"
+                                }`}
+                            >
+                                {t.TransType}
+                            </span>
+                        </td>
+                        <td className="p-4 font-bold text-slate-700 whitespace-nowrap">
+                            {t.ProductName}
+                        </td>
+                        <td
+                            className={`p-4 text-center font-bold font-mono text-sm whitespace-nowrap ${
+                                isIn ? "text-emerald-600" : "text-red-500"
+                            }`}
+                        >
+                            {isIn ? "+" : "-"}
+                            {Math.abs(t.Qty)}
+                        </td>
+                        <td className="p-4 text-slate-500 text-xs whitespace-nowrap">
+                            {t.RefInfo}
+                        </td>
+                        <td className="p-4 whitespace-nowrap">
+                            <span className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                                <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                    {t.UserID?.[0]}
+                                </div>
+                                {t.UserID}
+                            </span>
+                        </td>
+                    </tr>
+                );
+            })}
+        </tbody>
+    </table>
+
+    {/* แสดงหน้าว่างเมื่อไม่พบข้อมูล (Empty State) */}
+    {filteredTransactions.length === 0 && (
+        <div className="p-12">
+            <EmptyState
+                message="ไม่พบรายการประวัติที่ตรงกับเงื่อนไข"
+                actionLabel={
+                    searchTerm ||
+                    filter !== "ALL" ||
+                    dateFrom !== defaultRange.startDate
+                        ? "ล้างตัวกรอง"
+                        : null
+                }
+                onAction={() => {
+                    setSearchTerm("");
+                    setFilter("ALL");
+                    setDateFrom(defaultRange.startDate);
+                    setDateTo(defaultRange.endDate);
+                }}
+            />
+        </div>
+    )}
+</div>
+
             {/* Mobile Card View */}
             <div className="lg:hidden space-y-4">
-                {filteredTransactions.map((t) => {
+                {currentTransactions.map((t) => {
                     const isIn = (t.TransType || '').toUpperCase().trim() === 'IN' || (t.RefInfo || '').toLowerCase().includes('invoice');
                     return (
                         <div key={t.TransID} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -148,9 +264,21 @@ const HistoryPage = () => {
                     );
                 })}
                 {filteredTransactions.length === 0 && (
-                    <div className="text-center py-10 text-slate-400">No transactions found</div>
+                    <EmptyState message="ไม่พบข้อมูล" />
                 )}
+
             </div>
+
+            {/* Pagination */}
+            {filteredTransactions.length > 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    totalItems={filteredTransactions.length}
+                />
+            )}
         </div>
     );
 
