@@ -2,8 +2,8 @@ import sql from 'mssql';
 
 // Database Configuration from Environment Variables
 const config = {
-    server: process.env.DB_SERVER || '192.168.226.86',
-    database: process.env.DB_DATABASE || 'dbITMS',
+    server: process.env.DB_SERVER || '192.168.226.109',
+    database: process.env.DB_DATABASE || 'dbInfrastructure',
     port: parseInt(process.env.DB_PORT) || 1433,
     connectionTimeout: 60000, // Increase timeout to 60s
     requestTimeout: 60000,
@@ -27,7 +27,7 @@ if (process.env.DB_TRUSTED_CONNECTION === 'true') {
 } else {
     // SQL Authentication
     config.user = process.env.DB_USER || 'sa';
-    config.password = process.env.DB_PASSWORD || 'decjapan';
+    config.password = process.env.DB_PASSWORD || 'B7m?M89h7Y';
 }
 
 let pool = null;
