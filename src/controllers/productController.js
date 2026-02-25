@@ -18,7 +18,7 @@ export const getProducts = async (req, res) => {
     try {
         const pool = getPool();
         const result = await pool.request().query(`
-            SELECT ProductID, ProductName, DeviceType, MinStock, MaxStock, CurrentStock, LastPrice, UnitOfMeasure, IsActive, ImageURL
+            SELECT ProductID, ProductName, DeviceType, MinStock, MaxStock, CurrentStock, LastPrice, UnitOfMeasure, IsActive, ImageURL, Location
             FROM dbo.Stock_Products
             WHERE IsActive = 1
         `);
@@ -32,7 +32,7 @@ export const getProducts = async (req, res) => {
 // UPDATE Product
 export const updateProduct = async (req, res) => {
     const { id } = req.params;
-    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, MaxStock, ImageURL } = req.body;
+    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, MaxStock, ImageURL, Location } = req.body;
 
     try {
         const pool = getPool();
@@ -55,6 +55,11 @@ export const updateProduct = async (req, res) => {
         if (ImageURL !== undefined) {
             request.input('ImageURL', sql.NVarChar, ImageURL);
             query += `, ImageURL = @ImageURL`;
+        }
+
+        if (Location !== undefined) {
+            request.input('Location', sql.NVarChar, Location);
+            query += `, Location = @Location`;
         }
 
         query += ` WHERE ProductID = @ProductID`;
@@ -86,7 +91,7 @@ export const deleteProduct = async (req, res) => {
 
 // MANUAL IMPORT
 export const manualImport = async (req, res) => {
-    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, MaxStock, Remark, UserID } = req.body;
+    const { ProductName, DeviceType, LastPrice, CurrentStock, MinStock, MaxStock, Remark, UserID, Location } = req.body;
 
     const qty = parseInt(CurrentStock) || 0;
     const unitCost = parseFloat(LastPrice) || 0;
@@ -106,7 +111,7 @@ export const manualImport = async (req, res) => {
                 .query('SELECT ProductID FROM dbo.Stock_Products WHERE ProductName = @ProductName');
 
             if (checkRes.recordset.length > 0) {
-                // Update Existing
+                // Update Existing Product
                 productID = checkRes.recordset[0].ProductID;
                 await new sql.Request(transaction)
                     .input('ProductID', sql.Int, productID)
@@ -114,31 +119,36 @@ export const manualImport = async (req, res) => {
                     .input('UnitCost', sql.Decimal(18, 2), unitCost)
                     .input('MinStock', sql.Int, minStock)
                     .input('MaxStock', sql.Int, maxStock)
+                    .input('Location', sql.NVarChar, Location || null)
                     .query(`
                         UPDATE dbo.Stock_Products 
                         SET CurrentStock = CurrentStock + @Qty,
                             LastPrice = @UnitCost,
                             MinStock = @MinStock,
                             MaxStock = @MaxStock,
+                            Location = COALESCE(@Location, Location),
                             IsActive = 1
                         WHERE ProductID = @ProductID
                     `);
             } else {
-                // Create New
-                const createRes = await new sql.Request(transaction)
-                    .input('ProductName', sql.NVarChar, ProductName.trim())
-                    .input('DeviceType', sql.VarChar, DeviceType || 'Consumable')
+                // Create New Product
+                const insertRes = await new sql.Request(transaction)
+                    .input('ProductName', sql.NVarChar(255), ProductName.trim())
+                    .input('DeviceType', sql.VarChar(50), DeviceType || null)
                     .input('CurrentStock', sql.Int, qty)
                     .input('UnitCost', sql.Decimal(18, 2), unitCost)
                     .input('MinStock', sql.Int, minStock)
                     .input('MaxStock', sql.Int, maxStock)
+                    .input('Location', sql.NVarChar(100), Location || null)
                     .query(`
-                        INSERT INTO dbo.Stock_Products (ProductName, DeviceType, CurrentStock, LastPrice, MinStock, MaxStock, IsActive)
-                        VALUES (@ProductName, @DeviceType, @CurrentStock, @UnitCost, @MinStock, @MaxStock, 1);
-                        SELECT SCOPE_IDENTITY() AS NewID;
+                        INSERT INTO dbo.Stock_Products 
+                            (ProductName, DeviceType, CurrentStock, LastPrice, MinStock, MaxStock, Location, IsActive)
+                        OUTPUT INSERTED.ProductID
+                        VALUES (@ProductName, @DeviceType, @CurrentStock, @UnitCost, @MinStock, @MaxStock, @Location, 1)
                     `);
-                productID = createRes.recordset[0].NewID;
+                productID = insertRes.recordset[0].ProductID;
             }
+
 
             // 2. Log Transaction
             const now = getThaiDate();

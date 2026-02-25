@@ -18,6 +18,9 @@ import poRoutes from './src/routes/poRoutes.js';
 import transactionRoutes from './src/routes/transactionRoutes.js';
 import reportRoutes from './src/routes/reportRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
+import locationRoutes from './src/routes/locationRoutes.js';
+import reasonRoutes from './src/routes/reasonRoutes.js';
+import maRoutes from './src/routes/maRoutes.js';
 
 // Setup Environment
 dotenv.config();
@@ -26,7 +29,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -50,11 +53,17 @@ const startServer = async () => {
         app.use('/api', transactionRoutes);  // /api/transactions, /api/invoices, /api/receive
         app.use('/api', reportRoutes);       // /api/report/export, /api/test-email
         app.use('/api', userRoutes);         // /api/admin-users
+        app.use('/api', locationRoutes);     // /api/locations
+        app.use('/api', reasonRoutes);       // /api/reasons
+        app.use('/api', maRoutes);            // /api/ma
 
         // Cron Job (Daily Low Stock Report at 07:00 AM)
-        cron.schedule('0 7 * * *', async () => {
-            console.log('Running daily low stock report check...');
+        cron.schedule('20 18 * * *', async () => {
+            console.log('Running daily report...');
             await sendDailyReport();
+        }, {
+            scheduled: true,
+            timezone: "Asia/Bangkok" // บังคับให้เป็นเวลาประเทศไทย
         });
 
         // Error Handling Middleware

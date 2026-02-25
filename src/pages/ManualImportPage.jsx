@@ -6,8 +6,7 @@ import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import Portal from '../components/Portal';
 import AlertModal from '../components/AlertModal';
-
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../config/api';
 
 const ManualImportPage = () => {
     const { deviceTypes, products, refreshData } = useData();
@@ -21,8 +20,7 @@ const ManualImportPage = () => {
         LastPrice: '',
         Quantity: '', // Renamed from CurrentStock for clarity (Qty to add)
         MinStock: '',
-        MaxStock: '',
-        Remark: ''
+        MaxStock: ''
     });
 
     // Result Modal State
@@ -67,7 +65,6 @@ const ManualImportPage = () => {
                     // So server accepts 'CurrentStock' as the quantity. Correct.
                     MinStock: formData.MinStock,
                     MaxStock: formData.MaxStock,
-                    Remark: formData.Remark,
                     UserID: user.username
                 })
             });
@@ -109,7 +106,7 @@ const ManualImportPage = () => {
         <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in">
             {/* Premium Header */}
             <div className="mb-6">
-                <h2 className="text-3xl font-black mb-2  text-slate-800">Manual Stock Import</h2>
+                <h2 className="text-3xl font-black mb-2  text-slate-800">MANUAL STOCK IMPORT</h2>
                 <p className="text-slate-500 font-medium">เพิ่มไอเทมโดยไม่ต้องใช้ PO </p>
             </div>
 
@@ -166,25 +163,13 @@ const ManualImportPage = () => {
                                     </div>
                                 </div>
                             </div>
-
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-2 block tracking-wider">รายละเอียด / Remark</label>
-                                <textarea
-                                    name="Remark"
-                                    rows={3}
-                                    value={formData.Remark}
-                                    onChange={handleChange}
-                                    className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-cyan-100 focus:border-cyan-500 outline-none text-slate-800 font-medium resize-none"
-                                    placeholder="Optional details..."
-                                />
-                            </div>
                         </div>
 
                         {/* RIGHT COLUMN: Stock & Price */}
                         <div className="flex-1 p-8 space-y-6 bg-slate-50/50">
                             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
                                 <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm">2</span>
-                                Stock & Pricing
+                                STOCK & PRICING
                             </h3>
 
                             <div className="grid grid-cols-2 gap-6">

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Package, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE, API_URL } from '../config/api';
 
 const LoginPage = () => {
     const [loading, setLoading] = useState(false);
@@ -52,12 +52,12 @@ const LoginPage = () => {
                     <h2 className="text-4xl font-black tracking-tight text-white leading-none ">IT INVENTORY</h2>
                     <p className="font-bold text-indigo-300 mt-2">MANAGEMENT SYSTEM</p>
                 </div>
-                <p className="mt-8 text-center text-[14px] text-slate-400">
-                    Login ด้วย Username / Password เข้าเครื่องคอมพิวเตอร์ของคุณ
+                <p className="mt-8 text-center text-[12px] text-slate-400">
+                    LOGIN ด้วย USERNAME / PASSWORD เข้าเครื่องคอมพิวเตอร์ของคุณ
                 </p> <br></br>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Username</label>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">USERNAME</label>
                         <input
                             name="username"
                             placeholder="Aeagon.t"
@@ -66,7 +66,7 @@ const LoginPage = () => {
                         />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Password</label>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">PASSWORD</label>
                         <input
                             name="password"
                             type="password"
@@ -91,7 +91,7 @@ const LoginPage = () => {
                 </form>
                 
                 <p className="mt-5 text-center text-[13px] text-gray-500">
-                    © 2026 by: Natthawut.Y <span className="font-bold text-indigo-400">All rights reserved. </span>
+                    © 2026 BY: NATTHAWUT.Y <span className="font-bold text-indigo-400">ALL RIGHTS RESERVED. </span>
                 </p>
             </div>
         </div>

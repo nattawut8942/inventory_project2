@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Settings, Truck, Plus, Trash2, Edit2, Search, Check, X, Shield, AlertTriangle } from 'lucide-react';
+import { Users, Settings, Truck, Plus, Trash2, Edit2, Search, Check, X, Shield, AlertTriangle, Archive, MessageSquare, FileKey } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import Portal from '../components/Portal';
 import AlertModal from '../components/AlertModal';
-
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../config/api';
+import { getBadgeStyle, getDeviceTypeColor, getChartColor } from '../utils/styleHelpers';
 
 const ManagementPage = () => {
     const { user } = useAuth();
@@ -20,15 +20,30 @@ const ManagementPage = () => {
     const [newAdmin, setNewAdmin] = useState('');
     const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);
 
-    // Types State
-    const [isAddTypeOpen, setIsAddTypeOpen] = useState(false);
-    const [editingType, setEditingType] = useState(null);
-    const [typeForm, setTypeForm] = useState({ TypeId: '', Label: '' });
-
     // Vendors State
     const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
     const [editingVendor, setEditingVendor] = useState(null);
     const [vendorForm, setVendorForm] = useState({ VendorName: '', ContactInfo: '' });
+
+    // Locations State
+    const [locations, setLocations] = useState([]);
+    const [isAddLocationOpen, setIsAddLocationOpen] = useState(false);
+    const [editingLocation, setEditingLocation] = useState(null);
+    const [locationForm, setLocationForm] = useState({ Name: '' });
+
+    // Reasons State
+    const [reasons, setReasons] = useState([]);
+    const [isAddReasonOpen, setIsAddReasonOpen] = useState(false);
+    const [editingReason, setEditingReason] = useState(null);
+    const [reasonForm, setReasonForm] = useState({ Label: '', TypeId: '' });
+    const [selectedReasonType, setSelectedReasonType] = useState('all');
+
+    // MA Types State
+    const [maTypes, setMaTypes] = useState([]);
+    const [isAddMATypeOpen, setIsAddMATypeOpen] = useState(false);
+    const [editingMAType, setEditingMAType] = useState(null);
+    const [maTypeForm, setMaTypeForm] = useState({ Category: 'HARDWARE', TypeName: '' });
+    const [selectedMACategory, setSelectedMACategory] = useState('all');
 
     // Use AlertModal state instead of local alert
     const [alertModal, setAlertModal] = useState({ isOpen: false, type: 'info', title: '', message: '' });
@@ -50,6 +65,9 @@ const ManagementPage = () => {
 
     useEffect(() => {
         if (activeTab === 'admin') fetchAdminUsers();
+        if (activeTab === 'locations') fetchLocations();
+        if (activeTab === 'reasons') fetchReasons();
+        if (activeTab === 'ma-types') fetchMATypes();
         setSearchTerm(''); // Clear search when tab changes
     }, [activeTab]);
 
@@ -92,61 +110,6 @@ const ManagementPage = () => {
                     } else {
                         const data = await res.json();
                         setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: data.error || 'ไม่สามารถลบผู้ดูแลได้ (Failed to remove admin)' });
-                    }
-                } catch (err) {
-                    setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: err.message });
-                }
-            },
-            onCancel: () => setAlertModal(prev => ({ ...prev, isOpen: false }))
-        });
-    };
-
-    // --- Types Logic ---
-    const handleSaveType = async (e) => {
-        e.preventDefault();
-        try {
-            const isEdit = !!editingType;
-            const url = isEdit ? `${API_BASE}/types/${typeForm.TypeId}` : `${API_BASE}/types`;
-            const method = isEdit ? 'PUT' : 'POST';
-
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(typeForm)
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                setAlertModal({ isOpen: true, type: 'success', title: 'สำเร็จ (Success)', message: `บันทึกข้อมูลหมวดหมู่สำเร็จ (Category ${isEdit ? 'Updated' : 'Added'})` });
-                setIsAddTypeOpen(false);
-                setEditingType(null);
-                setTypeForm({ TypeId: '', Label: '' });
-                refreshData();
-            } else {
-                setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: data.error });
-            }
-        } catch (err) {
-            setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: err.message });
-        }
-    };
-
-    const handleDeleteType = (id) => {
-        setAlertModal({
-            isOpen: true,
-            type: 'danger',
-            title: 'ลบหมวดหมู่ ',
-            message: `คุณแน่ใจหรือไม่ที่จะลบหมวดหมู่ "${id}"? (Are you sure you want to delete Device Type "${id}"?)`,
-            confirmText: 'ลบหมวดหมู่ ',
-            cancelText: 'ยกเลิก ',
-            onConfirm: async () => {
-                try {
-                    const res = await fetch(`${API_BASE}/types/${id}`, { method: 'DELETE' });
-                    const data = await res.json();
-                    if (data.success) {
-                        setAlertModal({ isOpen: true, type: 'success', title: 'สำเร็จ (Success)', message: 'ลบหมวดหมู่สำเร็จ (Device Type deleted successfully)' });
-                        refreshData();
-                    } else {
-                        setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: data.error });
                     }
                 } catch (err) {
                     setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: err.message });
@@ -211,12 +174,214 @@ const ManagementPage = () => {
         });
     };
 
+    // --- Locations Logic ---
+    const fetchLocations = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/locations`);
+            if (res.ok) setLocations(await res.json());
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleSaveLocation = async (e) => {
+        e.preventDefault();
+        try {
+            const isEdit = !!editingLocation;
+            const url = isEdit ? `${API_BASE}/locations/${editingLocation.LocationID}` : `${API_BASE}/locations`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(locationForm)
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                setAlertModal({ isOpen: true, type: 'success', title: 'สำเร็จ (Success)', message: `บันทึกข้อมูลสถานที่สำเร็จ (Location ${isEdit ? 'Updated' : 'Added'})` });
+                setIsAddLocationOpen(false);
+                setEditingLocation(null);
+                setLocationForm({ Name: '' });
+                fetchLocations();
+            } else {
+                setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: data.error });
+            }
+        } catch (err) {
+            setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: err.message });
+        }
+    };
+
+    const handleDeleteLocation = (id) => {
+        setAlertModal({
+            isOpen: true,
+            type: 'danger',
+            title: 'ลบสถานที่ ',
+            message: 'คุณแน่ใจหรือไม่ที่จะลบสถานที่นี้? (Are you sure you want to delete this location?)',
+            confirmText: 'ลบสถานที่ ',
+            cancelText: 'ยกเลิก ',
+            onConfirm: async () => {
+                try {
+                    const res = await fetch(`${API_BASE}/locations/${id}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (data.success) {
+                        setAlertModal({ isOpen: true, type: 'success', title: 'สำเร็จ (Success)', message: 'ลบสถานที่สำเร็จ (Location deleted successfully)' });
+                        fetchLocations();
+                    } else {
+                        setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: data.error });
+                    }
+                } catch (err) {
+                    setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: err.message });
+                }
+            },
+            onCancel: () => setAlertModal(prev => ({ ...prev, isOpen: false }))
+        });
+    };
+
+    // --- Reasons Logic ---
+    const fetchReasons = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/reasons`);
+            if (res.ok) setReasons(await res.json());
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleSaveReason = async (e) => {
+        e.preventDefault();
+        try {
+            const isEdit = !!editingReason;
+            const url = isEdit ? `${API_BASE}/reasons/${editingReason.ReasonID}` : `${API_BASE}/reasons`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    label: reasonForm.Label,
+                    typeId: reasonForm.TypeId || null
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setAlertModal({ isOpen: true, type: 'success', title: 'สำเร็จ (Success)', message: `บันทึกข้อมูลเหตุผลสำเร็จ (Reason ${isEdit ? 'Updated' : 'Added'})` });
+                setIsAddReasonOpen(false);
+                setEditingReason(null);
+                setReasonForm({ Label: '', TypeId: '' });
+                fetchReasons();
+            } else {
+                setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: data.error || 'Failed' });
+            }
+        } catch (err) {
+            setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: err.message });
+        }
+    };
+
+    const handleDeleteReason = (id) => {
+        setAlertModal({
+            isOpen: true,
+            type: 'danger',
+            title: 'ลบเหตุผล ',
+            message: 'คุณแน่ใจหรือไม่ที่จะลบเหตุผลนี้? (Are you sure you want to delete this reason?)',
+            confirmText: 'ลบเหตุผล ',
+            cancelText: 'ยกเลิก ',
+            onConfirm: async () => {
+                try {
+                    const res = await fetch(`${API_BASE}/reasons/${id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        setAlertModal({ isOpen: true, type: 'success', title: 'สำเร็จ (Success)', message: 'ลบเหตุผลสำเร็จ (Reason deleted successfully)' });
+                        fetchReasons();
+                    } else {
+                        const data = await res.json();
+                        setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: data.error });
+                    }
+                } catch (err) {
+                    setAlertModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Error)', message: err.message });
+                }
+            },
+            onCancel: () => setAlertModal(prev => ({ ...prev, isOpen: false }))
+        });
+    };
+
+    // --- MA Types Logic ---
+    const MA_CATEGORIES = [
+        { key: 'HARDWARE', label: 'Hardware MA' },
+        { key: 'SOFTWARE', label: 'Software License' },
+        { key: 'SERVICE', label: 'Services' },
+        { key: 'RENTAL', label: 'Rental' },
+    ];
+
+    const fetchMATypes = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/ma-types`);
+            if (res.ok) setMaTypes(await res.json());
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleSaveMAType = async (e) => {
+        e.preventDefault();
+        try {
+            const isEdit = !!editingMAType;
+            const url = isEdit ? `${API_BASE}/ma-types/${editingMAType.TypeID}` : `${API_BASE}/ma-types`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(maTypeForm)
+            });
+
+            const data = await res.json();
+            if (data.success || res.ok) {
+                setAlertModal({ isOpen: true, type: 'success', title: 'สำเร็จ', message: `บันทึกข้อมูลประเภท MA สำเร็จ` });
+                setIsAddMATypeOpen(false);
+                setEditingMAType(null);
+                setMaTypeForm({ Category: 'HARDWARE', TypeName: '' });
+                fetchMATypes();
+            } else {
+                setAlertModal({ isOpen: true, type: 'error', title: 'ผิดพลาด', message: data.error || 'Failed' });
+            }
+        } catch (err) {
+            setAlertModal({ isOpen: true, type: 'error', title: 'ผิดพลาด', message: err.message });
+        }
+    };
+
+    const handleDeleteMAType = (id) => {
+        setAlertModal({
+            isOpen: true,
+            type: 'danger',
+            title: 'ลบประเภท MA',
+            message: 'คุณแน่ใจหรือไม่ที่จะลบประเภทนี้?',
+            confirmText: 'ลบ',
+            cancelText: 'ยกเลิก',
+            onConfirm: async () => {
+                try {
+                    const res = await fetch(`${API_BASE}/ma-types/${id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        setAlertModal({ isOpen: true, type: 'success', title: 'สำเร็จ', message: 'ลบประเภท MA สำเร็จ' });
+                        fetchMATypes();
+                    } else {
+                        const data = await res.json();
+                        setAlertModal({ isOpen: true, type: 'error', title: 'ผิดพลาด', message: data.error });
+                    }
+                } catch (err) {
+                    setAlertModal({ isOpen: true, type: 'error', title: 'ผิดพลาด', message: err.message });
+                }
+            },
+            onCancel: () => setAlertModal(prev => ({ ...prev, isOpen: false }))
+        });
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header & Tabs */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h2 className="text-3xl font-black text-slate-800 mb-2">Management System</h2>
+                    <h2 className="text-3xl font-black text-slate-800 mb-2">MANAGEMENT</h2>
                     <p className="text-slate-500 font-medium">จัดการผู้ใช้งาน หมวดหมู่อุปกรณ์ และผู้จัดหา </p>
                 </div>
 
@@ -224,8 +389,10 @@ const ManagementPage = () => {
                 <div className="flex bg-slate-100 p-1 rounded-xl self-start md:self-auto">
                     {[
                         { id: 'admin', label: 'Admin', icon: Users },
-                        { id: 'types', label: 'Types', icon: Settings },
-                        { id: 'vendors', label: 'Vendors', icon: Truck }
+                        { id: 'vendors', label: 'Vendors', icon: Truck },
+                        { id: 'locations', label: 'Locations', icon: Archive },
+                        { id: 'reasons', label: 'Reasons', icon: MessageSquare },
+                        { id: 'ma-types', label: 'MA Types', icon: FileKey }
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -244,7 +411,7 @@ const ManagementPage = () => {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                 <input
                     type="text"
-                    placeholder={`ค้นหาใน ${activeTab === 'admin' ? 'ผู้ดูแลระบบ (Admins)' : activeTab === 'types' ? 'หมวดหมู่ (Types)' : 'ผู้จัดหา (Vendors)'}...`}
+                    placeholder={`ค้นหาใน ${activeTab === 'admin' ? 'ผู้ดูแลระบบ (Admins)' : activeTab === 'vendors' ? 'ผู้จัดหา (Vendors)' : activeTab === 'locations' ? 'สถานที่ (Locations)' : activeTab === 'ma-types' ? 'ประเภท MA (MA Types)' : 'เหตุผล (Reasons)'}...`}
                     className="w-full bg-white border border-slate-200 pl-12 pr-4 py-3 rounded-xl shadow-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -258,7 +425,7 @@ const ManagementPage = () => {
                     <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
                         <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
                             <div>
-                                <h3 className="text-lg font-bold text-slate-800 mb-2">System Administrators</h3>
+                                <h3 className="text-lg font-bold text-slate-800 mb-2">SYSTEM ADMINISTRATORS</h3>
                                 <p className="text-slate-500 text-xs">จัดการผู้ใช้งานที่มีสิทธิ์เข้าถึงเต็มรูปแบบ (Manage full access users)</p>
                             </div>
                             <button
@@ -322,83 +489,13 @@ const ManagementPage = () => {
                 )
                 }
 
-                {/* TYPES TAB */}
-                {
-                    activeTab === 'types' && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
-                            <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                <div>
-                                    <h3 className="text-lg font-bold text-slate-800 mb-2">Device Types</h3>
-                                    <p className="text-slate-500 text-xs">จัดการประเภทและหมวดหมู่ของอุปกรณ์ (Manage Product Categorization)</p>
-                                </div>
-                                <button
-                                    onClick={() => { setEditingType(null); setTypeForm({ TypeId: '', Label: '' }); setIsAddTypeOpen(true); }}
-                                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all hover:scale-105"
-                                >
-                                    <Plus size={18} />
-                                    เพิ่ม Types
-                                </button>
-                            </div>
-
-                            {deviceTypes.filter(t => t.Label.toLowerCase().includes(searchTerm.toLowerCase()) || t.TypeId.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
-                                <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                                    {deviceTypes.filter(t => t.Label.toLowerCase().includes(searchTerm.toLowerCase()) || t.TypeId.toLowerCase().includes(searchTerm.toLowerCase())).map(type => (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            whileHover={{ y: -2 }}
-                                            key={type.TypeId}
-                                            className="relative overflow-hidden flex justify-between items-center p-4 rounded-xl border border-slate-100 hover:shadow-lg hover:border-emerald-100 transition-all group bg-white"
-                                        >
-                                            {/* Decorative Gradient */}
-                                            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-600 opacity-[0.05] rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-
-                                            <div className="flex items-center gap-3 relative z-10">
-                                                <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
-                                                    <Settings size={20} />
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-slate-800">{type.Label}</p>
-                                                    <p className="text-xs text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded w-fit mt-0.5">{type.TypeId}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity relative z-10">
-                                                <button
-                                                    onClick={() => { setEditingType(type); setTypeForm(type); setIsAddTypeOpen(true); }}
-                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
-                                                >
-                                                    <Edit2 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteType(type.TypeId)}
-                                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12 text-slate-400">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                                        <Search className="h-8 w-8 text-slate-300" />
-                                    </div>
-                                    <p className="font-medium text-slate-600">ไม่พบหมวดหมู่ (No types found)</p>
-                                    <p className="text-xs">ลองปรับคำค้นหาใหม่ (Try adjusting your search terms)</p>
-                                </div>
-                            )}
-                        </div>
-                    )
-                }
-
                 {/* VENDORS TAB */}
                 {
                     activeTab === 'vendors' && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
                             <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
                                 <div>
-                                    <h3 className="text-lg font-bold text-slate-800 mb-2">Vendors</h3>
+                                    <h3 className="text-lg font-bold text-slate-800 mb-2">VENDORS</h3>
                                     <p className="text-slate-500 text-xs">จัดการข้อมูลผู้จัดหาและข้อมูลติดต่อ (Manage Suppliers & Contact Info)</p>
                                 </div>
                                 <button
@@ -462,7 +559,273 @@ const ManagementPage = () => {
                         </div >
                     )
                 }
-            </div >
+                {/* LOCATIONS TAB */}
+                {activeTab === 'locations' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
+                        <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 mb-2">MANAGE LOCATIONS</h3>
+                                <p className="text-slate-500 text-xs">จัดการข้อมูลสถานที่เก็บอุปกรณ์ (Manage storage locations)</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setEditingLocation(null);
+                                    setLocationForm({ Name: '' });
+                                    setIsAddLocationOpen(true);
+                                }}
+                                className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all hover:scale-105"
+                            >
+                                <Plus size={18} />
+                                เพิ่มสถานที่
+                            </button>
+                        </div>
+
+                        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                            {locations.filter(l => l.Name.toLowerCase().includes(searchTerm.toLowerCase())).map(loc => (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    whileHover={{ y: -2 }}
+                                    key={loc.LocationID}
+                                    className="relative overflow-hidden flex justify-between items-center p-4 rounded-xl border border-slate-100 hover:bg-white hover:border-indigo-100 hover:shadow-lg transition-all group bg-white"
+                                >
+                                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-600 opacity-[0.03] rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+
+                                    <div className="flex items-center gap-4 relative z-10">
+                                        <div className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center text-teal-600 shadow-sm group-hover:scale-110 transition-transform">
+                                            <Archive size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-slate-800">{loc.Name}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => {
+                                                setEditingLocation(loc);
+                                                setLocationForm({ Name: loc.Name });
+                                                setIsAddLocationOpen(true);
+                                            }}
+                                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteLocation(loc.LocationID)}
+                                            className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                        {locations.length === 0 && (
+                            <div className="text-center py-12 text-slate-400">
+                                <Archive className="mx-auto w-12 h-12 text-slate-200 mb-4" />
+                                <p>ยังไม่มีข้อมูลสถานที่</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+                {/* REASONS TAB */}
+                {activeTab === 'reasons' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
+                        <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 mb-2">WITHDRAWAL REASONS</h3>
+                                <p className="text-slate-500 text-xs">จัดการเหตุผลการเบิก (Manage Withdrawal Reasons)</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <select
+                                    value={selectedReasonType}
+                                    onChange={(e) => setSelectedReasonType(e.target.value)}
+                                    className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 focus:outline-none focus:border-indigo-500 hover:border-indigo-300 transition-colors cursor-pointer"
+                                >
+                                    <option value="all">ทั้งหมด (All Types)</option>
+
+                                    {deviceTypes.map(t => (
+                                        <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={() => setIsAddReasonOpen(true)}
+                                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all hover:scale-105"
+                                >
+                                    <Plus size={18} />
+                                    เพิ่มเหตุผล
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                                        <th className="p-4 font-bold">ID</th>
+                                        <th className="p-4 font-bold">เหตุผล (Reason)</th>
+                                        <th className="p-4 font-bold">ใช้กับ (Type)</th>
+                                        <th className="p-4 font-bold text-right">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {reasons.filter(r =>
+                                        r.Label.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                                        (selectedReasonType === 'all' || r.TypeId === selectedReasonType)
+                                    ).length > 0 ? (
+                                        reasons.filter(r =>
+                                            r.Label.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                                            (selectedReasonType === 'all' || r.TypeId === selectedReasonType)
+                                        ).map(reason => (
+                                            <tr key={reason.ReasonID} className="hover:bg-slate-50 transition-colors group">
+                                                <td className="p-4 text-slate-400 font-mono text-sm">#{reason.ReasonID}</td>
+                                                <td className="p-4 font-bold text-slate-700">{reason.Label}</td>
+                                                <td className="p-4">
+                                                    {reason.TypeId && (
+                                                        <span className="px-3 py-1.5 rounded-full text-xs font-bold inline-flex items-center gap-1 text-white shadow-sm" style={{ backgroundColor: getChartColor(reason.TypeId) }}>
+                                                            <Settings size={12} />
+                                                            {reason.TypeId}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingReason(reason);
+                                                                setReasonForm({ Label: reason.Label, TypeId: reason.TypeId || '' });
+                                                                setIsAddReasonOpen(true);
+                                                            }}
+                                                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteReason(reason.ReasonID)}
+                                                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="p-12 text-center">
+                                                <div className="flex flex-col items-center justify-center text-slate-400">
+                                                    <MessageSquare className="w-12 h-12 mb-4 text-slate-200" />
+                                                    <p className="font-medium text-lg text-slate-500">ไม่พบข้อมูลเหตุผล</p>
+                                                    <p className="text-sm">No reasons found</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* MA TYPES TAB */}
+                {activeTab === 'ma-types' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
+                        <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 mb-2">MA / LICENSE TYPES</h3>
+                                <p className="text-slate-500 text-xs">จัดการประเภทย่อยของ MA, License, Services, Rental</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <select
+                                    value={selectedMACategory}
+                                    onChange={(e) => setSelectedMACategory(e.target.value)}
+                                    className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 focus:outline-none focus:border-indigo-500 hover:border-indigo-300 transition-colors cursor-pointer"
+                                >
+                                    <option value="all">ทั้งหมด (All)</option>
+                                    {MA_CATEGORIES.map(c => (
+                                        <option key={c.key} value={c.key}>{c.label}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={() => { setEditingMAType(null); setMaTypeForm({ Category: 'HARDWARE', TypeName: '' }); setIsAddMATypeOpen(true); }}
+                                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all hover:scale-105"
+                                >
+                                    <Plus size={18} />
+                                    เพิ่มประเภท
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                                        <th className="p-4 font-bold">ID</th>
+                                        <th className="p-4 font-bold">ชื่อประเภท (Type Name)</th>
+                                        <th className="p-4 font-bold">หมวดหมู่ (Category)</th>
+                                        <th className="p-4 font-bold text-right">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {maTypes.filter(t =>
+                                        t.TypeName.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                                        (selectedMACategory === 'all' || t.Category === selectedMACategory)
+                                    ).length > 0 ? (
+                                        maTypes.filter(t =>
+                                            t.TypeName.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                                            (selectedMACategory === 'all' || t.Category === selectedMACategory)
+                                        ).map(t => (
+                                            <tr key={t.TypeID} className="hover:bg-slate-50 transition-colors group">
+                                                <td className="p-4 text-slate-400 font-mono text-sm">#{t.TypeID}</td>
+                                                <td className="p-4 font-bold text-slate-700">{t.TypeName}</td>
+                                                <td className="p-4">
+                                                    <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${t.Category === 'HARDWARE' ? 'bg-blue-100 text-blue-700' :
+                                                            t.Category === 'SOFTWARE' ? 'bg-violet-100 text-violet-700' :
+                                                                t.Category === 'SERVICE' ? 'bg-emerald-100 text-emerald-700' :
+                                                                    'bg-amber-100 text-amber-700'
+                                                        }`}>
+                                                        {MA_CATEGORIES.find(c => c.key === t.Category)?.label || t.Category}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingMAType(t);
+                                                                setMaTypeForm({ Category: t.Category, TypeName: t.TypeName });
+                                                                setIsAddMATypeOpen(true);
+                                                            }}
+                                                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteMAType(t.TypeID)}
+                                                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="p-12 text-center">
+                                                <div className="flex flex-col items-center justify-center text-slate-400">
+                                                    <FileKey className="w-12 h-12 mb-4 text-slate-200" />
+                                                    <p className="font-medium text-lg text-slate-500">ไม่พบข้อมูลประเภท</p>
+                                                    <p className="text-sm">No MA types found</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* MODALS */}
 
@@ -527,86 +890,6 @@ const ManagementPage = () => {
                                             className="flex-[2] bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-3 rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none"
                                         >
                                             เพิ่ม Admin
-                                        </button>
-                                    </div>
-                                </form>
-                            </motion.div>
-                        </motion.div>
-                    </Portal>
-                )}
-            </AnimatePresence>
-
-            {/* Add/Edit Type Modal */}
-            <AnimatePresence>
-                {isAddTypeOpen && (
-                    <Portal>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4"
-                        >
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20"
-                            >
-                                <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-                                    <div className="flex justify-between items-start relative z-10">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1 opacity-90">
-                                                <Settings size={16} />
-                                                <span className="text-sm font-bold uppercase tracking-wider">หมวดหมู่ (Device Type)</span>
-                                            </div>
-                                            <h3 className="font-black text-2xl tracking-tight">{editingType ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}</h3>
-                                        </div>
-                                        <button onClick={() => setIsAddTypeOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                                            <X size={20} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <form onSubmit={handleSaveType} className="flex flex-col h-full">
-                                    <div className="p-6 bg-slate-50/50 space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">รหัสหมวดหมู่ (Type ID)</label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. Laptop"
-                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700 disabled:bg-slate-100 disabled:text-slate-500"
-                                                value={typeForm.TypeId}
-                                                onChange={(e) => setTypeForm({ ...typeForm, TypeId: e.target.value })}
-                                                disabled={!!editingType}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อหมวดหมู่ (Label)</label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. Laptop Computer"
-                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700"
-                                                value={typeForm.Label}
-                                                onChange={(e) => setTypeForm({ ...typeForm, Label: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="p-4 bg-white border-t border-slate-100 flex gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsAddTypeOpen(false)}
-                                            className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all"
-                                        >
-                                            ยกเลิก
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={!typeForm.TypeId || !typeForm.Label}
-                                            className="flex-[2] bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-3 rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none"
-                                        >
-                                            {editingType ? 'บันทึกการแก้ไข' : 'บันทึก'}
                                         </button>
                                     </div>
                                 </form>
@@ -686,6 +969,250 @@ const ManagementPage = () => {
                                             className="flex-[2] bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-3 rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none"
                                         >
                                             {editingVendor ? 'บันทึกการแก้ไข' : 'บันทึก'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </motion.div>
+                    </Portal>
+                )}
+            </AnimatePresence>
+
+            {/* LOCATIONS TAB */}
+
+
+            {/* Add/Edit Location Modal */}
+            <AnimatePresence>
+                {isAddLocationOpen && (
+                    <Portal>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4"
+                        >
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20"
+                            >
+                                <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+                                    <div className="flex justify-between items-start relative z-10">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1 opacity-90">
+                                                <Archive size={16} />
+                                                <span className="text-sm font-bold uppercase tracking-wider">สถานที่ (Location)</span>
+                                            </div>
+                                            <h3 className="font-black text-2xl tracking-tight">{editingLocation ? 'แก้ไขสถานที่' : 'เพิ่มสถานที่ใหม่'}</h3>
+                                        </div>
+                                        <button onClick={() => setIsAddLocationOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form onSubmit={handleSaveLocation} className="flex flex-col h-full">
+                                    <div className="p-6 bg-slate-50/50 space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อสถานที่ (Location Name)</label>
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                placeholder="e.g. Server Room, Cabinet A"
+                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700"
+                                                value={locationForm.Name}
+                                                onChange={(e) => setLocationForm({ ...locationForm, Name: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-white border-t border-slate-100 flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsAddLocationOpen(false)}
+                                            className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all"
+                                        >
+                                            ยกเลิก
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={!locationForm.Name}
+                                            className="flex-[2] bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-3 rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none"
+                                        >
+                                            {editingLocation ? 'บันทึกการแก้ไข' : 'บันทึก'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </motion.div>
+                    </Portal>
+                )}
+            </AnimatePresence>
+
+
+            {/* Add/Edit Reason Modal */}
+            <AnimatePresence>
+                {isAddReasonOpen && (
+                    <Portal>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4"
+                        >
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20"
+                            >
+                                <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+                                    <div className="flex justify-between items-start relative z-10">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1 opacity-90">
+                                                <MessageSquare size={16} />
+                                                <span className="text-sm font-bold uppercase tracking-wider">เหตุผล (Reason)</span>
+                                            </div>
+                                            <h3 className="font-black text-2xl tracking-tight">{editingReason ? 'แก้ไขเหตุผล' : 'เพิ่มเหตุผลใหม่'}</h3>
+                                        </div>
+                                        <button onClick={() => setIsAddReasonOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form onSubmit={handleSaveReason} className="flex flex-col h-full">
+                                    <div className="p-6 bg-slate-50/50 space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อเหตุผล (Label)</label>
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                placeholder="e.g. เบิกใหม่, ทดแทน"
+                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700"
+                                                value={reasonForm.Label}
+                                                onChange={(e) => setReasonForm({ ...reasonForm, Label: e.target.value })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">ใช้กับประเภท (Type) - Optional</label>
+                                            <select
+                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700"
+                                                value={reasonForm.TypeId}
+                                                onChange={(e) => setReasonForm({ ...reasonForm, TypeId: e.target.value })}
+                                            >
+                                                <option value="" disabled>-- เลือกประเภท (Select Type) --</option>
+                                                {deviceTypes.map(type => (
+                                                    <option key={type.TypeId} value={type.TypeId}>{type.Label}</option>
+                                                ))}
+                                            </select>
+                                            <p className="text-xs text-slate-500 mt-2">
+                                                เลือกประเภทอุปกรณ์เพื่อแสดงเหตุผลนี้เฉพาะเมื่อเบิกอุปกรณ์ประเภทนั้นๆ
+                                                <br />(Select a type to show this reason only when withdrawing that device type)
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-white border-t border-slate-100 flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsAddReasonOpen(false)}
+                                            className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all"
+                                        >
+                                            ยกเลิก
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={!reasonForm.Label}
+                                            className="flex-[2] bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-3 rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none"
+                                        >
+                                            {editingReason ? 'บันทึกการแก้ไข' : 'บันทึก'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </motion.div>
+                    </Portal>
+                )}
+            </AnimatePresence>
+
+            {/* Add/Edit MA Type Modal */}
+            <AnimatePresence>
+                {isAddMATypeOpen && (
+                    <Portal>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4"
+                        >
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20"
+                            >
+                                <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+                                    <div className="flex justify-between items-start relative z-10">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1 opacity-90">
+                                                <FileKey size={16} />
+                                                <span className="text-sm font-bold uppercase tracking-wider">ประเภท MA (MA Type)</span>
+                                            </div>
+                                            <h3 className="font-black text-2xl tracking-tight">{editingMAType ? 'แก้ไขประเภท' : 'เพิ่มประเภทใหม่'}</h3>
+                                        </div>
+                                        <button onClick={() => setIsAddMATypeOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form onSubmit={handleSaveMAType} className="flex flex-col h-full">
+                                    <div className="p-6 bg-slate-50/50 space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">หมวดหมู่ (Category)</label>
+                                            <select
+                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700"
+                                                value={maTypeForm.Category}
+                                                onChange={(e) => setMaTypeForm({ ...maTypeForm, Category: e.target.value })}
+                                                disabled={!!editingMAType}
+                                            >
+                                                {MA_CATEGORIES.map(c => (
+                                                    <option key={c.key} value={c.key}>{c.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อประเภท (Type Name)</label>
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                placeholder="e.g. Server, Antivirus, Printer Rental"
+                                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700"
+                                                value={maTypeForm.TypeName}
+                                                onChange={(e) => setMaTypeForm({ ...maTypeForm, TypeName: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-white border-t border-slate-100 flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsAddMATypeOpen(false)}
+                                            className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all"
+                                        >
+                                            ยกเลิก
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={!maTypeForm.TypeName}
+                                            className="flex-[2] bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-3 rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none"
+                                        >
+                                            {editingMAType ? 'บันทึกการแก้ไข' : 'บันทึก'}
                                         </button>
                                     </div>
                                 </form>

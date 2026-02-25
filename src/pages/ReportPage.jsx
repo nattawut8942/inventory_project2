@@ -4,10 +4,9 @@ import { BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, Cartes
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
 import AlertModal from '../components/AlertModal';
-import { getChartColor } from '../utils/styleHelpers';
+import { getChartColor, getBadgeStyle } from '../utils/styleHelpers';
 import { formatThaiDateShort } from '../utils/formatDate';
-
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../config/api';
 
 // const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
@@ -73,8 +72,8 @@ const ReportPage = () => {
             if (dataMap[monthKey]) {
                 const type = (t.TransType || '').toUpperCase().trim();
                 const qty = Math.abs(t.Qty);
-                if (type === 'IN') dataMap[monthKey].inbound += qty;
-                if (type === 'OUT') dataMap[monthKey].outbound += qty;
+                if (type === 'IN' && !(t.RefInfo || '').includes('ยกเลิก Invoice')) dataMap[monthKey].inbound += qty;
+                if (type === 'OUT' && !(t.RefInfo || '').includes('ยกเลิก Invoice')) dataMap[monthKey].outbound += qty;
             }
         });
 
@@ -110,8 +109,8 @@ const ReportPage = () => {
                 const price = priceMap[t.ProductID] || 0;
                 const value = qty * price;
 
-                if (type === 'IN') dataMap[monthKey].spending += value;
-                if (type === 'OUT') dataMap[monthKey].consumption += value;
+                if (type === 'IN' && !(t.RefInfo || '').includes('ยกเลิก Invoice')) dataMap[monthKey].spending += value;
+                if (type === 'OUT' && !(t.RefInfo || '').includes('ยกเลิก Invoice')) dataMap[monthKey].consumption += value;
             }
         });
 
@@ -128,7 +127,7 @@ const ReportPage = () => {
         (transactions || []).forEach(t => {
             const date = new Date(t.TransDate);
             const type = (t.TransType || '').toUpperCase().trim();
-            if (type === 'OUT' && date >= threeMonthsAgo) {
+            if (type === 'OUT' && date >= threeMonthsAgo && !(t.RefInfo || '').includes('ยกเลิก Invoice')) {
                 activeProductIds.add(t.ProductID);
             }
         });
@@ -149,7 +148,7 @@ const ReportPage = () => {
 
         (transactions || []).forEach(t => {
             const type = (t.TransType || '').toUpperCase().trim();
-            if (type === 'OUT') {
+            if (type === 'OUT' && !(t.RefInfo || '').includes('ยกเลิก Invoice')) {
                 const userId = t.UserID || 'Unknown';
                 if (!userMap[userId]) {
                     userMap[userId] = { userId, totalQty: 0, totalValue: 0, transactionCount: 0 };
@@ -173,7 +172,7 @@ const ReportPage = () => {
         const itemMap = {};
         (transactions || []).forEach(t => {
             const type = (t.TransType || '').toUpperCase().trim();
-            if (type === 'OUT') {
+            if (type === 'OUT' && !(t.RefInfo || '').includes('ยกเลิก Invoice')) {
                 const productId = t.ProductID;
                 const product = products.find(p => p.ProductID === productId);
                 if (!itemMap[productId]) {
@@ -203,7 +202,7 @@ const ReportPage = () => {
         const catMap = {};
         (transactions || []).forEach(t => {
             const type = (t.TransType || '').toUpperCase().trim();
-            if (type === 'OUT') {
+            if (type === 'OUT' && !(t.RefInfo || '').includes('ยกเลิก Invoice')) {
                 const product = products.find(p => p.ProductID === t.ProductID);
                 const category = product?.DeviceType || 'ไม่ระบุ';
                 if (!catMap[category]) {
@@ -428,7 +427,9 @@ const ReportPage = () => {
                                             <p className="font-medium text-slate-800 truncate max-w-[200px]">{item.ProductName}</p>
                                         </td>
                                         <td className="py-3 px-3 text-center">
-                                            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-lg">{item.DeviceType}</span>
+                                            <span className={`px-2 py-1 rounded-lg text-xs font-bold ${getBadgeStyle(item.DeviceType)}`}>
+                                                {item.DeviceType}
+                                            </span>
                                         </td>
                                         <td className="py-3 px-3 text-center font-mono text-slate-700">{item.CurrentStock}</td>
                                         <td className="py-3 px-3 text-right font-mono text-red-500">฿{(item.CurrentStock * (item.LastPrice || 0)).toLocaleString()}</td>
@@ -557,7 +558,11 @@ const ReportPage = () => {
                                             </span>
                                         </td>
                                         <td className="py-2 px-2 font-medium text-slate-800 truncate max-w-[150px]">{item.productName}</td>
-                                        <td className="py-2 px-2 text-center text-slate-500 text-xs">{item.deviceType}</td>
+                                        <td className="py-2 px-2 text-center">
+                                            <span className={`px-2 py-1 rounded-lg text-xs font-bold ${getBadgeStyle(item.deviceType)}`}>
+                                                {item.deviceType}
+                                            </span>
+                                        </td>
                                         <td className="py-2 px-2 text-right font-bold text-rose-600">{item.totalQty.toLocaleString()}</td>
                                         <td className="py-2 px-2 text-right text-slate-600">฿{item.totalValue.toLocaleString()}</td>
                                     </tr>
@@ -593,9 +598,9 @@ const ReportPage = () => {
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     layout="vertical"
-                                    data={withdrawalsByCategory.slice(0, 10).map((item, index) => ({
+                                    data={withdrawalsByCategory.slice(0, 10).map((item) => ({
                                         ...item,
-                                        fill: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4'][index % 6]
+                                        fill: getChartColor(item.name)
                                     }))}
                                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                                 >

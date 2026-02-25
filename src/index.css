@@ -39,6 +39,12 @@
   }
 }
 
+@layer components {
+  .form-input {
+    @apply w-full bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-sm text-slate-700 font-medium shadow-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100;
+  }
+}
+
 @layer utilities {
   .animate-in {
     animation: fadeIn 0.4s ease-out forwards;

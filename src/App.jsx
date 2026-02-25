@@ -13,11 +13,11 @@ import DashboardPage from './pages/DashboardPage';
 import InventoryPage from './pages/InventoryPage';
 import ManualImportPage from './pages/ManualImportPage';
 import ReceivePage from './pages/ReceivePage';
-import WithdrawPage from './pages/WithdrawPage';
 import HistoryPage from './pages/HistoryPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import ReportPage from './pages/ReportPage';
 import ManagementPage from './pages/ManagementPage';
+import MALicensePage from './pages/MALicensePage';
 
 
 // App Routes Component
@@ -43,9 +43,9 @@ const AppRoutes = () => {
             >
                 <Route index element={<DashboardPage />} />
                 <Route path="inventory" element={<InventoryPage />} />
-                <Route path="withdraw" element={<WithdrawPage />} />
                 <Route path="history" element={<HistoryPage />} />
                 <Route path="reports" element={<ReportPage />} />
+                <Route path="ma-license" element={<MALicensePage />} />
 
                 {/* PO and Receive - viewable by all, actions restricted in components */}
                 <Route path="purchase-orders" element={<PurchaseOrdersPage />} />

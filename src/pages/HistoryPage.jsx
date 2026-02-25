@@ -78,7 +78,7 @@ const HistoryPage = () => {
         <div className="space-y-6 animate-in slide-in-from-bottom-5">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-black mb-2 text-slate-800">Transaction History</h2>
+                    <h2 className="text-3xl font-black mb-2 text-slate-800">TRANSACTION HISTORY</h2>
                     <p className="text-slate-500 font-medium">ประวัติการทำรายการย้อนหลัง</p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -88,8 +88,8 @@ const HistoryPage = () => {
                         className="bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-sm text-slate-600 outline-none focus:border-indigo-500 font-bold"
                     >
                         <option value="ALL">ทุกประเภท (All)</option>
-                        <option value="IN">รับเข้า (Inbound)</option>
-                        <option value="OUT">เบิกออก (Outbound)</option>
+                        <option value="IN">รับเข้า (INBOUND)</option>
+                        <option value="OUT">เบิกออก (OUTBOUND)</option>
                     </select>
                     <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                         <Search size={18} className="text-slate-400" />
@@ -108,7 +108,7 @@ const HistoryPage = () => {
             <div className="flex flex-wrap gap-3 items-center">
                 <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                     <Calendar size={18} className="text-slate-400 shrink-0" />
-                    <span className="text-xs text-slate-400 shrink-0">เริ่ม</span>
+                    <span className="text-xs text-slate-400 shrink-0">เริ่มต้น</span>
                     <input
                         type="date"
                         className="bg-transparent border-none outline-none text-sm text-slate-700"
@@ -132,7 +132,7 @@ const HistoryPage = () => {
                         onClick={() => { setSearchTerm(''); setDateFrom(defaultRange.startDate); setDateTo(defaultRange.endDate); setFilter('ALL'); }}
                         className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                     >
-                        ล้างตัวกรอง
+                        CLEAR
                     </button>
                 )}
             </div>
@@ -142,12 +142,12 @@ const HistoryPage = () => {
     <table className="w-full text-left text-lg min-w-max table-auto">
         <thead className="bg-slate-50 text-slate-500 uppercase text-[12px] tracking-widest border-b border-slate-200">
             <tr>
-                <th className="p-4 pl-6 whitespace-nowrap">บันทึกวันเวลา</th>
+                <th className="p-4 pl-6 whitespace-nowrap">วันที่บันทึก</th>
                 <th className="p-4 whitespace-nowrap">หมวดหมู่</th>
                 <th className="p-4 whitespace-nowrap">รายการ</th>
                 <th className="p-4 text-center whitespace-nowrap">จำนวน</th>
-                <th className="p-4 whitespace-nowrap">อ้างอิง</th>
-                <th className="p-4 whitespace-nowrap">ผู้ใช้งาน</th>
+                <th className="p-4 whitespace-nowrap">หมายเหตุ</th>
+                <th className="p-4 whitespace-nowrap">ผู้ใช้</th>
             </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -245,17 +245,17 @@ const HistoryPage = () => {
 
                             <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                                 <div className="bg-slate-50 p-2 rounded-lg">
-                                    <span className="text-slate-400 block mb-0.5">Reference</span>
+                                    <span className="text-slate-400 block mb-0.5">อ้างอิง</span>
                                     <span className="font-medium text-slate-700 truncate block">{t.RefInfo || '-'}</span>
                                 </div>
                                 <div className="bg-slate-50 p-2 rounded-lg">
-                                    <span className="text-slate-400 block mb-0.5">User</span>
+                                    <span className="text-slate-400 block mb-0.5">USER</span>
                                     <span className="font-medium text-slate-700 truncate block">{t.UserID}</span>
                                 </div>
                             </div>
 
                             <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                                <span className="text-xs font-bold text-slate-400">Quantity</span>
+                                <span className="text-xs font-bold text-slate-400">QUANTITY</span>
                                 <span className={`text-lg font-black font-mono ${isIn ? 'text-emerald-600' : 'text-red-500'}`}>
                                     {isIn ? '+' : '-'}{Math.abs(t.Qty)}
                                 </span>

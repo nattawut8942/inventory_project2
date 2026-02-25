@@ -1,19 +1,31 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Package, TrendingUp, TrendingDown, AlertTriangle, DollarSign, ShoppingCart, Clock, ArrowRight, Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
+import { API_BASE } from '../config/api';
 import { formatThaiDate } from '../utils/formatDate';
 import StatCard from '../components/StatCard';
 import LoadingState from '../components/LoadingState';
-import { getChartColor, getBadgeStyle } from '../utils/styleHelpers';
+import { getChartColor, getBadgeStyle, getDeviceTypeColor } from '../utils/styleHelpers';
 
 // const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1'];
 
 const DashboardPage = () => {
     const { products, transactions, purchaseOrders, loading } = useData();
     const navigate = useNavigate();
+    const [maItems, setMaItems] = useState([]);
+
+    React.useEffect(() => {
+        const fetchMa = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/ma`);
+                if (res.ok) setMaItems(await res.json());
+            } catch (err) { }
+        };
+        fetchMa();
+    }, []);
 
     // 1. Calculate Stats
     const stats = useMemo(() => {
@@ -61,8 +73,8 @@ const DashboardPage = () => {
             if (dataMap[monthKey]) {
                 const type = (t.TransType || '').toUpperCase().trim();
                 const qty = Math.abs(t.Qty);
-                if (type === 'IN') dataMap[monthKey].inbound += qty;
-                if (type === 'OUT') dataMap[monthKey].outbound += qty;
+                if (type === 'IN' && !(t.RefInfo || '').includes('ยกเลิก Invoice')) dataMap[monthKey].inbound += qty;
+                if (type === 'OUT' && !(t.RefInfo || '').includes('ยกเลิก Invoice')) dataMap[monthKey].outbound += qty;
             }
         });
 
@@ -87,12 +99,16 @@ const DashboardPage = () => {
         transactions.forEach(t => {
             const date = new Date(t.TransDate);
             const type = (t.TransType || '').toUpperCase().trim();
-            if (type === 'OUT' && date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+            const refInfo = t.RefInfo || '';
+            // Only count actual withdrawals, exclude invoice cancellations
+            if (type === 'OUT' && date.getMonth() === currentMonth && date.getFullYear() === currentYear && !refInfo.includes('ยกเลิก Invoice')) {
                 const productId = t.ProductID;
                 if (!withdrawMap[productId]) {
+                    const product = products.find(p => p.ProductID === productId);
                     withdrawMap[productId] = {
                         ProductID: productId,
                         ProductName: t.ProductName || `ID: ${productId}`,
+                        DeviceType: product ? product.DeviceType : 'Unknown',
                         totalQty: 0
                     };
                 }
@@ -117,12 +133,43 @@ const DashboardPage = () => {
             .slice(0, 5);
     }, [purchaseOrders]);
 
+    // 8. NEW: Recommended Order Trend (Items close to MinStock, sorted by % needed to reach MaxStock)
+    const orderTrendItems = useMemo(() => {
+        return products
+            .filter(p => p.CurrentStock > p.MinStock && p.MaxStock && p.MaxStock > 0)
+            .map(p => {
+                const orderNeedPercent = Math.round(((p.MaxStock - p.CurrentStock) / p.MaxStock) * 100);
+                return {
+                    ...p,
+                    orderNeedPercent
+                };
+            })
+            .sort((a, b) => b.orderNeedPercent - a.orderNeedPercent)
+            .slice(0, 5);
+    }, [products]);
+
     // 7. Recent Transactions (Last 5)
     const recentTransactions = useMemo(() => {
         return [...transactions]
             .sort((a, b) => new Date(b.TransDate) - new Date(a.TransDate))
             .slice(0, 5);
     }, [transactions]);
+
+    // 9. NEW: MA Expiry Alerts (Expired or <= 90 days)
+    const maAlerts = useMemo(() => {
+        return maItems
+            .filter(ma => {
+                if (ma.Status === 'Cancelled' || !ma.EndDate) return false;
+                const daysRemaining = Math.ceil((new Date(ma.EndDate) - new Date()) / (1000 * 60 * 60 * 24));
+                return daysRemaining <= 90;
+            })
+            .map(ma => {
+                const daysRemaining = Math.ceil((new Date(ma.EndDate) - new Date()) / (1000 * 60 * 60 * 24));
+                return { ...ma, daysRemaining };
+            })
+            .sort((a, b) => a.daysRemaining - b.daysRemaining)
+            .slice(0, 5);
+    }, [maItems]);
 
     if (loading && products.length === 0) {
         return <LoadingState message="กำลังประมวลผลข้อมูล Dashboard... (Loading Dashboard...)" />;
@@ -131,7 +178,7 @@ const DashboardPage = () => {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div>
-                <h2 className="text-3xl font-black text-slate-800 mb-2">Dashboard</h2>
+                <h2 className="text-3xl font-black text-slate-800 mb-2">DASHBOARD</h2>
                 <p className="text-slate-500 font-medium">สรุปข้อมูลและสถานะคลังอุปกรณ์</p>
             </div>
             {/* Stats Grid */}
@@ -178,7 +225,7 @@ const DashboardPage = () => {
                 >
                     <h3 className="text-lg font-bold text-slate-800 mb-6">ความเคลื่อนไหวสต็อค 6 เดือน </h3>
                     <div className="h-[250px] lg:h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <BarChart data={stockData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                                 <XAxis dataKey="month" stroke="#64748b" tickLine={false} axisLine={false} dy={10} />
@@ -194,8 +241,8 @@ const DashboardPage = () => {
                                     cursor={{ fill: '#f1f5f9' }}
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                <Bar dataKey="inbound" fill="#3b82f6" name="รับเข้า (Inbound)" radius={[6, 6, 0, 0]} barSize={20} />
-                                <Bar dataKey="outbound" fill="#8b5cf6" name="เบิกจ่าย (Outbound)" radius={[6, 6, 0, 0]} barSize={20} />
+                                <Bar dataKey="inbound" stackId="a" fill="#3b82f6" name="รับเข้า (Inbound)" radius={[0, 0, 0, 0]} barSize={32} />
+                                <Bar dataKey="outbound" stackId="a" fill="#8b5cf6" name="เบิกจ่าย (Outbound)" radius={[6, 6, 0, 0]} barSize={32} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -209,7 +256,7 @@ const DashboardPage = () => {
                 >
                     <h3 className="text-lg font-bold text-slate-800 mb-6">สัดส่วนอุปกรณ์ </h3>
                     <div className="h-[250px] lg:h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <PieChart>
                                 <Pie
                                     data={categoryData}
@@ -249,7 +296,7 @@ const DashboardPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="col-span-1 lg:col-span-2 bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+                    className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
                 >
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-slate-800">มูลค่าสต็อกตามหมวดหมู่ </h3>
@@ -259,14 +306,35 @@ const DashboardPage = () => {
                     </div>
                     <div className="h-[300px] w-full">
                         <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 {(() => {
                                     const stockValueData = categoryData.map(c => {
-                                        const value = products
-                                            .filter(p => p.DeviceType === c.name)
-                                            .reduce((sum, p) => sum + (p.CurrentStock * p.LastPrice), 0);
-                                        return { ...c, totalValue: value };
+                                        const categoryProducts = products.filter(p => p.DeviceType === c.name);
+                                        const dataObj = { name: c.name, fill: c.fill };
+                                        let totalValue = 0;
+                                        categoryProducts.forEach(p => {
+                                            const val = p.CurrentStock * p.LastPrice;
+                                            if (val > 0) {
+                                                const key = p.ProductName || `Product ID: ${p.ProductID}`;
+                                                dataObj[key] = (dataObj[key] || 0) + val;
+                                                totalValue += val;
+                                            }
+                                        });
+                                        dataObj.totalValue = totalValue;
+                                        return dataObj;
                                     }).sort((a, b) => b.totalValue - a.totalValue);
+
+                                    const allKeys = Array.from(new Set(
+                                        stockValueData.flatMap(d => Object.keys(d).filter(k => k !== 'name' && k !== 'fill' && k !== 'totalValue'))
+                                    ));
+
+                                    const keyToColor = {};
+                                    allKeys.forEach(k => {
+                                        const cat = stockValueData.find(d => d[k] > 0);
+                                        if (cat) {
+                                            keyToColor[k] = cat.fill;
+                                        }
+                                    });
 
                                     return (
                                         <BarChart
@@ -278,19 +346,26 @@ const DashboardPage = () => {
                                             <YAxis stroke="#64748b" tickLine={false} axisLine={false} tickFormatter={(value) => `฿${(value / 1000).toFixed(0)}k`} />
                                             <Tooltip
                                                 cursor={{ fill: '#f8fafc' }}
-                                                formatter={(value) => [`฿${value.toLocaleString()}`, 'มูลค่ารวม (Value)']}
+                                                formatter={(value, name) => [`฿${value.toLocaleString()}`, name]}
                                                 contentStyle={{
                                                     backgroundColor: 'white',
                                                     borderRadius: '12px',
                                                     border: 'none',
-                                                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                                                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                                                 }}
+                                                itemSorter={(item) => -item.value}
                                             />
-                                            <Bar dataKey="totalValue" radius={[6, 6, 0, 0]} barSize={40}>
-                                                {stockValueData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                                                ))}
-                                            </Bar>
+                                            {allKeys.map(key => (
+                                                <Bar
+                                                    key={key}
+                                                    dataKey={key}
+                                                    stackId="a"
+                                                    fill={keyToColor[key] || '#8884d8'}
+                                                    stroke="rgba(255,255,255,0.4)"
+                                                    strokeWidth={1}
+                                                    barSize={40}
+                                                />
+                                            ))}
                                         </BarChart>
                                     );
                                 })()}
@@ -300,8 +375,8 @@ const DashboardPage = () => {
                 </motion.div>
             </div>
 
-            {/* NEW: Operational Insights Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Critical Alerts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                 {/* Critical Low Stock */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -316,7 +391,7 @@ const DashboardPage = () => {
                             </div>
                             <h3 className="font-bold text-slate-800">สต็อกวิกฤต </h3>
                         </div>
-                        <button onClick={() => navigate('/inventory')} className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
+                        <button onClick={() => navigate('/inventory', { state: { filter: 'lowstock' } })} className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
                             ดูทั้งหมด  <ArrowRight size={14} />
                         </button>
                     </div>
@@ -340,7 +415,98 @@ const DashboardPage = () => {
                         )) : (
                             <div className="text-center py-8 text-slate-400">
                                 <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">สต็อกเพียงพอ (Stock OK) 👍</p>
+                                <p className="text-sm">สต็อกเพียงพอ👍</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* MA Expiry Alerts */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                                <Clock className="w-5 h-5 text-white" />
+                            </div>
+                            <h3 className="font-bold text-slate-800">MA / License ใกล้หมดอายุ</h3>
+                        </div>
+                        <button onClick={() => navigate('/ma-license')} className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
+                            จัดการ MA <ArrowRight size={14} />
+                        </button>
+                    </div>
+                    <div className="space-y-3">
+                        {maAlerts.length > 0 ? maAlerts.map((ma, idx) => {
+                            const isExpired = ma.daysRemaining <= 0;
+                            return (
+                                <motion.div
+                                    key={ma.ItemID}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                    className={`flex items-center justify-between p-3 rounded-xl border ${isExpired ? 'bg-red-50 border-red-100' : 'bg-orange-50 border-orange-100'}`}
+                                >
+                                    <div className="flex-1 min-w-0 pr-2">
+                                        <p className="font-bold text-sm text-slate-800 truncate">{ma.ItemName}</p>
+                                        <p className={`text-xs truncate ${isExpired ? 'text-red-500' : 'text-orange-600'}`}>หมวด: {ma.Category}</p>
+                                    </div>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isExpired ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-700'}`}>
+                                        {isExpired ? 'Expired' : `${ma.daysRemaining} วัน`}
+                                    </span>
+                                </motion.div>
+                            );
+                        }) : (
+                            <div className="text-center py-8 text-slate-400">
+                                <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">ไม่มีสัญญาใกล้หมดอายุ ✅</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* NEW: Operational Insights Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Recommended Order Trend */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+                >
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center">
+                                <TrendingUp className="w-5 h-5 text-white" />
+                            </div>
+                            <h3 className="font-bold text-slate-800">แนวโน้มสั่งซื้อ </h3>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        {orderTrendItems.length > 0 ? orderTrendItems.map((item, idx) => (
+                            <motion.div
+                                key={item.ProductID}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className="flex items-center justify-between p-3 bg-indigo-50 rounded-xl border border-indigo-100"
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm text-slate-800 truncate">{item.ProductName}</p>
+                                    <p className="text-xs text-indigo-500">สต็อกปัจจุบัน: {item.CurrentStock} / {item.MaxStock}</p>
+                                </div>
+                                <span className={`text-xs font-bold px-2 py-1 rounded-lg ${item.orderNeedPercent >= 80 ? 'bg-red-100 text-red-600' : item.orderNeedPercent >= 50 ? 'bg-orange-100 text-orange-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                                    เพิ่ม {item.orderNeedPercent}%
+                                </span>
+                            </motion.div>
+                        )) : (
+                            <div className="text-center py-8 text-slate-400">
+                                <TrendingUp className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">ไม่มีข้อมูลแนวโน้ม</p>
                             </div>
                         )}
                     </div>
@@ -378,13 +544,13 @@ const DashboardPage = () => {
                                     <p className="text-xs text-amber-600 truncate">{po.VendorName || 'ไม่ระบุผู้ขาย (Unknown Vendor)'}</p>
                                 </div>
                                 <span className={`text-xs font-bold px-2 py-1 rounded-lg ${po.daysAgo > 7 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
-                                    {po.daysAgo} วัน 
+                                    {po.daysAgo} วัน
                                 </span>
                             </motion.div>
                         )) : (
                             <div className="text-center py-8 text-slate-400">
                                 <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">ไม่มี PO ค้าง (No Pending) ✅</p>
+                                <p className="text-sm">ไม่มี PO ค้าง ✅</p>
                             </div>
                         )}
                     </div>
@@ -414,20 +580,20 @@ const DashboardPage = () => {
                                 transition={{ delay: idx * 0.05 }}
                                 className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100"
                             >
-                                <span className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-bold flex items-center justify-center">
+                                <span className={`w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center bg-gradient-to-br ${getDeviceTypeColor(item.DeviceType).gradient}`}>
                                     {idx + 1}
                                 </span>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-medium text-sm text-slate-800 truncate">{item.ProductName}</p>
                                 </div>
                                 <span className="text-sm font-bold text-purple-600 font-mono">
-                                    {item.totalQty} ชิ้น 
+                                    {item.totalQty} ชิ้น
                                 </span>
                             </motion.div>
                         )) : (
                             <div className="text-center py-8 text-slate-400">
                                 <TrendingDown className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">ยังไม่มีข้อมูลการเบิกเดือนนี้ (No data)</p>
+                                <p className="text-sm">ยังไม่มีข้อมูลการเบิกเดือนนี้</p>
                             </div>
                         )}
                     </div>
@@ -488,7 +654,7 @@ const DashboardPage = () => {
                     {recentTransactions.length === 0 && (
                         <div className="text-center py-12 text-slate-400">
                             <Package className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                            <p>ไม่มีข้อมูล (No Data)</p>
+                            <p>ไม่มีข้อมูล</p>
                         </div>
                     )}
                 </div>

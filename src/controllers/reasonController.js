@@ -1,0 +1,69 @@
+import { sql, connectDB } from '../config/db.js';
+
+// Get all reasons
+export const getReasons = async (req, res) => {
+    try {
+        const pool = await connectDB();
+        const result = await pool.request().query("SELECT * FROM dbo.Stock_WithdrawalReasons ORDER BY TypeId, Label");
+        res.json(result.recordset);
+    } catch (err) {
+        console.error('Error fetching reasons:', err);
+        res.status(500).json({ error: 'Failed to fetch reasons' });
+    }
+};
+
+// Add a new reason
+export const addReason = async (req, res) => {
+    const { label, typeId } = req.body;
+    if (!label) return res.status(400).json({ error: 'Label is required' });
+
+    try {
+        const pool = await connectDB();
+        await pool.request()
+            .input('Label', sql.NVarChar, label)
+            .input('TypeId', sql.VarChar, typeId || null)
+            .query("INSERT INTO dbo.Stock_WithdrawalReasons (Label, TypeId) VALUES (@Label, @TypeId)");
+
+        res.status(201).json({ message: 'Reason added successfully' });
+    } catch (err) {
+        console.error('Error adding reason:', err);
+        res.status(500).json({ error: 'Failed to add reason' });
+    }
+};
+
+// Update a reason
+export const updateReason = async (req, res) => {
+    const { id } = req.params;
+    const { label, typeId } = req.body;
+    if (!label) return res.status(400).json({ error: 'Label is required' });
+
+    try {
+        const pool = await connectDB();
+        await pool.request()
+            .input('ReasonID', sql.Int, id)
+            .input('Label', sql.NVarChar, label)
+            .input('TypeId', sql.VarChar, typeId || null)
+            .query("UPDATE dbo.Stock_WithdrawalReasons SET Label = @Label, TypeId = @TypeId WHERE ReasonID = @ReasonID");
+
+        res.json({ message: 'Reason updated successfully' });
+    } catch (err) {
+        console.error('Error updating reason:', err);
+        res.status(500).json({ error: 'Failed to update reason' });
+    }
+};
+
+// Delete a reason
+export const deleteReason = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const pool = await connectDB();
+        await pool.request()
+            .input('ReasonID', sql.Int, id)
+            .query("DELETE FROM dbo.Stock_WithdrawalReasons WHERE ReasonID = @ReasonID");
+
+        res.json({ message: 'Reason deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting reason:', err);
+        res.status(500).json({ error: 'Failed to delete reason' });
+    }
+};

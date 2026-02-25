@@ -36,7 +36,8 @@ const POFormModal = ({ isOpen, onClose, initialData, isEditMode, products, vendo
         Section: '',
         Remark: '',
         BudgetNo: '',
-        PR_No: ''
+        PR_No: '',
+        DeliveryTo: ''
     });
     const [poItems, setPoItems] = useState([{ ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
     const [selectedVendor, setSelectedVendor] = useState({ VendorID: null, VendorName: '' });
@@ -62,7 +63,8 @@ const POFormModal = ({ isOpen, onClose, initialData, isEditMode, products, vendo
                     Section: initialData.Section,
                     Remark: initialData.Remark,
                     BudgetNo: initialData.BudgetNo,
-                    PR_No: initialData.PR_No || ''
+                    PR_No: initialData.PR_No || '',
+                    DeliveryTo: initialData.DeliveryTo || ''
                 });
 
                 // Map items
@@ -92,7 +94,8 @@ const POFormModal = ({ isOpen, onClose, initialData, isEditMode, products, vendo
                     Section: '',
                     Remark: '',
                     BudgetNo: '',
-                    PR_No: ''
+                    PR_No: '',
+                    DeliveryTo: ''
                 });
                 setPoItems([{ ProductID: null, ItemName: '', QtyOrdered: 1, UnitCost: 0 }]);
                 setSelectedVendor({ VendorID: null, VendorName: '' });
@@ -113,7 +116,8 @@ const POFormModal = ({ isOpen, onClose, initialData, isEditMode, products, vendo
                 PR_No: extractedFormData.prNum || prev.PR_No,
                 BudgetNo: extractedFormData.bgNum || prev.BudgetNo,
                 Section: extractedFormData.section || prev.Section,
-                DueDate: extractedFormData.dueDate || prev.DueDate
+                DueDate: extractedFormData.dueDate || prev.DueDate,
+                DeliveryTo: extractedFormData.deliveryTo || prev.DeliveryTo
             }));
             setExtractedFormData(null);
         }
@@ -280,9 +284,18 @@ const POFormModal = ({ isOpen, onClose, initialData, isEditMode, products, vendo
             }
         }
 
-        console.log('Parsed Section (Strict Who):', section);
+        // 5. Delivery To (PR Opener) - English only, format: firstname.x or similar
+        let deliveryTo = "";
+        // Try strict format first: "Delivery To: natthawut.t"
+        const deliveryMatch = text.match(/Delivery\s*To\s*[:\s]*\s*([a-zA-Z]+(?:\.[a-zA-Z]+)?)/i);
+        if (deliveryMatch) {
+            deliveryTo = deliveryMatch[1].trim().toUpperCase();
+        }
 
-        return { poNum, vendorName, prNum, bgNum, section, firstDueDate, items: newItems };
+        console.log('Parsed Section (Strict Who):', section);
+        console.log('Parsed DeliveryTo:', deliveryTo);
+
+        return { poNum, vendorName, prNum, bgNum, section, firstDueDate, deliveryTo, items: newItems };
     };
 
     const handleOCRExtract = async () => {
@@ -356,8 +369,9 @@ const POFormModal = ({ isOpen, onClose, initialData, isEditMode, products, vendo
                 poNum: result.poNum,
                 prNum: result.prNum,
                 bgNum: result.bgNum,
-                section: result.section, // Added Section
-                dueDate: result.firstDueDate
+                section: result.section,
+                dueDate: result.firstDueDate,
+                deliveryTo: result.deliveryTo
             });
 
             setOcrProgress({ step: 'Complete!', percent: 100 });
@@ -581,6 +595,16 @@ const POFormModal = ({ isOpen, onClose, initialData, isEditMode, products, vendo
                                             value={newPO.RequestedBy}
                                             onChange={(e) => setNewPO({ ...newPO, RequestedBy: e.target.value })}
                                             className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block tracking-wider">คนเปิด PR (Delivery To)</label>
+                                        <input
+                                            name="DeliveryTo"
+                                            value={newPO.DeliveryTo}
+                                            onChange={(e) => setNewPO({ ...newPO, DeliveryTo: e.target.value })}
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-indigo-500"
+                                            placeholder="เช่น natthawut.t"
                                         />
                                     </div>
                                     <div className="sm:col-span-2">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileText, Search, Calendar, Eye, X, Package, Check, CircleArrowDown, ShoppingCart, Clock, Phone } from 'lucide-react';
+import { FileText, Search, Calendar, Eye, X, Package, Check, CircleArrowDown, ShoppingCart, Clock, Phone, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -12,7 +12,7 @@ import EmptyState from '../components/EmptyState';
 import LoadingState from '../components/LoadingState';
 import Pagination from '../components/Pagination';
 
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE, API_URL } from '../config/api';
 
 const ReceivePage = () => {
     console.log("ReceivePage: Rendering...");
@@ -37,6 +37,7 @@ const ReceivePage = () => {
     const [dateTo, setDateTo] = useState(defaultRange.endDate);
     const [selectedPO, setSelectedPO] = useState(null); // For detail view
     const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
+    const [cancelConfirm, setCancelConfirm] = useState({ isOpen: false, invoiceNo: null });
 
     // Pagination State for Invoices
     const [currentPage, setCurrentPage] = useState(1);
@@ -93,6 +94,30 @@ const ReceivePage = () => {
             }
         } catch (err) {
             setResultModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด (Connection Error)', message: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ (Cannot connect to server)' });
+        }
+    };
+
+    // Cancel Invoice Handler
+    const handleCancelInvoice = async (invoiceNo) => {
+        try {
+            const res = await fetch(`${API_BASE}/invoice/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    InvoiceNo: invoiceNo,
+                    UserID: user?.username || 'system'
+                })
+            });
+            if (res.ok) {
+                refreshData();
+                setSelectedInvoice(null);
+                setResultModal({ isOpen: true, type: 'success', title: 'ยกเลิกสำเร็จ', message: `Invoice ${invoiceNo} ถูกยกเลิกเรียบร้อยแล้ว สต็อกและ PO ถูกปรับกลับคืน` });
+            } else {
+                const err = await res.json();
+                setResultModal({ isOpen: true, type: 'error', title: 'ยกเลิกไม่สำเร็จ', message: err.details || 'ไม่สามารถยกเลิก Invoice ได้' });
+            }
+        } catch (err) {
+            setResultModal({ isOpen: true, type: 'error', title: 'เกิดข้อผิดพลาด', message: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้' });
         }
     };
 
@@ -223,7 +248,7 @@ const ReceivePage = () => {
                 className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4"
             >
                 <div>
-                    <h2 className="text-3xl font-black mb-2 text-slate-800">Receive Goods</h2>
+                    <h2 className="text-3xl font-black mb-2 text-slate-800">RECEIVE GOODS</h2>
                     <p className="text-slate-500 font-medium">บันทึกรับอุปกรณ์เข้าสต็อก</p>
                 </div>
 
@@ -307,9 +332,19 @@ const ReceivePage = () => {
                                             BudgetNo.: {po.BudgetNo}
                                         </span>
                                     )}
+                                    {po.DeliveryTo && (
+                                        <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded-lg border border-indigo-100 font-medium">
+                                            👤 {po.DeliveryTo}
+                                        </span>
+                                    )}
                                     <span className="text-[10px] bg-slate-50 text-slate-500 px-2 py-1 rounded-lg border border-slate-100 flex items-center gap-1">
                                         <Calendar size={10} /> {formatThaiDate(po.RequestDate)}
                                     </span>
+                                    {po.DueDate && (
+                                        <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-1 rounded-lg border border-amber-100 flex items-center gap-1 font-medium">
+                                            ⏰ Due Date: {formatThaiDate(po.DueDate)}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2 mt-auto">
@@ -353,7 +388,7 @@ const ReceivePage = () => {
                         <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800 mb-2">
                             <FileText className="text-indigo-600" /> ประวัติการรับของ
                         </h2>
-                        <p className="text-sm text-slate-500 pl-8">รายการ Invoice ที่บันทึกรับของแล้ว</p>
+                        <p className="text-sm text-slate-500 pl-8">รายการ INVOICE ที่บันทึกรับของแล้ว</p>
                     </div>
                 </div>
 
@@ -364,12 +399,14 @@ const ReceivePage = () => {
                         <thead className="bg-gradient-to-r from-slate-50 to-slate-100 text-xs text-slate-500 uppercase border-b border-slate-200">
                             <tr>
                                 {/* 3. เพิ่ม whitespace-nowrap ในคอลัมน์ที่ต้องการให้กว้างตามเนื้อหา */}
-                                <th className="p-4 pl-6 font-bold whitespace-nowrap">เลขที่ Invoice</th>
-                                <th className="p-4 font-bold whitespace-nowrap">อ้างอิง PO</th>
-                                <th className="p-4 font-bold whitespace-nowrap">ผู้ขาย (Vendor)</th>
-                                <th className="p-4 font-bold whitespace-nowrap">Budget No.</th>
+                                <th className="p-4 pl-6 font-bold whitespace-nowrap">เลข INVOICE</th>
+                                <th className="p-4 font-bold whitespace-nowrap">PO REF.</th>
+                                <th className="p-4 font-bold whitespace-nowrap">VENDOR</th>
+                                <th className="p-4 font-bold whitespace-nowrap">BUDGET NO.</th>
                                 <th className="p-4 font-bold whitespace-nowrap">วัน-เวลา</th>
-                                <th className="p-4 font-bold text-center whitespace-nowrap">ผู้ทำรายการ</th>
+                                <th className="p-4 font-bold text-center whitespace-nowrap">สถานะ</th>
+                                <th className="p-4 font-bold text-center whitespace-nowrap">User</th>
+                                <th className="p-4 font-bold text-center whitespace-nowrap">ดำเนินการ</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -399,16 +436,39 @@ const ReceivePage = () => {
                                         </div>
                                     </td>
                                     <td className="p-4 text-center whitespace-nowrap">
+                                        {inv.Status === 'Cancelled' ? (
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-red-100 text-red-600 text-xs font-bold border border-red-200">
+                                                ยกเลิกแล้ว
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold border border-emerald-200">
+                                                <Check size={12} className="mr-1" /> ปกติ
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-center whitespace-nowrap">
                                         <div className="flex items-center justify-center gap-2">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
                                                 {inv.ReceivedBy || '?'}
                                             </span>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-center whitespace-nowrap">
+                                        <div className="flex items-center justify-center gap-2">
                                             <button
                                                 onClick={() => setSelectedInvoice(inv)}
                                                 className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200"
                                             >
                                                 <Eye size={14} /> ดูรายละเอียด
                                             </button>
+                                            {user?.role === 'Staff' && inv.Status !== 'Cancelled' && (
+                                                <button
+                                                    onClick={() => setCancelConfirm({ isOpen: true, invoiceNo: inv.InvoiceNo })}
+                                                    className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200"
+                                                >
+                                                    <RotateCcw size={14} /> ยกเลิก
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -452,7 +512,7 @@ const ReceivePage = () => {
                                         <div>
                                             <div className="flex items-center gap-2 mb-1 opacity-80">
                                                 <Package size={16} />
-                                                <span className="text-lm font-bold uppercase tracking-wider">ใบสั่งซื้อ (Purchase Order)</span>
+                                                <span className="text-lm font-bold uppercase tracking-wider">ใบสั่งซื้อ</span>
                                             </div>
                                             <h3 className="font-black text-2xl tracking-tight">{selectedPO.PO_ID}</h3>
                                             <p className="text-slate-300 font-medium mt-1">{selectedPO.VendorName || 'ไม่ระบุผู้ขาย (Unknown Vendor)'}</p>
@@ -474,25 +534,37 @@ const ReceivePage = () => {
                                     {/* Info */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                                            <p className="text-xs text-slate-400 font-bold mb-1 uppercase tracking-wider">Status</p>
+                                            <p className="text-xs text-slate-700 font-bold mb-1 uppercase tracking-wider">สถานะ</p>
                                             <span className={`inline-block text-sm font-bold px-3 py-1 rounded-full border ${getStatusColor(selectedPO.Status)}`}>
                                                 {selectedPO.Status === 'Open' ? 'Pending' : selectedPO.Status === 'Partial' ? 'Partial' : selectedPO.Status === 'Completed' ? 'Completed' : selectedPO.Status}
                                             </span>
                                         </div>
                                         <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                                            <p className="text-xs text-slate-400 font-bold mb-1 uppercase tracking-wider">Request Date</p>
+                                            <p className="text-xs text-slate-700 font-bold mb-1 uppercase tracking-wider">REQUEST DATE</p>
                                             <p className="text-sm text-slate-800">{formatThaiDate(selectedPO.RequestDate)}</p>
                                         </div>
+                                        {selectedPO.DueDate && (
+                                            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                                                <p className="text-xs text-slate-700 font-bold mb-1 uppercase tracking-wider">DUE DATE</p>
+                                                <p className="text-sm text-slate-800">{formatThaiDate(selectedPO.DueDate)}</p>
+                                            </div>
+                                        )}
                                         {selectedPO.BudgetNo && (
                                             <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                                                <p className="text-xs text-slate-400 font-bold mb-1 uppercase tracking-wider">Budget No.</p>
+                                                <p className="text-xs text-slate-700 font-bold mb-1 uppercase tracking-wider">BUDGET NO.</p>
                                                 <p className="text-sm text-slate-800 font-mono">{selectedPO.BudgetNo}</p>
                                             </div>
                                         )}
                                         {selectedPO.PR_No && (
                                             <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                                                <p className="text-xs text-slate-400 font-bold mb-1 uppercase tracking-wider">PR No.</p>
+                                                <p className="text-xs text-slate-700 font-bold mb-1 uppercase tracking-wider">PR NO.</p>
                                                 <p className="text-sm text-slate-800 font-mono">{selectedPO.PR_No}</p>
+                                            </div>
+                                        )}
+                                        {selectedPO.DeliveryTo && (
+                                            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                                                <p className="text-xs text-slate-700 font-bold mb-1 uppercase tracking-wider">ผู้เปิด PR</p>
+                                                <p className="text-sm text-slate-800">{selectedPO.DeliveryTo}</p>
                                             </div>
                                         )}
                                     </div>
@@ -536,8 +608,7 @@ const ReceivePage = () => {
                                                                         </span>
                                                                     ) : (
                                                                         <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full text-xs font-bold border border-amber-100 mx-auto">
-                                                                            <Clock size={12} /> รอรับ
-                                                                        </span>
+                                                                            <Clock size={12} /> รอของ                                                                       </span>
                                                                     )}
                                                                 </td>
                                                                 <td className="p-2 text-right font-mono text-slate-600">฿{(item.UnitCost || 0).toLocaleString()}</td>
@@ -629,14 +700,14 @@ const ReceivePage = () => {
                                 <div className="p-6 bg-slate-50/50">
                                     <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
                                         <Package className="text-violet-500" size={18} />
-                                        รายการที่รับเข้า (Received Items)
+                                        รายการที่รับเข้า
                                     </h4>
 
                                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                                         <table className="w-full text-sm">
                                             <thead className="bg-slate-50 border-b border-slate-100">
                                                 <tr>
-                                                    <th className="text-left p-3 font-bold text-slate-500">สินค้า (Item)</th>
+                                                    <th className="text-left p-3 font-bold text-slate-500">รายการ</th>
                                                     <th className="text-center p-3 font-bold text-slate-500 w-24">จำนวน</th>
                                                     <th className="text-right p-3 font-bold text-slate-500 w-32">มูลค่ารวม</th>
                                                 </tr>
@@ -667,7 +738,7 @@ const ReceivePage = () => {
                                                 {(transactions || []).filter(t => t.RefInfo && t.RefInfo.includes(`Invoice: ${selectedInvoice.InvoiceNo}`)).length === 0 && (
                                                     <tr>
                                                         <td colSpan="3" className="p-8 text-center text-slate-400">
-                                                            ไม่พบรายการสินค้า (No items found for this invoice)
+                                                            ไม่พบรายการสินค้า
                                                         </td>
                                                     </tr>
                                                 )}
@@ -687,13 +758,29 @@ const ReceivePage = () => {
                                 </div>
 
                                 {/* Footer Actions */}
-                                <div className="p-4 bg-white border-t border-slate-100">
+                                <div className="p-4 bg-white border-t border-slate-100 flex gap-3">
                                     <button
                                         onClick={() => setSelectedInvoice(null)}
-                                        className="w-full bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all"
+                                        className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all"
                                     >
                                         ปิดหน้าต่าง
                                     </button>
+                                    {user?.role === 'Staff' && selectedInvoice.Status !== 'Cancelled' && (
+                                        <button
+                                            onClick={() => {
+                                                setSelectedInvoice(null);
+                                                setCancelConfirm({ isOpen: true, invoiceNo: selectedInvoice.InvoiceNo });
+                                            }}
+                                            className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-3 rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-200 flex items-center justify-center gap-2"
+                                        >
+                                            <RotateCcw size={18} /> ยกเลิก Invoice
+                                        </button>
+                                    )}
+                                    {selectedInvoice.Status === 'Cancelled' && (
+                                        <div className="flex-1 bg-red-50 text-red-600 font-bold py-3 rounded-xl text-center border border-red-200">
+                                            Invoice นี้ถูกยกเลิกแล้ว
+                                        </div>
+                                    )}
                                 </div>
                             </motion.div>
                         </motion.div>
@@ -723,7 +810,7 @@ const ReceivePage = () => {
                                         <div>
                                             <div className="flex items-center gap-2 mb-1 opacity-90">
                                                 <Package size={16} />
-                                                <span className="text-sm font-bold uppercase tracking-wider">บันทึกรับของ (Receive Goods)</span>
+                                                <span className="text-sm font-bold uppercase tracking-wider">บันทึกรับของ</span>
                                             </div>
                                             <h3 className="font-black text-2xl tracking-tight">{activePo.PO_ID}</h3>
                                             <p className="text-indigo-100 text-sm font-medium mt-1">{activePo.VendorName}</p>
@@ -739,6 +826,7 @@ const ReceivePage = () => {
                                     const fd = new FormData(e.target);
                                     const items = activePo.Items.map((item, idx) => ({
                                         DetailID: item.DetailID,
+                                        ProductID: item.ProductID,
                                         Qty: parseInt(fd.get(`qty-${idx}`)) || 0
                                     })).filter(i => i.Qty > 0);
                                     handleReceive(activePo.PO_ID, fd.get('InvoiceNo'), items);
@@ -746,7 +834,7 @@ const ReceivePage = () => {
                                     <div className="p-6 bg-slate-50/50 space-y-6 max-h-[60vh] overflow-y-auto">
                                         <div className="bg-white p-6 rounded-2xl border border-indigo-100 shadow-sm">
                                             <label className="text-xs font-bold text-indigo-500 uppercase mb-2 block tracking-wider flex items-center gap-1">
-                                                <FileText size={14} /> เลขที่ Invoice
+                                                <FileText size={14} /> เลข Invoice
                                             </label>
                                             <input
                                                 name="InvoiceNo"
@@ -867,6 +955,21 @@ const ReceivePage = () => {
                 title={resultModal.title}
                 message={resultModal.message}
                 confirmText="ตกลง"
+            />
+
+            {/* Cancel Invoice Confirmation */}
+            <AlertModal
+                isOpen={cancelConfirm.isOpen}
+                type="danger"
+                title="ยืนยันการยกเลิก Invoice"
+                message={`ต้องการยกเลิก Invoice "${cancelConfirm.invoiceNo}" หรือไม่? ระบบจะหักสต็อกที่รับเข้าออก และปรับสถานะ PO กลับคืน`}
+                confirmText="ยืนยันยกเลิก"
+                cancelText="ไม่ยกเลิก"
+                onConfirm={() => {
+                    handleCancelInvoice(cancelConfirm.invoiceNo);
+                    setCancelConfirm({ isOpen: false, invoiceNo: null });
+                }}
+                onCancel={() => setCancelConfirm({ isOpen: false, invoiceNo: null })}
             />
 
 

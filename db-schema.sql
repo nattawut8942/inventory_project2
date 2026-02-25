@@ -1,18 +1,42 @@
 -- =====================================================
 -- IT Stock Pro - Database Schema
--- Last Updated: 2026-01-30
+-- Last Updated: 2026-02-20
 -- =====================================================
 
+-- =====================================================
 -- 1. Device Types Table (Lookup Table)
+-- =====================================================
 CREATE TABLE dbo.Stock_DeviceTypes (
     TypeId VARCHAR(50) PRIMARY KEY,           -- Monitor, Asset, Stock, Network
     Label NVARCHAR(100)                       -- Display label
 );
 
+-- =====================================================
+-- 1.1 Locations Table (Master Table)
+-- =====================================================
+CREATE TABLE dbo.Stock_Locations (
+    LocationID INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(255) NOT NULL UNIQUE        -- e.g. Server Room, Stock Room A
+);
 
+-- Default seed data for Locations
+INSERT INTO dbo.Stock_Locations (Name) VALUES
+('Server Room'), ('Stock Room A'), ('Stock Room B'),
+('Cabinet 1'), ('Cabinet 2'), ('Front Desk');
 
 -- =====================================================
--- 2. Products / Inventory Master Table
+-- 2. Vendor Master (Suppliers)
+-- =====================================================
+CREATE TABLE dbo.Stock_Vendors (
+    VendorID INT IDENTITY(1,1) PRIMARY KEY,
+    VendorName NVARCHAR(255) NOT NULL UNIQUE,
+    ContactInfo NVARCHAR(MAX),               -- Phone, email, notes
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- =====================================================
+-- 3. Products / Inventory Master Table
 -- =====================================================
 CREATE TABLE dbo.Stock_Products (
     ProductID INT IDENTITY(1,1) PRIMARY KEY,
@@ -23,15 +47,13 @@ CREATE TABLE dbo.Stock_Products (
     CurrentStock INT DEFAULT 0,               -- Current available quantity
     LastPrice DECIMAL(18, 2) DEFAULT 0.00,    -- Last purchase price per unit
     UnitOfMeasure NVARCHAR(50) DEFAULT 'Pcs', -- Unit (Pcs, Box, Set, etc.)
-    IsActive BIT DEFAULT 1,                   -- Soft delete flag
-    ImageURL NVARCHAR(MAX)                    -- Product image path (/uploads/...)
+    IsActive BIT DEFAULT 1,                   -- Soft delete flag (0 = hidden)
+    ImageURL NVARCHAR(MAX),                   -- Product image path (/uploads/...)
+    Location NVARCHAR(255)                    -- Storage location
 );
 
--- Add MaxStock column if table already exists
--- ALTER TABLE dbo.Stock_Products ADD MaxStock INT DEFAULT 0;
-
 -- =====================================================
--- 3. Purchase Orders Table (PO Header)
+-- 4. Purchase Orders Table (PO Header)
 -- =====================================================
 CREATE TABLE dbo.Stock_PurchaseOrders (
     PO_ID NVARCHAR(50) PRIMARY KEY,           -- PO-YYYYMM-XXX
@@ -44,11 +66,12 @@ CREATE TABLE dbo.Stock_PurchaseOrders (
     Tel NVARCHAR(50),                         -- Contact phone
     Remark NVARCHAR(MAX),                     -- General notes
     Status NVARCHAR(50) DEFAULT 'Open',       -- Open, Partial, Completed, Cancelled
-    BudgetNo NVARCHAR(100)                    -- Budget Number (Optional)
+    BudgetNo NVARCHAR(100),                   -- Budget Number (Optional)
+    DeliveryTo NVARCHAR(100)                  -- PR Opener name (e.g. natthawut.t)
 );
 
 -- =====================================================
--- 4. PO Details Table (PO Line Items)
+-- 5. PO Details Table (PO Line Items)
 -- =====================================================
 CREATE TABLE dbo.Stock_PODetails (
     DetailID INT IDENTITY(1,1) PRIMARY KEY,
@@ -56,16 +79,16 @@ CREATE TABLE dbo.Stock_PODetails (
     ItemName NVARCHAR(255),                   -- Item description (for manual entry)
     ProductID INT FOREIGN KEY REFERENCES dbo.Stock_Products(ProductID), -- NULL for manual items
     QtyOrdered INT NOT NULL,                  -- Quantity ordered
-    QtyReceived INT DEFAULT 0,                -- Quantity already received
+    QtyReceived INT DEFAULT 0,               -- Quantity already received
     UnitCost DECIMAL(18, 2),                  -- Price per unit
-    BG_No NVARCHAR(100),                      -- Budget number
+    BG_No NVARCHAR(100),                      -- Budget number per line
     ProgressBit CHAR(1),                      -- Y/N progress flag
     AssetPlace NVARCHAR(255),                 -- Asset location
     ItemRemark NVARCHAR(MAX)                  -- Item-specific notes
 );
 
 -- =====================================================
--- 5. Invoices Table (Receiving Records)
+-- 6. Invoices Table (Receiving Records)
 -- =====================================================
 CREATE TABLE dbo.Stock_Invoices (
     InvoiceID INT IDENTITY(1,1) PRIMARY KEY,
@@ -75,10 +98,8 @@ CREATE TABLE dbo.Stock_Invoices (
     ReceivedBy NVARCHAR(100)                  -- AD Username who received
 );
 
-
-
 -- =====================================================
--- 6. Stock Transactions Table (Movement Log)
+-- 7. Stock Transactions Table (Movement Log)
 -- =====================================================
 CREATE TABLE dbo.Stock_Transactions (
     TransID INT IDENTITY(1,1) PRIMARY KEY,
@@ -88,6 +109,25 @@ CREATE TABLE dbo.Stock_Transactions (
     RefInfo NVARCHAR(255),                    -- Reference (Invoice No / Reason)
     UserID NVARCHAR(100),                     -- AD Username
     TransDate DATETIME DEFAULT GETDATE()      -- Transaction datetime
+);
+
+-- =====================================================
+-- 8. User Roles (Admin/Staff Permissions)
+-- =====================================================
+CREATE TABLE dbo.Stock_UserRole (
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    Username NVARCHAR(50) NOT NULL UNIQUE,
+    CreatedBy NVARCHAR(100),
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- =====================================================
+-- 9. Withdrawal Reasons (for stock OUT transactions)
+-- =====================================================
+CREATE TABLE dbo.Stock_WithdrawalReasons (
+    ReasonID INT IDENTITY(1,1) PRIMARY KEY,
+    Label NVARCHAR(255) NOT NULL,             -- Reason description (e.g. "ซ่อมเครื่อง")
+    TypeId VARCHAR(50)                        -- Optional: linked DeviceType filter
 );
 
 -- =====================================================
@@ -101,42 +141,18 @@ CREATE INDEX IX_Transactions_TransDate ON dbo.Stock_Transactions(TransDate);
 CREATE INDEX IX_Invoices_PO_ID ON dbo.Stock_Invoices(PO_ID);
 
 -- =====================================================
--- 7. User Roles (Admin/Staff Permissions)
--- =====================================================
-CREATE TABLE dbo.Stock_UserRole (
-    ID INT IDENTITY(1,1) PRIMARY KEY,
-    Username NVARCHAR(50) NOT NULL UNIQUE,
-    CreatedBy NVARCHAR(100),
-    CreatedAt DATETIME DEFAULT GETDATE()
-);
-
--- =====================================================
--- 8. Vendor Master (Suppliers)
--- =====================================================
-CREATE TABLE dbo.Stock_Vendors (
-    VendorID INT IDENTITY(1,1) PRIMARY KEY,
-    VendorName NVARCHAR(200) NOT NULL UNIQUE,
-    ContactInfo NVARCHAR(500),
-    IsActive BIT DEFAULT 1,
-    CreatedAt DATETIME DEFAULT GETDATE()
-);
-
-
-
-
-
--- =====================================================
 -- SUMMARY OF TABLES
 -- =====================================================
 -- Table Name               | Description
--- -------------------------|-----------------------------------------
+-- -------------------------|------------------------------------------
 -- Stock_DeviceTypes        | Lookup: Product categories
+-- Stock_Locations          | Master: Storage locations
+-- Stock_Vendors            | Master: Vendor/Supplier list
 -- Stock_Products           | Master: Product/inventory items
 -- Stock_PurchaseOrders     | Header: Purchase order records
 -- Stock_PODetails          | Detail: PO line items
 -- Stock_Invoices           | Receiving: Invoice/delivery records
 -- Stock_Transactions       | Log: All stock movements (IN/OUT)
 -- Stock_UserRole           | Access: List of Admin/Staff users
--- Stock_Vendors            | Master: Vendor/Supplier list
-
+-- Stock_WithdrawalReasons  | Lookup: Reasons for stock withdrawal (OUT)
 -- =====================================================

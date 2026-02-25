@@ -6,7 +6,7 @@ export const getPOs = async (req, res) => {
         const pool = getPool();
         const { status } = req.query;
 
-        let query = `SELECT PO_ID, PR_No, VendorName, RequestDate, DueDate, RequestedBy, Section, Status, Remark, BudgetNo FROM dbo.Stock_PurchaseOrders`;
+        let query = `SELECT PO_ID, PR_No, VendorName, RequestDate, DueDate, RequestedBy, Section, Status, Remark, BudgetNo, DeliveryTo FROM dbo.Stock_PurchaseOrders`;
 
         const request = pool.request();
         if (status) {
@@ -38,7 +38,7 @@ export const getPOs = async (req, res) => {
 
 // CREATE PO
 export const createPO = async (req, res) => {
-    const { PO_ID, VendorName, DueDate, RequestedBy, Section, Remark, Items, BudgetNo, PR_No } = req.body;
+    const { PO_ID, VendorName, DueDate, RequestedBy, Section, Remark, Items, BudgetNo, PR_No, DeliveryTo } = req.body;
     console.log('====== CREATE PO REQUEST ======');
     console.log('Timestamp:', new Date().toISOString());
     console.log('BudgetNo received:', BudgetNo, '| Type:', typeof BudgetNo);
@@ -63,9 +63,10 @@ export const createPO = async (req, res) => {
                 .input('Section', sql.NVarChar, Section)
                 .input('Remark', sql.NVarChar, Remark)
                 .input('BudgetNo', sql.NVarChar, BudgetNo || null)
+                .input('DeliveryTo', sql.NVarChar, DeliveryTo || null)
                 .query(`
-                    INSERT INTO dbo.Stock_PurchaseOrders (PO_ID, PR_No, VendorName, DueDate, RequestedBy, Section, Remark, Status, BudgetNo)
-                    VALUES (@PO_ID, @PR_No, @VendorName, @DueDate, @RequestedBy, @Section, @Remark, 'Open', @BudgetNo)
+                    INSERT INTO dbo.Stock_PurchaseOrders (PO_ID, PR_No, VendorName, DueDate, RequestedBy, Section, Remark, Status, BudgetNo, DeliveryTo)
+                    VALUES (@PO_ID, @PR_No, @VendorName, @DueDate, @RequestedBy, @Section, @Remark, 'Open', @BudgetNo, @DeliveryTo)
                 `);
 
             console.log('INSERT completed successfully');
@@ -104,7 +105,7 @@ export const createPO = async (req, res) => {
 // UPDATE PO
 export const updatePO = async (req, res) => {
     const { id } = req.params;
-    const { VendorName, DueDate, RequestedBy, Section, Remark, Items, BudgetNo, PR_No } = req.body;
+    const { VendorName, DueDate, RequestedBy, Section, Remark, Items, BudgetNo, PR_No, DeliveryTo } = req.body;
 
     try {
         const pool = getPool();
@@ -138,6 +139,7 @@ export const updatePO = async (req, res) => {
                 .input('Remark', sql.NVarChar, Remark)
                 .input('BudgetNo', sql.NVarChar, BudgetNo || null)
                 .input('PR_No', sql.NVarChar, PR_No || null)
+                .input('DeliveryTo', sql.NVarChar, DeliveryTo || null)
                 .query(`
                     UPDATE dbo.Stock_PurchaseOrders
                     SET VendorName = @VendorName, 
@@ -146,7 +148,8 @@ export const updatePO = async (req, res) => {
                         Section = @Section, 
                         Remark = @Remark,
                         BudgetNo = @BudgetNo,
-                        PR_No = @PR_No
+                        PR_No = @PR_No,
+                        DeliveryTo = @DeliveryTo
                     WHERE PO_ID = @PO_ID
                 `);
 

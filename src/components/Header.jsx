@@ -13,7 +13,8 @@ import {
     FileSpreadsheet,
     Shield,
     Plus,
-    User
+    User,
+    FileKey
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { formatThaiDate } from '../utils/formatDate';
@@ -42,6 +43,7 @@ const Header = ({ onMenuClick }) => {
             case '/reports': return { title: 'Reports & Analytics', icon: FileSpreadsheet, color: 'text-teal-600' };
             case '/management': return { title: 'System Management', icon: Shield, color: 'text-indigo-600' };
             case '/manual-import': return { title: 'Manual Stock Import', icon: Plus, color: 'text-cyan-600' };
+            case '/ma-license': return { title: 'MA / License Management', icon: FileKey, color: 'text-amber-600' };
             default: return { title: 'IT Stock Management', icon: Package, color: 'text-slate-600' };
         }
     };

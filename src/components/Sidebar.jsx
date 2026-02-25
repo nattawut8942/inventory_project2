@@ -13,6 +13,7 @@ import {
     FileSpreadsheet,
     Shield
 } from 'lucide-react';
+import { FileKey } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const SidebarItem = ({ icon: Icon, label, to }) => (
@@ -107,7 +108,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <nav className="relative z-10 flex-1 space-y-1.5 overflow-y-auto scrollbar-none pr-2">
                     <NavItem icon={LayoutDashboard} label="Dashboard" to="/" />
                     <NavItem icon={Database} label="Inventory" to="/inventory" />
-
+                     <NavItem icon={FileKey} label="MA / License" to="/ma-license" />
                     {/* PO and Receive - viewable by all */}
                     <NavItem icon={ShoppingCart} label="Purchase Orders" to="/purchase-orders" />
                     <NavItem icon={ArrowDownToLine} label="Receive Items" to="/receive" />
@@ -125,9 +126,10 @@ const Sidebar = ({ isOpen, onClose }) => {
                     <div className="pt-6 pb-2 text-[10px] font-bold uppercase text-slate-500 tracking-wider pl-3">
                         ทั่วไป (General)
                     </div>
-                    <NavItem icon={ArrowUpFromLine} label="Withdraw Items" to="/withdraw" />
+                    {/* <NavItem icon={ArrowUpFromLine} label="Withdraw Items" to="/withdraw" /> */}
                     <NavItem icon={History} label="History Log" to="/history" />
                     <NavItem icon={FileSpreadsheet} label="Reports" to="/reports" />
+                   
                 </nav>
 
                 <div className="relative z-10 pt-6 border-t border-white/5 mt-2">
