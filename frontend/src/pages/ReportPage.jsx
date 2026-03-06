@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { FileSpreadsheet, Calendar, Download, CheckSquare, Square, Package, TrendingUp, TrendingDown, BarChart3, PieChart, FileText, Receipt, DollarSign, Clock, User, AlertCircle } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { FileSpreadsheet, Calendar, Download, CheckSquare, Square, Package, TrendingUp, TrendingDown, BarChart3, PieChart, FileText, Receipt, DollarSign, Clock, User, AlertCircle, Shield } from 'lucide-react';
 import { BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, LabelList } from 'recharts';
 import { motion } from 'motion/react';
 import { useData } from '../context/DataContext';
@@ -37,13 +37,38 @@ const ReportPage = () => {
     const [endDate, setEndDate] = useState('');
     const [isExporting, setIsExporting] = useState(false);
     const [alertModal, setAlertModal] = useState({ isOpen: false, type: 'info', title: '', message: '' });
+    const [maItems, setMaItems] = useState([]);
+
+    useEffect(() => {
+        fetch(`${API_BASE}/ma`)
+            .then(res => res.json())
+            .then(data => setMaItems(data))
+            .catch(err => console.error("Failed to load MA data in reports", err));
+    }, []);
 
     // Calculate stats from real data
     const totalProducts = products.length;
     const totalValue = products.reduce((sum, p) => sum + (p.CurrentStock * (p.LastPrice || 0)), 0);
-    const lowStockCount = products.filter(p => p.CurrentStock <= p.MinStock).length;
+    const lowStockCount = products.filter(p => p.CurrentStock <= p.MinStock && p.MinStock > 0).length;
     const pendingPOCount = (purchaseOrders || []).filter(po => po.Status !== 'Completed').length;
     const transactionCount = (transactions || []).length;
+
+    // MA Stats
+    const activeMACount = maItems.filter(i => i.Status === 'Active').length;
+    const maAlerts = useMemo(() => {
+        return maItems
+            .filter(ma => {
+                if (ma.Status === 'Cancelled' || !ma.EndDate) return false;
+                const daysRemaining = Math.ceil((new Date(ma.EndDate) - new Date()) / (1000 * 60 * 60 * 24));
+                return daysRemaining <= 90;
+            })
+            .map(ma => {
+                const daysRemaining = Math.ceil((new Date(ma.EndDate) - new Date()) / (1000 * 60 * 60 * 24));
+                return { ...ma, daysRemaining };
+            })
+            .sort((a, b) => a.daysRemaining - b.daysRemaining);
+    }, [maItems]);
+    const expiringMACount = maAlerts.length;
 
     // Category distribution for pie chart
     const categoryData = deviceTypes.map((t, idx) => ({
@@ -224,7 +249,8 @@ const ReportPage = () => {
         { id: 'slowmoving', label: '🐢 อุปกรณ์ค้างสต็อค', description: 'ไม่มีการเบิกใน 3 เดือนล่าสุด (Dead Stock)', icon: Clock, color: 'from-yellow-500 to-yellow-600' },
         { id: 'topwithdrawn', label: '🔥 อุปกรณ์เบิกมากสุด', description: 'อันดับอุปกรณ์ที่ถูกเบิกมากที่สุด', icon: TrendingUp, color: 'from-rose-500 to-rose-600' },
         { id: 'topconsumers', label: '👤 ผู้เบิกมากสุด', description: 'อันดับผู้ใช้ที่เบิกมากที่สุด', icon: User, color: 'from-cyan-500 to-cyan-600' },
-        { id: 'bycategory', label: '📂 เบิกตามประเภท', description: 'สรุปยอดเบิกแยกตามประเภทอุปกรณ์', icon: PieChart, color: 'from-emerald-500 to-emerald-600' }
+        { id: 'bycategory', label: '📂 เบิกตามประเภท', description: 'สรุปยอดเบิกแยกตามประเภทอุปกรณ์', icon: PieChart, color: 'from-emerald-500 to-emerald-600' },
+        { id: 'ma', label: '🛡️ สัญญาบริการ (MA & License)', description: 'ส่งออกข้อมูลสัญญา ค่าใช้จ่ายรายสัปดาห์/รายปี', icon: Shield, color: 'from-blue-600 to-indigo-600' }
     ];
 
     const toggleType = (typeId) => {
@@ -276,7 +302,7 @@ const ReportPage = () => {
     return (
         <div className="space-y-6">
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon={Package}
                     title="อุปกรณ์ทั้งหมด"
@@ -319,6 +345,13 @@ const ReportPage = () => {
                     subtitle="ประเภทอุปกรณ์"
                     color="from-pink-500 to-pink-600"
                 />
+                <StatCard
+                    icon={Shield}
+                    title="สัญญาบริการ (MA)"
+                    value={activeMACount}
+                    subtitle={expiringMACount > 0 ? `ใกล้หมดอายุ ${expiringMACount} รายการ` : `ข้อมูลลิขสิทธิ์ทั้งหมด`}
+                    color={expiringMACount > 0 ? "from-rose-500 to-rose-600" : "from-blue-500 to-indigo-600"}
+                />
             </div>
 
             {/* Charts Grid */}
@@ -330,7 +363,7 @@ const ReportPage = () => {
                     className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
                 >
                     <h3 className="text-lg font-semibold text-slate-900 mb-4">การเคลื่อนไหวสต็อค (จำนวนชิ้น)</h3>
-                    <ResponsiveContainer width="100%" height={250}>
+                    <ResponsiveContainer width="100%" height={250} minWidth={1} minHeight={1}>
                         <BarChart data={stockMovementData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                             <XAxis dataKey="month" stroke="#64748b" />
@@ -359,7 +392,7 @@ const ReportPage = () => {
                         <DollarSign className="w-5 h-5 text-emerald-500" />
                         <h3 className="text-lg font-semibold text-slate-900">วิเคราะห์ค่าใช้จ่าย (บาท)</h3>
                     </div>
-                    <ResponsiveContainer width="100%" height={250}>
+                    <ResponsiveContainer width="100%" height={250} minWidth={1} minHeight={1}>
                         <LineChart data={costAnalysisData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                             <XAxis dataKey="month" stroke="#64748b" />
@@ -500,7 +533,7 @@ const ReportPage = () => {
                 className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
             >
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">การกระจายตามหมวดหมู่</h3>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={250} minWidth={1} minHeight={1}>
                     <RechartsPie>
                         <Pie
                             data={categoryData}
@@ -595,7 +628,7 @@ const ReportPage = () => {
 
                     {withdrawalsByCategory.length > 0 ? (
                         <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                 <BarChart
                                     layout="vertical"
                                     data={withdrawalsByCategory.slice(0, 10).map((item) => ({
@@ -642,6 +675,72 @@ const ReportPage = () => {
                     )}
                 </motion.div>
             </div>
+
+            {/* NEW: MA Expiry Alerts Full Width */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200 mt-6"
+            >
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-800">สัญญาบริการ (MA & License) ที่ต้องดำเนินการ</h3>
+                        <p className="text-xs text-slate-500">หมดอายุแล้ว หรือ ใกล้หมดอายุภายใน 90 วัน</p>
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b border-slate-200">
+                                <th className="text-left py-2 px-3 text-slate-500 font-medium">ระบบ/อุปกรณ์</th>
+                                <th className="text-left py-2 px-3 text-slate-500 font-medium">หมวดหมู่</th>
+                                <th className="text-left py-2 px-3 text-slate-500 font-medium">วันที่หมดอายุ</th>
+                                <th className="text-right py-2 px-3 text-slate-500 font-medium">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {maAlerts.length > 0 ? maAlerts.map((ma, idx) => {
+                                const isExpired = ma.daysRemaining <= 0;
+                                return (
+                                    <motion.tr
+                                        key={ma.ItemID}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        className="border-b border-slate-100 hover:bg-slate-50"
+                                    >
+                                        <td className="py-3 px-3">
+                                            <p className="font-medium text-slate-800">{ma.ItemName}</p>
+                                        </td>
+                                        <td className="py-3 px-3">
+                                            <span className="text-xs text-slate-500">{ma.Category}</span>
+                                        </td>
+                                        <td className="py-3 px-3">
+                                            <span className="text-sm font-mono text-slate-700">{formatThaiDateShort(ma.EndDate)}</span>
+                                        </td>
+                                        <td className="py-3 px-3 text-right">
+                                            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg text-white ${isExpired ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-orange-400 to-amber-500'}`}>
+                                                {isExpired ? 'หมดอายุแล้ว' : `อีก ${ma.daysRemaining} วัน`}
+                                            </span>
+                                        </td>
+                                    </motion.tr>
+                                )
+                            }) : (
+                                <tr>
+                                    <td colSpan="4" className="py-8 text-center text-slate-400">
+                                        <Shield className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                                        ไม่มีสัญญาหมดอายุหรือใกล้หมดอายุ 👍
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </motion.div>
 
             {/* Export Section */}
             <motion.div

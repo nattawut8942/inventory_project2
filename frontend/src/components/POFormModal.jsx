@@ -185,10 +185,37 @@ const POFormModal = ({ isOpen, onClose, initialData, isEditMode, products, vendo
 
         // 2. Vendor Name
         let vendorName = "";
-        const supplierLineIndex = lines.findIndex(l => l.toUpperCase().includes('SUPPLIER'));
-        if (supplierLineIndex !== -1 && lines[supplierLineIndex + 1]) {
-            let vendorLine = lines[supplierLineIndex + 1];
-            vendorName = vendorLine.split(/Issue Date|Print Date|PO:/i)[0].trim();
+
+        // ค้นหาตำแหน่งบรรทัดที่มีคำว่า SUPPLIER หรือ VENDOR ก่อน
+        const supplierLineIndex = lines.findIndex(l => l.toUpperCase().includes('SUPPLIER') || l.toUpperCase().includes('VENDOR'));
+
+        if (supplierLineIndex !== -1) {
+            // สำรวจจากบรรทัดถัดจาก SUPPLIER ลงมา (ดูสัก 5 บรรทัด)
+            for (let i = 1; i <= 5; i++) {
+                let currentLine = lines[supplierLineIndex + i];
+                if (!currentLine) break;
+
+                // ถ้าเจอบรรทัดที่มีคำว่า CO.,LTD หรือคล้ายๆ กัน ให้หยิบมาแล้วหยุดเลย
+                const matchSuffix = currentLine.match(/(.*?)(CO\.,\s*LTD\.?|COMPANY LIMITED|LTD\.?|CORPORATION)/i);
+                if (matchSuffix) {
+                    // matchSuffix[1] คือข้อความข้างหน้า (เช่น SAMAPHAN TECHNOLOGIES )
+                    // matchSuffix[2] คือคำลงท้าย (เช่น CO.,LTD.)
+                    vendorName = (matchSuffix[1] + matchSuffix[2]).trim();
+                    break;
+                }
+            }
+
+            // Fallback กรณีใน 5 บรรทัดนั้นไม่มีคำว่า CO.,LTD เลย ให้ดึงจากบรรทัดที่ 2 รองจากบรรทัด SUPPLIER มาใช้งาน
+            if (!vendorName) {
+                let line2 = lines[supplierLineIndex + 2] || "";
+                let line1 = lines[supplierLineIndex + 1] || "";
+
+                if (line2 && !line2.toUpperCase().includes('ISSUE')) {
+                    vendorName = line2.split(/Issue Date|Print Date|PO:/i)[0].trim();
+                } else if (line1) {
+                    vendorName = line1.split(/Issue Date|Print Date|PO:/i)[0].trim();
+                }
+            }
         }
 
         // 3. PR and BG

@@ -441,48 +441,56 @@ const ManagementPage = () => {
                             <div className="text-center py-10 text-slate-400">Loading...</div>
                         ) : (
                             <>
-                                {adminUsers.filter(u => u.Username.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
-                                    <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                                        {adminUsers.filter(u => u.Username.toLowerCase().includes(searchTerm.toLowerCase())).map(admin => (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                whileHover={{ y: -2 }}
-                                                key={admin.ID}
-                                                className="relative overflow-hidden flex justify-between items-center p-4 rounded-xl border border-slate-100 hover:bg-white hover:border-indigo-100 hover:shadow-lg transition-all group bg-white"
-                                            >
-                                                {/* Decorative Gradient */}
-                                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 opacity-[0.03] rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-
-                                                <div className="flex items-center gap-4 relative z-10">
-                                                    <div className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center text-indigo-600 shadow-sm group-hover:scale-110 transition-transform">
-                                                        <Shield size={20} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-bold text-slate-800">{admin.Username}</p>
-                                                        <p className="text-xs text-slate-400">เพิ่มโดย  {admin.CreatedBy || 'System'}</p>
-                                                    </div>
-                                                </div>
-                                                {admin.Username.toLowerCase() !== 'admin' && (
-                                                    <button
-                                                        onClick={() => handleDeleteAdmin(admin.Username)}
-                                                        className="relative z-10 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                )}
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12 text-slate-400">
-                                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <Search className="h-8 w-8 text-slate-300" />
-                                        </div>
-                                        <p className="font-medium text-slate-600">ไม่พบผู้ดูแลระบบ (No admins found)</p>
-                                        <p className="text-xs">ลองปรับคำค้นหาใหม่ (Try adjusting your search terms)</p>
-                                    </div>
-                                )}
+                                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                                                <th className="p-4 font-bold">ID</th>
+                                                <th className="p-4 font-bold">Username</th>
+                                                <th className="p-4 font-bold">เพิ่มโดย (Created By)</th>
+                                                <th className="p-4 font-bold text-right">จัดการ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {adminUsers.filter(u => u.Username.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
+                                                adminUsers.filter(u => u.Username.toLowerCase().includes(searchTerm.toLowerCase())).map(admin => (
+                                                    <tr key={admin.ID} className="hover:bg-slate-50 transition-colors group">
+                                                        <td className="p-4 text-slate-400 font-mono text-sm">#{admin.ID}</td>
+                                                        <td className="p-4 font-bold text-slate-700">
+                                                            <div className="flex items-center gap-2">
+                                                                <Shield size={16} className="text-indigo-600" />
+                                                                {admin.Username}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4 text-slate-600 text-sm">{admin.CreatedBy || 'System'}</td>
+                                                        <td className="p-4 text-right">
+                                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                {admin.Username.toLowerCase() !== 'admin' && (
+                                                                    <button
+                                                                        onClick={() => handleDeleteAdmin(admin.Username)}
+                                                                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                                    >
+                                                                        <Trash2 size={16} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="4" className="p-12 text-center">
+                                                        <div className="flex flex-col items-center justify-center text-slate-400">
+                                                            <Shield className="w-12 h-12 mb-4 text-slate-200" />
+                                                            <p className="font-medium text-lg text-slate-500">ไม่พบผู้ดูแลระบบ (No admins found)</p>
+                                                            <p className="text-sm">ลองปรับคำค้นหาใหม่</p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </>
                         )}
                     </div>
@@ -507,55 +515,60 @@ const ManagementPage = () => {
                                 </button>
                             </div>
 
-                            {vendors.filter(v => v.VendorName.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
-                                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                                    {vendors.filter(v => v.VendorName.toLowerCase().includes(searchTerm.toLowerCase())).map(vendor => (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            whileHover={{ y: -2 }}
-                                            key={vendor.VendorID}
-                                            className="relative overflow-hidden p-4 rounded-xl border border-slate-100 hover:shadow-lg hover:border-orange-100 transition-all group bg-white"
-                                        >
-                                            {/* Decorative Gradient */}
-                                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500 to-amber-600 opacity-[0.05] rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-
-                                            <div className="flex justify-between items-start mb-2 relative z-10">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
-                                                        <Truck size={20} />
+                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                                            <th className="p-4 font-bold">ID</th>
+                                            <th className="p-4 font-bold">ชื่อผู้จัดหา (Vendor Name)</th>
+                                            <th className="p-4 font-bold">ข้อมูลติดต่อ (Contact Info)</th>
+                                            <th className="p-4 font-bold text-right">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {vendors.filter(v => v.VendorName.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
+                                            vendors.filter(v => v.VendorName.toLowerCase().includes(searchTerm.toLowerCase())).map(vendor => (
+                                                <tr key={vendor.VendorID} className="hover:bg-slate-50 transition-colors group">
+                                                    <td className="p-4 text-slate-400 font-mono text-sm">#{vendor.VendorID}</td>
+                                                    <td className="p-4 font-bold text-slate-700">
+                                                        <div className="flex items-center gap-2">
+                                                            <Truck size={16} className="text-orange-500" />
+                                                            {vendor.VendorName}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 text-slate-600 text-sm whitespace-pre-wrap max-w-xs">{vendor.ContactInfo || '-'}</td>
+                                                    <td className="p-4 text-right">
+                                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={() => { setEditingVendor(vendor); setVendorForm(vendor); setIsAddVendorOpen(true); }}
+                                                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteVendor(vendor.VendorID)}
+                                                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="4" className="p-12 text-center">
+                                                    <div className="flex flex-col items-center justify-center text-slate-400">
+                                                        <Truck className="w-12 h-12 mb-4 text-slate-200" />
+                                                        <p className="font-medium text-lg text-slate-500">ไม่พบผู้จัดหา (No vendors found)</p>
+                                                        <p className="text-sm">ลองปรับคำค้นหาใหม่</p>
                                                     </div>
-                                                    <h4 className="font-bold text-slate-800">{vendor.VendorName}</h4>
-                                                </div>
-                                                <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => { setEditingVendor(vendor); setVendorForm(vendor); setIsAddVendorOpen(true); }}
-                                                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
-                                                    >
-                                                        <Edit2 size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteVendor(vendor.VendorID)}
-                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 relative z-10">{vendor.ContactInfo || 'ไม่มีข้อมูลติดต่อ (No contact info)'}</p>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12 text-slate-400">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                                        <Search className="h-8 w-8 text-slate-300" />
-                                    </div>
-                                    <p className="font-medium text-slate-600">ไม่พบผู้จัดหา (No vendors found)</p>
-                                    <p className="text-xs">ลองปรับคำค้นหาใหม่ (Try adjusting your search terms)</p>
-                                </div >
-                            )
-                            }
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div >
                     )
                 }
@@ -580,52 +593,62 @@ const ManagementPage = () => {
                             </button>
                         </div>
 
-                        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                            {locations.filter(l => l.Name.toLowerCase().includes(searchTerm.toLowerCase())).map(loc => (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    whileHover={{ y: -2 }}
-                                    key={loc.LocationID}
-                                    className="relative overflow-hidden flex justify-between items-center p-4 rounded-xl border border-slate-100 hover:bg-white hover:border-indigo-100 hover:shadow-lg transition-all group bg-white"
-                                >
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-600 opacity-[0.03] rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-
-                                    <div className="flex items-center gap-4 relative z-10">
-                                        <div className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center text-teal-600 shadow-sm group-hover:scale-110 transition-transform">
-                                            <Archive size={20} />
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-slate-800">{loc.Name}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={() => {
-                                                setEditingLocation(loc);
-                                                setLocationForm({ Name: loc.Name });
-                                                setIsAddLocationOpen(true);
-                                            }}
-                                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
-                                        >
-                                            <Edit2 size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteLocation(loc.LocationID)}
-                                            className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            ))}
+                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                                        <th className="p-4 font-bold">ID</th>
+                                        <th className="p-4 font-bold">ชื่อสถานที่ (Location Name)</th>
+                                        <th className="p-4 font-bold text-right">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {locations.filter(l => l.Name.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
+                                        locations.filter(l => l.Name.toLowerCase().includes(searchTerm.toLowerCase())).map(loc => (
+                                            <tr key={loc.LocationID} className="hover:bg-slate-50 transition-colors group">
+                                                <td className="p-4 text-slate-400 font-mono text-sm">#{loc.LocationID}</td>
+                                                <td className="p-4 font-bold text-slate-700">
+                                                    <div className="flex items-center gap-2">
+                                                        <Archive size={16} className="text-teal-600" />
+                                                        {loc.Name}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingLocation(loc);
+                                                                setLocationForm({ Name: loc.Name });
+                                                                setIsAddLocationOpen(true);
+                                                            }}
+                                                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteLocation(loc.LocationID)}
+                                                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="3" className="p-12 text-center">
+                                                <div className="flex flex-col items-center justify-center text-slate-400">
+                                                    <Archive className="w-12 h-12 mb-4 text-slate-200" />
+                                                    <p className="font-medium text-lg text-slate-500">ไม่พบสถานที่ (No locations found)</p>
+                                                    <p className="text-sm">ลองปรับคำค้นหาใหม่</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
-                        {locations.length === 0 && (
-                            <div className="text-center py-12 text-slate-400">
-                                <Archive className="mx-auto w-12 h-12 text-slate-200 mb-4" />
-                                <p>ยังไม่มีข้อมูลสถานที่</p>
-                            </div>
-                        )}
                     </div>
                 )}
                 {/* REASONS TAB */}
@@ -780,9 +803,9 @@ const ManagementPage = () => {
                                                 <td className="p-4 font-bold text-slate-700">{t.TypeName}</td>
                                                 <td className="p-4">
                                                     <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${t.Category === 'HARDWARE' ? 'bg-blue-100 text-blue-700' :
-                                                            t.Category === 'SOFTWARE' ? 'bg-violet-100 text-violet-700' :
-                                                                t.Category === 'SERVICE' ? 'bg-emerald-100 text-emerald-700' :
-                                                                    'bg-amber-100 text-amber-700'
+                                                        t.Category === 'SOFTWARE' ? 'bg-violet-100 text-violet-700' :
+                                                            t.Category === 'SERVICE' ? 'bg-emerald-100 text-emerald-700' :
+                                                                'bg-amber-100 text-amber-700'
                                                         }`}>
                                                         {MA_CATEGORIES.find(c => c.key === t.Category)?.label || t.Category}
                                                     </span>

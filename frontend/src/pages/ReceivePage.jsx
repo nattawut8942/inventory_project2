@@ -22,14 +22,19 @@ const ReceivePage = () => {
     const [activePo, setActivePo] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedInvoice, setSelectedInvoice] = useState(null); // For Invoice Detail View
-    // Default to current month date range
+    // Default to 3 months date range for UX
     const getDefaultDateRange = () => {
         const now = new Date();
         const y = now.getFullYear();
         const m = now.getMonth();
-        const startDate = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+
+        // ย้อนหลัง 3 เดือน
+        const start = new Date(y, m - 2, 1);
+        const startDate = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-01`;
+
         const lastDay = new Date(y, m + 1, 0).getDate();
         const endDate = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
         return { startDate, endDate };
     };
     const defaultRange = getDefaultDateRange();
@@ -159,6 +164,13 @@ const ReceivePage = () => {
                         const d = po.RequestDate.slice(0, 10);
                         if (dateFrom) matchDate = matchDate && d >= dateFrom;
                         if (dateTo) matchDate = matchDate && d <= dateTo;
+                    }
+
+                    // UX Enhancement: Always show unfinished POs (Open/Partial) if using default date range
+                    const isDefaultDate = dateFrom === defaultRange.startDate && dateTo === defaultRange.endDate;
+                    const isUnfinished = po.Status === 'Open' || po.Status === 'Pending' || po.Status === 'Partial';
+                    if (isDefaultDate && isUnfinished) {
+                        matchDate = true;
                     }
 
                     return matchSearch && matchDate;
