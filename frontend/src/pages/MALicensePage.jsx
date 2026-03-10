@@ -620,15 +620,15 @@ const MALicensePage = () => {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+                            className="w-full max-w-xl bg-white rounded-2xl shadow-xl overflow-hidden"
                         >
                             {/* Header */}
-                            <div className={`p-6 bg-gradient-to-r ${activeCat?.color} text-white relative overflow-hidden`}>
+                            <div className={`p-4 md:p-5 bg-gradient-to-r ${activeCat?.color} text-white relative overflow-hidden`}>
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl" />
                                 <div className="flex justify-between items-start relative z-10">
                                     <div>
                                         <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">{activeCat?.label}</p>
-                                        <h3 className="font-black text-2xl tracking-tight">{detailItem.ItemName}</h3>
+                                        <h3 className="font-black text-xl md:text-2xl tracking-tight">{detailItem.ItemName}</h3>
                                         <p className="text-white/70 text-sm mt-1">{detailItem.SubType}</p>
                                     </div>
                                     <button onClick={() => setDetailItem(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
@@ -638,7 +638,7 @@ const MALicensePage = () => {
                             </div>
 
                             {/* Body */}
-                            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                            <div className="p-4 md:p-5 space-y-4 max-h-[60vh] overflow-y-auto">
                                 {/* Status Badge */}
                                 <div className="flex items-center gap-3">
                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${STATUS_COLORS[detailItem.Status]}`}>
@@ -654,7 +654,7 @@ const MALicensePage = () => {
                                 </div>
 
                                 {/* Detail Grid */}
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-slate-50 rounded-xl overflow-hidden divide-y divide-slate-100 border border-slate-100 shadow-sm">
                                     {detailItem.Brand && (
                                         <DetailField icon={Tag} label="ยี่ห้อ/รุ่น" value={detailItem.Brand} />
                                     )}
@@ -691,15 +691,15 @@ const MALicensePage = () => {
                                 <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-wrap gap-2">
                                     <button
                                         onClick={() => { setDetailItem(null); setFormModal({ isOpen: true, item: detailItem }); }}
-                                        className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm font-bold hover:bg-indigo-100 transition-colors border border-indigo-200"
+                                        className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors border border-indigo-200"
                                     >
                                         <Edit2 size={14} /> แก้ไข
                                     </button>
                                     <div className="relative group">
-                                        <button className="flex items-center gap-1.5 px-4 py-2 bg-amber-50 text-amber-600 rounded-xl text-sm font-bold hover:bg-amber-100 transition-colors border border-amber-200">
+                                        <button className="flex items-center gap-1.5 px-4 py-2 bg-amber-50 text-amber-600 rounded-lg text-sm font-bold hover:bg-amber-100 transition-colors border border-amber-200">
                                             <RefreshCw size={14} /> เปลี่ยนสถานะ <ChevronDown size={12} />
                                         </button>
-                                        <div className="absolute bottom-full left-0 mb-1 bg-white rounded-xl shadow-xl border border-slate-200 py-1 hidden group-hover:block z-10 min-w-[140px]">
+                                        <div className="absolute bottom-full left-0 mb-1 bg-white rounded-lg shadow-xl border border-slate-200 py-1 hidden group-hover:block z-10 min-w-[140px]">
                                             {STATUS_OPTIONS.filter(s => s !== detailItem.Status).map(s => (
                                                 <button
                                                     key={s}
@@ -713,7 +713,7 @@ const MALicensePage = () => {
                                     </div>
                                     <button
                                         onClick={() => { setDetailItem(null); handleDelete(detailItem); }}
-                                        className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors border border-red-200 ml-auto"
+                                        className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors border border-red-200 ml-auto"
                                     >
                                         <Trash2 size={14} /> ลบ
                                     </button>
@@ -752,14 +752,11 @@ const MALicensePage = () => {
 
 // ─── DETAIL FIELD COMPONENT ──────────────
 const DetailField = ({ icon: Icon, label, value }) => (
-    <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-        <div className="p-1.5 bg-white rounded-lg shadow-sm text-indigo-500 shrink-0">
-            <Icon size={14} />
-        </div>
-        <div className="min-w-0">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-            <p className="text-sm font-bold text-slate-700 truncate">{value}</p>
-        </div>
+    <div className="flex items-center p-3 sm:px-4">
+        <span className="text-xs text-slate-500 font-bold uppercase w-64 shrink-0 flex items-center gap-2">
+            <Icon size={14} className="text-indigo-400" /> {label}
+        </span>
+        <span className="text-sm font-bold text-slate-800">{value}</span>
     </div>
 );
 
@@ -804,12 +801,12 @@ const FormModal = ({ item, category, vendors, locations, maTypes, onSave, onClos
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+                    className="w-full max-w-xl bg-white rounded-2xl shadow-xl overflow-hidden"
                 >
                     {/* Header */}
-                    <div className={`p-5 bg-gradient-to-r ${catInfo?.color} text-white`}>
+                    <div className={`p-4 md:p-5 bg-gradient-to-r ${catInfo?.color} text-white`}>
                         <div className="flex justify-between items-center">
-                            <h3 className="font-black text-xl">
+                            <h3 className="font-black text-lg md:text-xl">
                                 {isEdit ? 'แก้ไขรายการ' : `เพิ่ม ${catInfo?.label} ใหม่`}
                             </h3>
                             <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
@@ -819,7 +816,7 @@ const FormModal = ({ item, category, vendors, locations, maTypes, onSave, onClos
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+                    <form onSubmit={handleSubmit} className="p-4 md:p-5 space-y-4 max-h-[65vh] overflow-y-auto">
                         {/* Row 1 */}
                         <div className="grid grid-cols-2 gap-4">
                             <FormField label="ประเภทย่อย" required>
@@ -932,12 +929,12 @@ const FormModal = ({ item, category, vendors, locations, maTypes, onSave, onClos
 
                     {/* Footer */}
                     <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
-                        <button onClick={onClose} className="flex-1 py-3 bg-white text-slate-600 rounded-xl font-bold border border-slate-200 hover:bg-slate-50 transition-colors">
+                        <button onClick={onClose} className="flex-1 py-2.5 bg-white text-slate-600 rounded-lg text-sm font-bold border border-slate-200 hover:bg-slate-50 transition-colors">
                             ยกเลิก
                         </button>
                         <button
                             onClick={handleSubmit}
-                            className={`flex-1 py-3 text-white rounded-xl font-bold bg-gradient-to-r ${catInfo?.color} hover:shadow-lg transition-all`}
+                            className={`flex-1 py-2.5 text-white rounded-lg text-sm font-bold bg-gradient-to-r ${catInfo?.color} hover:shadow-lg transition-all`}
                         >
                             {isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มรายการ'}
                         </button>

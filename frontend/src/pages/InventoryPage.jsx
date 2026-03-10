@@ -334,6 +334,8 @@ const InventoryPage = () => {
             case 'Consumable': return Droplet;
             case 'Storage': return HardDrive;
             case 'Peripheral': return Mouse;
+            case 'Office Supplies': return ClipboardList;
+            case 'Office': return ClipboardList;
             default: return Package;
         }
     };
@@ -807,18 +809,18 @@ const InventoryPage = () => {
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20"
+                                    className="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden"
                                 >
-                                    <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden">
+                                    <div className="p-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                                         <div className="flex justify-between items-start relative z-10">
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1 opacity-90">
                                                     <List size={16} />
-                                                    <span className="text-sm font-bold uppercase tracking-wider">ประวัติอุปกรณ์</span>
+                                                    <span className="text-xs font-bold uppercase tracking-wider">ประวัติอุปกรณ์</span>
                                                 </div>
-                                                <h3 className="font-black text-2xl tracking-tight">{historyItem.ProductName}</h3>
-                                                <p className="text-indigo-100 text-sm font-medium mt-1 font-mono opacity-80">{historyItem.ProductID}</p>
+                                                <h3 className="font-black text-lg md:text-xl tracking-tight">{historyItem.ProductName}</h3>
+                                                <p className="text-indigo-100 text-xs font-medium mt-1 font-mono opacity-80">{historyItem.ProductID}</p>
                                             </div>
                                             <button onClick={() => setHistoryItem(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                                                 <X size={20} />
@@ -826,10 +828,10 @@ const InventoryPage = () => {
                                         </div>
                                     </div>
 
-                                    <div className="p-6 bg-slate-50/50 max-h-[60vh] overflow-y-auto">
+                                    <div className="p-4 md:p-5 bg-slate-50/50 max-h-[60vh] overflow-y-auto">
                                         {/* 1. ตรวจสอบว่ามี overflow-x-auto และใส่ min-w-max เพื่อให้ตารางกว้างตามเนื้อหา */}
                                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
-                                            <table className="w-full text-left text-sm table-auto min-w-max">
+                                            <table className="w-full text-left text-xs table-auto min-w-max">
                                                 <thead className="bg-slate-50 border-b border-slate-100 uppercase text-xs font-bold text-slate-500 tracking-wider">
                                                     <tr>
                                                         {/* 2. ใส่ whitespace-nowrap ให้หัวตารางทุกตัวเพื่อความเป๊ะ */}
@@ -881,7 +883,7 @@ const InventoryPage = () => {
                                     </div>
 
                                     <div className="p-4 bg-white border-t border-slate-100">
-                                        <button onClick={() => setHistoryItem(null)} className="w-full bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all">
+                                        <button onClick={() => setHistoryItem(null)} className="w-full bg-slate-100 text-slate-600 font-bold py-2 text-sm rounded-lg hover:bg-slate-200 transition-all">
                                             ปิดหน้าต่าง
                                         </button>
                                     </div>
@@ -899,18 +901,18 @@ const InventoryPage = () => {
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20"
+                                    className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden"
                                 >
-                                    <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden">
+                                    <div className="p-4 md:p-5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                                         <div className="flex justify-between items-start relative z-10">
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1 opacity-90">
                                                     <Edit2 size={16} />
-                                                    <span className="text-sm font-bold uppercase tracking-wider">แก้ไขอุปกรณ์</span>
+                                                    <span className="text-xs font-bold uppercase tracking-wider">แก้ไขอุปกรณ์</span>
                                                 </div>
-                                                <h3 className="font-black text-2xl tracking-tight">{editItem.ProductName}</h3>
-                                                <p className="text-indigo-100 text-sm font-medium mt-1 font-mono opacity-80">{editItem.ProductID}</p>
+                                                <h3 className="font-black text-lg md:text-xl tracking-tight">{editItem.ProductName}</h3>
+                                                <p className="text-indigo-100 text-xs font-medium mt-1 font-mono opacity-80">{editItem.ProductID}</p>
                                             </div>
                                             <button onClick={() => setEditItem(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                                                 <X size={20} />
@@ -918,11 +920,11 @@ const InventoryPage = () => {
                                         </div>
                                     </div>
                                     <form onSubmit={handleUpdate} className="flex flex-col h-full">
-                                        <div className="p-6 bg-slate-50/50 space-y-4 max-h-[60vh] overflow-y-auto">
+                                        <div className="p-4 md:p-5 bg-slate-50/50 space-y-4 max-h-[60vh] overflow-y-auto">
                                             <div className="space-y-4">
                                                 <div>
                                                     <label className="block text-sm font-bold text-slate-700 mb-2">ชื่ออุปกรณ์</label>
-                                                    <input name="ProductName" defaultValue={editItem.ProductName} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700" required />
+                                                    <input name="ProductName" defaultValue={editItem.ProductName} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700" required />
                                                 </div>
                                                 <div>
                                                     <label className="block text-sm font-bold text-slate-700 mb-2">รูปอุปกรณ์</label>
@@ -942,7 +944,7 @@ const InventoryPage = () => {
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
                                                         <label className="block text-sm font-bold text-slate-700 mb-2">หมวดหมู่</label>
-                                                        <select name="DeviceType" defaultValue={editItem.DeviceType} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700">
+                                                        <select name="DeviceType" defaultValue={editItem.DeviceType} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700">
                                                             {deviceTypes.map(t => <option key={t.TypeId} value={t.TypeId}>{t.Label}</option>)}
                                                         </select>
                                                     </div>
@@ -950,20 +952,20 @@ const InventoryPage = () => {
                                                         <label className="block text-sm font-bold text-slate-700 mb-2">ราคาต่อหน่วย</label>
                                                         <div className="relative">
                                                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">฿</span>
-                                                            <input name="LastPrice" type="number" step="0.01" defaultValue={editItem.LastPrice} className="w-full pl-8 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono font-medium text-slate-700" />
+                                                            <input name="LastPrice" type="number" step="0.01" defaultValue={editItem.LastPrice} className="w-full pl-8 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono font-medium text-slate-700" />
                                                         </div>
                                                     </div>
                                                     <div>
                                                         <label className="block text-sm font-bold text-slate-700 mb-2">คงเหลือ</label>
-                                                        <input name="CurrentStock" type="number" defaultValue={editItem.CurrentStock} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono font-medium text-slate-700" />
+                                                        <input name="CurrentStock" type="number" defaultValue={editItem.CurrentStock} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono font-medium text-slate-700" />
                                                     </div>
                                                     <div>
                                                         <label className="block text-sm font-bold text-slate-700 mb-2">สต็อคขั้นต่ำ</label>
-                                                        <input name="MinStock" type="number" defaultValue={editItem.MinStock} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono font-medium text-slate-700" />
+                                                        <input name="MinStock" type="number" defaultValue={editItem.MinStock} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono font-medium text-slate-700" />
                                                     </div>
                                                     <div className="col-span-1">
                                                         <label className="block text-sm font-bold text-slate-700 mb-2">สต็อคสูงสุด</label>
-                                                        <input name="MaxStock" type="number" defaultValue={editItem.MaxStock || 0} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono font-medium text-slate-700" />
+                                                        <input name="MaxStock" type="number" defaultValue={editItem.MaxStock || 0} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono font-medium text-slate-700" />
                                                     </div>
                                                     <div className="col-span-1">
                                                         <label className="block text-sm font-bold text-slate-700 mb-2">ที่เก็บ</label>
@@ -974,7 +976,7 @@ const InventoryPage = () => {
                                                             <select
                                                                 name="Location"
                                                                 defaultValue={editItem.Location || ''}
-                                                                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700 appearance-none"
+                                                                className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium text-slate-700 appearance-none"
                                                             >
                                                                 <option value="">-- ระบุตำแหน่ง --</option>
                                                                 {locations.map(loc => (
@@ -996,7 +998,7 @@ const InventoryPage = () => {
                                                                 name="BarcodeID"
                                                                 defaultValue={editItem.BarcodeID || ''}
                                                                 placeholder="สแกนหรือพิมพ์เลขบาร์โค้ดจริงของอุปกรณ์"
-                                                                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono font-medium text-slate-700"
+                                                                className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono font-medium text-slate-700"
                                                             />
                                                         </div>
                                                     </div>
@@ -1008,13 +1010,13 @@ const InventoryPage = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setEditItem(null)}
-                                                className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all"
+                                                className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-2 text-sm rounded-lg hover:bg-slate-50 hover:text-slate-800 transition-all"
                                             >
                                                 ยกเลิก
                                             </button>
                                             <button
                                                 type="submit"
-                                                className="flex-[2] bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-3 rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg shadow-indigo-200"
+                                                className="flex-[2] bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-2 text-sm rounded-lg hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg shadow-indigo-200"
                                             >
                                                 บันทึกการแก้ไข
                                             </button>
@@ -1036,9 +1038,9 @@ const InventoryPage = () => {
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20"
+                                    className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/20"
                                 >
-                                    <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden print:hidden">
+                                    <div className="p-4 md:p-5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden print:hidden">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                                         <div className="flex justify-between items-start relative z-10">
                                             <div>
@@ -1046,18 +1048,18 @@ const InventoryPage = () => {
                                                     <Printer size={16} />
                                                     <span className="text-sm font-bold uppercase tracking-wider">พิมพ์บาร์โค้ด (Print Barcode)</span>
                                                 </div>
-                                                <h3 className="font-black text-xl tracking-tight">{barcodeItem.ProductName}</h3>
+                                                <h3 className="font-black text-lg tracking-tight">{barcodeItem.ProductName}</h3>
                                                 <p className="text-indigo-100 text-xs font-medium mt-1 font-mono opacity-80">{barcodeItem.ProductID}</p>
                                             </div>
                                             <button onClick={() => setBarcodeItem(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                                                <X size={20} />
+                                                <X size={18} />
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="p-6 bg-slate-50/50 flex flex-col items-center gap-4">
-                                        <div ref={printRef} className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center gap-3 w-full shadow-sm" id="barcode-print-area">
+                                    <div className="p-5 bg-slate-50/50 flex flex-col items-center gap-4">
+                                        <div ref={printRef} className="bg-white border-2 border-dashed border-slate-200 rounded-xl p-5 flex flex-col items-center gap-3 w-full shadow-sm" id="barcode-print-area">
                                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">IT INVENTORY</p>
-                                            <h4 className="text-base font-bold text-slate-800 text-center leading-tight mb-2">{barcodeItem.ProductName}</h4>
+                                            <h4 className="text-sm font-bold text-slate-800 text-center leading-tight mb-2">{barcodeItem.ProductName}</h4>
                                             <Barcode
                                                 value={barcodeItem.ProductID}
                                                 width={1.5}
@@ -1075,7 +1077,7 @@ const InventoryPage = () => {
                                     <div className="p-4 bg-white border-t border-slate-100 flex gap-3 print:hidden">
                                         <button
                                             onClick={() => setBarcodeItem(null)}
-                                            className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all"
+                                            className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-2 text-sm rounded-lg hover:bg-slate-50 hover:text-slate-800 transition-all"
                                         >
                                             ปิด
                                         </button>
@@ -1100,9 +1102,9 @@ const InventoryPage = () => {
                                                 win.focus();
                                                 win.print();
                                             }}
-                                            className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                                            className="flex-1 bg-emerald-600 text-white font-bold py-2 text-sm rounded-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
                                         >
-                                            <Printer size={18} /> พิมพ์
+                                            <Printer size={16} /> พิมพ์
                                         </button>
                                     </div>
                                 </motion.div>
@@ -1120,9 +1122,9 @@ const InventoryPage = () => {
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20"
+                                    className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/20"
                                 >
-                                    <div className="relative h-48 bg-slate-900 overflow-hidden">
+                                    <div className="relative h-40 bg-slate-900 overflow-hidden">
                                         <div className={`absolute inset-0 bg-gradient-to-br ${getColorGradient(detailItem.DeviceType)} opacity-90`}></div>
                                         <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
 
@@ -1144,13 +1146,13 @@ const InventoryPage = () => {
                                             </p>
                                         </div>
 
-                                        <button onClick={() => setDetailItem(null)} className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full text-white transition-all">
-                                            <X size={20} />
+                                        <button onClick={() => setDetailItem(null)} className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full text-white transition-all">
+                                            <X size={18} />
                                         </button>
                                     </div>
 
-                                    <div className="p-8 bg-slate-50/50 max-h-[60vh] overflow-y-auto">
-                                        <div className="flex flex-col md:flex-row gap-8">
+                                    <div className="p-6 bg-slate-50/50 max-h-[60vh] overflow-y-auto">
+                                        <div className="flex flex-col md:flex-row gap-6">
                                             {/* Left Column: Image */}
                                             <div className="w-full md:w-1/3 flex flex-col gap-4">
                                                 <div className={`aspect-square rounded-2xl bg-white p-2 shadow-md border border-slate-100 flex items-center justify-center overflow-hidden`}>
@@ -1170,74 +1172,53 @@ const InventoryPage = () => {
                                             </div>
 
                                             {/* Right Column: Details Grid */}
-                                            <div className="w-full md:w-2/3 space-y-6">
+                                            <div className="w-full md:w-2/3 space-y-4">
                                                 {/* Stock Status Section */}
-                                                <div>
-                                                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-3">
-                                                        <Package size={16} className="text-indigo-600" />
-                                                        สถานะคลังสินค้า
-                                                    </h4>
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
-                                                            <div className={`absolute right-2 top-2 p-1.5 rounded-lg opacity-50 group-hover:opacity-100 transition-opacity ${getDeviceTypeColor(detailItem.DeviceType).bg} ${getDeviceTypeColor(detailItem.DeviceType).text}`}>
-                                                                <Archive size={14} />
-                                                            </div>
-                                                            <p className="text-[13px] font-bold text-slate-700 uppercase tracking-wider mb-1">คงเหลือ</p>
-                                                            <div className="flex items-baseline gap-1">
-                                                                <p className={`text-2xl font-black ${detailItem.CurrentStock <= detailItem.MinStock ? 'text-red-500' : 'text-emerald-500'}`}>
-                                                                    {detailItem.CurrentStock}
-                                                                </p>
-                                                                <span className="text-xs font-bold text-slate-400">{detailItem.UnitOfMeasure || 'หน่วย'}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
-                                                            <div className={`absolute right-2 top-2 p-1.5 rounded-lg opacity-50 group-hover:opacity-100 transition-opacity ${getDeviceTypeColor(detailItem.DeviceType).bg} ${getDeviceTypeColor(detailItem.DeviceType).text}`}>
-                                                                <AlertTriangle size={14} />
-                                                            </div>
-                                                            <p className="text-[13px] font-bold text-slate-700 uppercase tracking-wider mb-1">ขั้นต่ำ</p>
-                                                            <p className="text-2xl font-black text-orange-500">{detailItem.MinStock}</p>
-                                                        </div>
-                                                        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
-                                                            <div className={`absolute right-2 top-2 p-1.5 rounded-lg opacity-50 group-hover:opacity-100 transition-opacity ${getDeviceTypeColor(detailItem.DeviceType).bg} ${getDeviceTypeColor(detailItem.DeviceType).text}`}>
-                                                                <Truck size={14} />
-                                                            </div>
-                                                            <p className="text-[13px] font-bold text-slate-700 uppercase tracking-wider mb-1">สูงสุด</p>
-                                                            <p className="text-2xl font-black text-slate-600">{detailItem.MaxStock || '-'}</p>
-                                                        </div>
-                                                        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
-                                                            <div className={`absolute right-2 top-2 p-1.5 rounded-lg opacity-50 group-hover:opacity-100 transition-opacity ${getDeviceTypeColor(detailItem.DeviceType).bg} ${getDeviceTypeColor(detailItem.DeviceType).text}`}>
-                                                                <Settings size={14} />
-                                                            </div>
-                                                            <p className="text-[13px] font-bold text-slate-700 uppercase tracking-wider mb-1">หน่วยนับ</p>
-                                                            <p className="text-lg font-bold text-slate-700">{detailItem.UnitOfMeasure || '-'}</p>
+                                                <div className="bg-white rounded-2xl overflow-hidden divide-y divide-slate-100 border border-slate-100 shadow-sm">
+                                                    <div className="flex items-center p-3 sm:px-4">
+                                                        <span className="text-xs text-slate-500 font-bold uppercase w-48 shrink-0 flex items-center gap-2">
+                                                            <Archive size={14} className={getDeviceTypeColor(detailItem.DeviceType).text} /> คงเหลือ
+                                                        </span>
+                                                        <div className="flex items-baseline gap-1">
+                                                            <span className={`text-sm font-black ${detailItem.CurrentStock <= detailItem.MinStock ? 'text-red-500' : 'text-emerald-500'}`}>
+                                                                {detailItem.CurrentStock}
+                                                            </span>
+                                                            <span className="text-xs font-bold text-slate-400">{detailItem.UnitOfMeasure || 'หน่วย'}</span>
                                                         </div>
                                                     </div>
-                                                </div>
-
-                                                {/* Location Section */}
-                                                <div>
-                                                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 mb-3">
-                                                        <Truck size={16} className={getDeviceTypeColor(detailItem.DeviceType).text} />
-                                                        สถานที่จัดเก็บ
-                                                    </h4>
-                                                    <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 group hover:border-indigo-200 transition-colors">
-                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${getDeviceTypeColor(detailItem.DeviceType).bg} ${getDeviceTypeColor(detailItem.DeviceType).text}`}>
-                                                            <Archive size={24} />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Current Location</p>
-                                                            <p className="font-bold text-lg text-slate-700">{detailItem.Location || 'ไม่ได้ระบุ (Not Assigned)'}</p>
-                                                        </div>
+                                                    <div className="flex items-center p-3 sm:px-4">
+                                                        <span className="text-xs text-slate-500 font-bold uppercase w-48 shrink-0 flex items-center gap-2">
+                                                            <AlertTriangle size={14} className="text-orange-500" /> ขั้นต่ำ
+                                                        </span>
+                                                        <span className="text-sm font-black text-orange-500">{detailItem.MinStock}</span>
+                                                    </div>
+                                                    <div className="flex items-center p-3 sm:px-4">
+                                                        <span className="text-xs text-slate-500 font-bold uppercase w-48 shrink-0 flex items-center gap-2">
+                                                            <Truck size={14} className="text-slate-400" /> สูงสุด
+                                                        </span>
+                                                        <span className="text-sm font-black text-slate-600">{detailItem.MaxStock || '-'}</span>
+                                                    </div>
+                                                    <div className="flex items-center p-3 sm:px-4">
+                                                        <span className="text-xs text-slate-500 font-bold uppercase w-48 shrink-0 flex items-center gap-2">
+                                                            <Settings size={14} className="text-slate-400" /> หน่วยนับ
+                                                        </span>
+                                                        <span className="text-sm font-bold text-slate-700">{detailItem.UnitOfMeasure || '-'}</span>
+                                                    </div>
+                                                    <div className="flex items-center p-3 sm:px-4">
+                                                        <span className="text-xs text-slate-500 font-bold uppercase w-48 shrink-0 flex items-center gap-2">
+                                                            <Truck size={14} className={getDeviceTypeColor(detailItem.DeviceType).text} /> จัดเก็บ
+                                                        </span>
+                                                        <span className="text-sm font-bold text-slate-700">{detailItem.Location || 'ไม่ได้ระบุ (Not Assigned)'}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="p-6 bg-white border-t border-slate-100 bg-slate-50/50">
+                                    <div className="p-4 bg-white border-t border-slate-100 bg-slate-50/50">
                                         <button
                                             onClick={() => setDetailItem(null)}
-                                            className="w-full bg-slate-200 text-slate-600 font-bold py-4 rounded-2xl hover:bg-slate-300 hover:text-slate-800 transition-all shadow-sm"
+                                            className="w-full bg-slate-200 text-slate-600 font-bold py-2 text-sm rounded-lg hover:bg-slate-300 hover:text-slate-800 transition-all shadow-sm"
                                         >
                                             ปิดหน้าต่าง
                                         </button>
@@ -1305,20 +1286,20 @@ const InventoryPage = () => {
                                         </div>
                                     </div>
 
-                                    <div className="p-6 overflow-y-auto space-y-6">
+                                    <div className="p-5 overflow-y-auto space-y-5">
                                         {/* Qty Selector */}
                                         <div className="flex items-center gap-4 justify-center">
-                                            <button onClick={() => setSelectQty(Math.max(1, selectQty - 1))} className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 shadow-sm"><Minus size={18} /></button>
+                                            <button onClick={() => setSelectQty(Math.max(1, selectQty - 1))} className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-50 shadow-sm"><Minus size={16} /></button>
                                             <div className="text-center">
                                                 <input
                                                     type="number"
                                                     value={selectQty}
                                                     onChange={(e) => setSelectQty(Math.max(1, Math.min(qtyModal.product.CurrentStock, parseInt(e.target.value) || 1)))}
-                                                    className="w-16 text-center text-2xl font-black bg-transparent outline-none"
+                                                    className="w-16 text-center text-xl font-black bg-transparent outline-none"
                                                 />
                                                 <p className="text-[10px] text-slate-400 font-bold uppercase">จำนวน</p>
                                             </div>
-                                            <button onClick={() => setSelectQty(Math.min(qtyModal.product.CurrentStock, selectQty + 1))} className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 shadow-sm"><Plus size={18} /></button>
+                                            <button onClick={() => setSelectQty(Math.min(qtyModal.product.CurrentStock, selectQty + 1))} className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-50 shadow-sm"><Plus size={16} /></button>
                                         </div>
 
                                         {/* Reason Selector */}
@@ -1326,7 +1307,7 @@ const InventoryPage = () => {
                                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">เหตุผลการเบิก</label>
                                             <div className="space-y-2">
                                                 {reasonOptions.map((opt) => (
-                                                    <label key={opt.ReasonID} className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-all ${selectedReason === opt.Label ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:border-indigo-200'}`}>
+                                                    <label key={opt.ReasonID} className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${selectedReason === opt.Label ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:border-indigo-200'}`}>
                                                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedReason === opt.Label ? 'border-indigo-500' : 'border-slate-300'}`}>
                                                             {selectedReason === opt.Label && <div className="w-2 h-2 bg-indigo-500 rounded-full" />}
                                                         </div>
@@ -1350,8 +1331,8 @@ const InventoryPage = () => {
                                         </div>
                                     </div>
                                     <div className="p-4 bg-slate-50 border-t border-slate-100 grid grid-cols-2 gap-3">
-                                        <button onClick={() => setQtyModal({ isOpen: false, product: null, mode: 'cart' })} className="py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-all">ยกเลิก</button>
-                                        <button onClick={handleQtyConfirm} className={`py-2.5 rounded-xl font-bold text-white shadow-lg transition-all ${qtyModal.mode === 'cart' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
+                                        <button onClick={() => setQtyModal({ isOpen: false, product: null, mode: 'cart' })} className="py-2 text-sm rounded-lg border border-slate-200 bg-white font-bold text-slate-500 hover:bg-slate-100 transition-all">ยกเลิก</button>
+                                        <button onClick={handleQtyConfirm} className={`py-2 text-sm rounded-lg font-bold text-white shadow-md transition-all ${qtyModal.mode === 'cart' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
                                             {qtyModal.mode === 'cart' ? 'ยืนยัน' : 'เบิกเลย'}
                                         </button>
                                     </div>
@@ -1380,11 +1361,11 @@ const InventoryPage = () => {
                                     className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="p-5 bg-indigo-600 text-white flex justify-between items-center shadow-md z-10">
+                                    <div className="p-4 bg-indigo-600 text-white flex justify-between items-center shadow-md z-10">
                                         <div className="flex items-center gap-3">
-                                            <div className="bg-white/20 p-2 rounded-lg"><ShoppingCart size={20} /></div>
+                                            <div className="bg-white/20 p-2 rounded-lg"><ShoppingCart size={18} /></div>
                                             <div>
-                                                <h3 className="font-bold text-lg">รายการเบิก</h3>
+                                                <h3 className="font-bold text-base">รายการเบิก</h3>
                                                 <p className="text-indigo-200 text-xs">{cart.length} รายการ</p>
                                             </div>
                                         </div>
@@ -1440,11 +1421,11 @@ const InventoryPage = () => {
                                                 <span className="text-2xl font-black text-indigo-600">{getCartTotal()} <span className="text-sm text-slate-400 font-medium">ชิ้น</span></span>
                                             </div>
                                             <div className="grid grid-cols-3 gap-3">
-                                                <button onClick={() => setIsCartOpen(false)} className="col-span-1 py-3.5 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all border border-slate-200">
+                                                <button onClick={() => setIsCartOpen(false)} className="col-span-1 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-100 transition-all border border-slate-200">
                                                     ยกเลิก
                                                 </button>
-                                                <button onClick={executeWithdrawAll} className="col-span-2 bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2">
-                                                    <Check size={18} /> ยืนยันการเบิก
+                                                <button onClick={executeWithdrawAll} className="col-span-2 bg-indigo-600 text-white font-bold py-2 rounded-lg text-sm hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all flex items-center justify-center gap-2">
+                                                    <Check size={16} /> ยืนยันการเบิก
                                                 </button>
                                             </div>
                                         </div>
@@ -1470,42 +1451,42 @@ const InventoryPage = () => {
                                     initial={{ scale: 0.9, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     exit={{ scale: 0.9, opacity: 0 }}
-                                    className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl relative"
+                                    className="w-full max-w-md bg-white rounded-2xl overflow-hidden shadow-2xl relative"
                                     onClick={e => e.stopPropagation()}
                                 >
                                     <button onClick={() => setScanModal({ isOpen: false, scannedCode: '', foundProduct: null, error: '' })} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full z-10"><X size={20} /></button>
 
                                     {!scanModal.foundProduct ? (
-                                        <div className="p-8 flex flex-col items-center text-center">
-                                            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 animate-pulse">
-                                                <ScanLine size={40} />
+                                        <div className="p-6 flex flex-col items-center text-center">
+                                            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-5 animate-pulse">
+                                                <ScanLine size={32} />
                                             </div>
-                                            <h3 className="text-2xl font-black text-slate-800 mb-2">สแกนอุปกรณ์</h3>
-                                            <p className="text-slate-500 mb-6">ยิงบาร์โค้ด หรือพิมพ์รหัส/ชื่ออุปกรณ์เพื่อค้นหา</p>
+                                            <h3 className="text-xl font-black text-slate-800 mb-2">สแกนอุปกรณ์</h3>
+                                            <p className="text-slate-500 mb-5 text-sm">ยิงบาร์โค้ด หรือพิมพ์รหัส/ชื่ออุปกรณ์เพื่อค้นหา</p>
 
                                             <div className="w-full relative">
                                                 <input
                                                     autoFocus
                                                     type="text"
-                                                    className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl px-5 py-4 text-center font-bold text-lg focus:border-emerald-500 focus:bg-white outline-none transition-all"
+                                                    className="w-full bg-slate-100 border-2 border-slate-200 rounded-xl px-4 py-3 text-center font-bold focus:border-emerald-500 focus:bg-white outline-none transition-all"
                                                     placeholder="Ready to Scan..."
                                                     value={scanModal.scannedCode}
                                                     onChange={e => setScanModal(prev => ({ ...prev, scannedCode: e.target.value, error: '' }))}
                                                     onKeyDown={e => { if (e.key === 'Enter') handleScanLookup(scanModal.scannedCode); }}
                                                 />
-                                                <button onClick={() => handleScanLookup(scanModal.scannedCode)} className="absolute right-2 top-2 bottom-2 bg-emerald-500 text-white px-4 rounded-xl font-bold hover:bg-emerald-600">Enter</button>
+                                                <button onClick={() => handleScanLookup(scanModal.scannedCode)} className="absolute right-2 top-2 bottom-2 bg-emerald-500 text-white px-3 py-1 rounded-lg font-bold hover:bg-emerald-600 text-sm">Enter</button>
                                             </div>
                                             {scanModal.error && <p className="text-red-500 font-bold mt-4 flex items-center gap-2 animate-bounce"><AlertTriangle size={16} /> {scanModal.error}</p>}
                                         </div>
                                     ) : (
                                         <div className="bg-slate-50">
-                                            <div className="p-6 bg-white rounded-b-3xl shadow-sm z-10 relative">
+                                            <div className="p-5 bg-white rounded-b-2xl shadow-sm z-10 relative">
                                                 <div className="flex gap-4">
-                                                    <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${getColorGradient(scanModal.foundProduct.DeviceType)} flex items-center justify-center shadow-lg overflow-hidden border-4 border-white`}>
+                                                    <div className={`w-20 h-20 rounded-xl bg-gradient-to-br ${getColorGradient(scanModal.foundProduct.DeviceType)} flex items-center justify-center shadow-md overflow-hidden border-2 border-white`}>
                                                         {scanModal.foundProduct.ImageURL ? (
                                                             <img src={`${API_URL}${scanModal.foundProduct.ImageURL}`} alt="" className="w-full h-full object-cover" />
                                                         ) : (
-                                                            <Package size={32} className="text-white" />
+                                                            <Package size={28} className="text-white" />
                                                         )}
                                                     </div>
                                                     <div className="flex-1">
@@ -1524,7 +1505,7 @@ const InventoryPage = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="p-6 space-y-5">
+                                            <div className="p-5 space-y-4">
                                                 {/* Qty */}
                                                 <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200">
                                                     <span className="font-bold text-slate-600 pl-2">จำนวนที่จะเบิก</span>
@@ -1559,13 +1540,13 @@ const InventoryPage = () => {
                                                 </div>
 
                                                 <div className="grid grid-cols-3 gap-3">
-                                                    <button onClick={() => setScanModal({ isOpen: false, scannedCode: '', foundProduct: null, error: '' })} className="col-span-1 py-3.5 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all border border-slate-200">
+                                                    <button onClick={() => setScanModal({ isOpen: false, scannedCode: '', foundProduct: null, error: '' })} className="col-span-1 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 transition-all border border-slate-200 text-sm">
                                                         ยกเลิก
                                                     </button>
                                                     <button
                                                         onClick={handleScanWithdraw}
                                                         disabled={scanModal.foundProduct.CurrentStock <= 0}
-                                                        className="col-span-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-200 transition-all text-lg disabled:opacity-50 disabled:shadow-none"
+                                                        className="col-span-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-lg transition-all text-sm disabled:opacity-50 disabled:shadow-none"
                                                     >
                                                         ยืนยันการเบิก
                                                     </button>

@@ -605,14 +605,14 @@ const PurchaseOrdersPage = () => {
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
-                                        className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+                                        className="w-full max-w-xl bg-white rounded-2xl shadow-xl overflow-hidden"
                                     >
                                         {/* Header */}
-                                        <div className="p-6 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
+                                        <div className="p-4 md:p-5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <h3 className="font-black text-2xl">{selectedPO.PO_ID}</h3>
-                                                    <p className="text-indigo-200">{selectedPO.VendorName || 'ไม่ระบุผู้ขาย'}</p>
+                                                    <h3 className="font-black text-xl md:text-2xl tracking-tight">{selectedPO.PO_ID}</h3>
+                                                    <p className="text-indigo-200 mt-1">{selectedPO.VendorName || 'ไม่ระบุผู้ขาย'}</p>
                                                     {(() => {
                                                         const normalize = (str) => str ? str.toLowerCase().trim() : '';
                                                         const vendor = (vendors || []).find(v => normalize(v.VendorName) === normalize(selectedPO.VendorName));
@@ -636,53 +636,49 @@ const PurchaseOrdersPage = () => {
                                         </div>
 
                                         {/* Body */}
-                                        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                                            {/* Status & Date */}
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-slate-50 p-4 rounded-xl">
-                                                    <p className="text-xs text-slate-700 font-bold mb-1">สถานะ</p>
+                                        <div className="p-4 md:p-5 space-y-4 max-h-[60vh] overflow-y-auto bg-slate-50/50">
+                                            {/* Details List */}
+                                            <div className="bg-slate-50 rounded-xl overflow-hidden divide-y divide-slate-100 border border-slate-100">
+                                                <div className="flex items-center p-3 sm:px-4">
+                                                    <span className="text-xs text-slate-500 font-bold uppercase w-64 shrink-0">สถานะ</span>
                                                     <span className={`text-sm font-bold px-3 py-1 rounded-full border ${getStatusColor(selectedPO.Status)}`}>
                                                         {selectedPO.Status === 'Open' ? 'Pending' : selectedPO.Status}
                                                     </span>
                                                 </div>
-                                                <div className="bg-slate-50 p-4 rounded-xl">
-                                                    <p className="text-xs text-slate-700 font-bold mb-1">วันที่สร้าง</p>
-                                                    <p className="text-sm  text-slate-800">{formatThaiDate(selectedPO.RequestDate)}</p>
+                                                <div className="flex items-center p-3 sm:px-4">
+                                                    <span className="text-xs text-slate-500 font-bold uppercase w-64 shrink-0">วันที่สร้าง</span>
+                                                    <span className="text-sm font-bold text-slate-800">{formatThaiDate(selectedPO.RequestDate)}</span>
                                                 </div>
-                                            </div>
-
-                                            {/* Info Grid */}
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-slate-50 p-4 rounded-xl">
-                                                    <p className="text-xs text-slate-700 font-bold mb-1">ผู้บันทึก</p>
-                                                    <p className="text-sm  text-slate-800">{selectedPO.RequestedBy || '-'}</p>
+                                                <div className="flex items-center p-3 sm:px-4">
+                                                    <span className="text-xs text-slate-500 font-bold uppercase w-64 shrink-0">ผู้บันทึก</span>
+                                                    <span className="text-sm font-bold text-slate-800">{selectedPO.RequestedBy || '-'}</span>
                                                 </div>
-                                                <div className="bg-slate-50 p-4 rounded-xl">
-                                                    <p className="text-xs text-slate-700 font-bold mb-1">แผนก</p>
-                                                    <p className="text-sm  text-slate-800">{selectedPO.Section || '-'}</p>
+                                                <div className="flex items-center p-3 sm:px-4">
+                                                    <span className="text-xs text-slate-500 font-bold uppercase w-64 shrink-0">แผนก</span>
+                                                    <span className="text-sm font-bold text-slate-800">{selectedPO.Section || '-'}</span>
                                                 </div>
                                                 {selectedPO.DueDate && (
-                                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                                        <p className="text-xs text-slate-700 font-bold mb-1">DUE DATE</p>
-                                                        <p className="text-sm  text-slate-800">{formatThaiDate(selectedPO.DueDate)}</p>
+                                                    <div className="flex items-center p-3 sm:px-4">
+                                                        <span className="text-xs text-slate-500 font-bold uppercase w-64 shrink-0">DUE DATE</span>
+                                                        <span className="text-sm font-bold text-slate-800">{formatThaiDate(selectedPO.DueDate)}</span>
                                                     </div>
                                                 )}
                                                 {selectedPO.PR_No && (
-                                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                                        <p className="text-xs text-slate-700 font-bold mb-1">PR NO.</p>
-                                                        <p className="text-sm  text-slate-800">{selectedPO.PR_No}</p>
+                                                    <div className="flex items-center p-3 sm:px-4">
+                                                        <span className="text-xs text-slate-500 font-bold uppercase w-64 shrink-0">PR NO.</span>
+                                                        <span className="text-sm font-bold text-slate-800">{selectedPO.PR_No}</span>
                                                     </div>
                                                 )}
                                                 {selectedPO.BudgetNo && (
-                                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                                        <p className="text-xs text-slate-700 font-bold mb-1">BUDGET NO.</p>
-                                                        <p className="text-sm  text-slate-800">{selectedPO.BudgetNo}</p>
+                                                    <div className="flex items-center p-3 sm:px-4">
+                                                        <span className="text-xs text-slate-500 font-bold uppercase w-64 shrink-0">BUDGET NO.</span>
+                                                        <span className="text-sm font-bold text-slate-800">{selectedPO.BudgetNo}</span>
                                                     </div>
                                                 )}
                                                 {selectedPO.DeliveryTo && (
-                                                    <div className="bg-slate-50 p-4 rounded-xl">
-                                                        <p className="text-xs text-slate-700 font-bold mb-1">DELIVERY TO</p>
-                                                        <p className="text-sm  text-slate-800">{selectedPO.DeliveryTo}</p>
+                                                    <div className="flex items-center p-3 sm:px-4">
+                                                        <span className="text-xs text-slate-500 font-bold uppercase w-64 shrink-0">DELIVERY TO</span>
+                                                        <span className="text-sm font-bold text-slate-800">{selectedPO.DeliveryTo}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -745,7 +741,7 @@ const PurchaseOrdersPage = () => {
                                         <div className="p-4 bg-slate-50 border-t border-slate-200">
                                             <button
                                                 onClick={() => setSelectedPO(null)}
-                                                className="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-700 transition-all"
+                                                className="w-full bg-slate-800 text-white font-bold py-2.5 text-sm rounded-lg hover:bg-slate-700 transition-all"
                                             >
                                                 ปิด
                                             </button>

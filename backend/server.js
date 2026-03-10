@@ -8,7 +8,6 @@ import dotenv from 'dotenv';
 // Config & Services
 import { connectDB } from './src/config/db.js';
 import { connectDciDB } from './src/config/dciDb.js';
-import { initializeDatabase } from './src/config/initDb.js';
 import { sendDailyReport } from './src/services/emailService.js';
 
 // Routes
@@ -47,7 +46,6 @@ app.use('/uploads', express.static(uploadsDir));
 const startServer = async () => {
     try {
         await connectDB();
-        await initializeDatabase();
         await connectDciDB();
 
         // Routes

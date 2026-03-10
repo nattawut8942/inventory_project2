@@ -1015,12 +1015,12 @@ const StockCountPage = () => {
                                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden relative z-[70] flex flex-col max-h-[85vh]"
+                                className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden relative z-[70] flex flex-col max-h-[85vh]"
                             >
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-20">
+                                <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-20">
                                     <div>
-                                        <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-                                            <Search className="text-indigo-500" /> รายการที่ยังไม่ได้นับ
+                                        <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                                            <Search className="text-indigo-500" size={20} /> รายการที่ยังไม่ได้นับ
                                         </h3>
                                         <p className="text-sm text-slate-500 mt-1">
                                             อุปกรณ์ที่มีการเคลื่อนไหวในระบบ แต่ยังไม่มีการนับในรอบนี้ ({(allProducts.length - countingList.length) > 0 ? allProducts.length - countingList.length : 0} รายการ)
@@ -1030,16 +1030,16 @@ const StockCountPage = () => {
                                         onClick={() => setShowUncountedModal(false)}
                                         className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-full transition-colors"
                                     >
-                                        <X size={24} />
+                                        <X size={20} />
                                     </button>
                                 </div>
 
                                 <div className="p-0 overflow-y-auto flex-1 bg-slate-50/50">
                                     {allProducts.filter(p => !countingList.some(c => c.ProductID === p.ProductID)).length === 0 ? (
-                                        <div className="p-16 text-center">
-                                            <CheckCircle2 size={48} className="mx-auto text-emerald-400 mb-4" />
-                                            <h4 className="text-xl font-bold text-slate-700 mb-2">เยี่ยมยอด!</h4>
-                                            <p className="text-slate-500">คุณได้สแกนและนับอุปกรณ์ทั้งหมดในระบบครบทุกรายการแล้ว</p>
+                                        <div className="p-10 text-center">
+                                            <CheckCircle2 size={40} className="mx-auto text-emerald-400 mb-3" />
+                                            <h4 className="text-lg font-bold text-slate-700 mb-1">เยี่ยมยอด!</h4>
+                                            <p className="text-sm text-slate-500">คุณได้สแกนและนับอุปกรณ์ทั้งหมดในระบบครบทุกรายการแล้ว</p>
                                         </div>
                                     ) : (
                                         <div className="divide-y divide-slate-100">
