@@ -19,7 +19,7 @@ const DashboardPage = () => {
 
     React.useEffect(() => {
         // Let the route transition & Sidebar animation finish before rendering heavy charts
-        const timer = setTimeout(() => setIsAnimating(false), 300);
+        const timer = setTimeout(() => setIsAnimating(false), 500);
         return () => clearTimeout(timer);
     }, []);
 
@@ -37,7 +37,7 @@ const DashboardPage = () => {
     const stats = useMemo(() => {
         const productCount = products.length;
         const totalStock = products.reduce((sum, p) => sum + p.CurrentStock, 0);
-        const totalValue = products.reduce((sum, p) => sum + (p.CurrentStock * p.LastPrice), 0);
+        const totalValue = products.reduce((sum, p) => sum + (p.CurrentStock * (p.LastPrice || 0)), 0);
         const lowStockCount = products.filter(p => p.CurrentStock <= p.MinStock && p.MinStock > 0).length;
         const activePOs = purchaseOrders.filter(po => po.Status !== 'Completed').length;
 
@@ -173,6 +173,39 @@ const DashboardPage = () => {
             .sort((a, b) => a.daysRemaining - b.daysRemaining)
             .slice(0, 5);
     }, [maItems]);
+    
+    // 10. Data for Stock Value Bar Chart
+    const stockValueDistributionData = useMemo(() => {
+        const data = categoryData.map(c => {
+            const categoryProducts = products.filter(p => p.DeviceType === c.name);
+            const dataObj = { name: c.name, fill: c.fill };
+            let totalValue = 0;
+            categoryProducts.forEach(p => {
+                const val = p.CurrentStock * (p.LastPrice || 0);
+                if (val > 0) {
+                    const key = p.ProductName || `Product ID: ${p.ProductID}`;
+                    dataObj[key] = (dataObj[key] || 0) + val;
+                    totalValue += val;
+                }
+            });
+            dataObj.totalValue = totalValue;
+            return dataObj;
+        }).sort((a, b) => b.totalValue - a.totalValue);
+
+        const allKeys = Array.from(new Set(
+            data.flatMap(d => Object.keys(d).filter(k => k !== 'name' && k !== 'fill' && k !== 'totalValue'))
+        ));
+
+        const keyToColorMap = {};
+        allKeys.forEach(k => {
+            const cat = data.find(d => d[k] > 0);
+            if (cat) {
+                keyToColorMap[k] = cat.fill;
+            }
+        });
+
+        return { data, allKeys, keyToColorMap };
+    }, [categoryData, products]);
 
     if (loading && products.length === 0) {
         return <LoadingState message="กำลังประมวลผลข้อมูล Dashboard... (Loading Dashboard...)" />;
@@ -217,7 +250,7 @@ const DashboardPage = () => {
     );
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-8 p-1">
             {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -273,91 +306,101 @@ const DashboardPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Stock Movement Chart */}
                 <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="relative bg-white rounded-2xl p-6 shadow-lg border border-slate-100 overflow-hidden group hover:shadow-xl transition-shadow duration-300"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4 }}
+                    className="relative bg-white rounded-2xl p-6 shadow-lg border border-slate-100 overflow-hidden group hover:shadow-xl transition-shadow duration-300 min-w-0"
                 >
                     {/* Subtle decorative gradient */}
                     <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-[60px] opacity-60 pointer-events-none" />
                     <h3 className="relative text-lg font-bold text-slate-800 mb-1">ความเคลื่อนไหวสต็อค 6 เดือน</h3>
                     <p className="relative text-xs text-slate-400 mb-6">รายงานรับเข้า-เบิกจ่ายรายเดือน</p>
-                    <div className="relative h-[250px] lg:h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                            <BarChart data={stockData}>
-                                <defs>
-                                    <linearGradient id="inboundGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-                                        <stop offset="100%" stopColor="#6366f1" stopOpacity={0.8} />
-                                    </linearGradient>
-                                    <linearGradient id="outboundGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#a855f7" stopOpacity={1} />
-                                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                                <XAxis dataKey="month" stroke="#94a3b8" tickLine={false} axisLine={false} dy={10} fontSize={12} />
-                                <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} fontSize={12} />
-                                <Tooltip
-                                    contentStyle={ChartTooltipStyle}
-                                    itemStyle={{ color: '#e2e8f0', fontSize: '13px' }}
-                                    labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '6px' }}
-                                    cursor={{ fill: 'rgba(99, 102, 241, 0.06)' }}
-                                />
-                                <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '13px' }} iconType="circle" iconSize={8} />
-                                <Bar dataKey="inbound" stackId="a" fill="url(#inboundGrad)" name="รับเข้า (Inbound)" radius={[0, 0, 0, 0]} barSize={28} />
-                                <Bar dataKey="outbound" stackId="a" fill="url(#outboundGrad)" name="เบิกจ่าย (Outbound)" radius={[6, 6, 0, 0]} barSize={28} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <div className="w-full">
+                        {isAnimating ? (
+                            <div className="h-[300px] w-full bg-slate-50 rounded-xl animate-pulse" />
+                        ) : (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={stockData}>
+                                    <defs>
+                                        <linearGradient id="inboundGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+                                            <stop offset="100%" stopColor="#6366f1" stopOpacity={0.8} />
+                                        </linearGradient>
+                                        <linearGradient id="outboundGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#a855f7" stopOpacity={1} />
+                                            <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                                    <XAxis dataKey="month" stroke="#94a3b8" tickLine={false} axisLine={false} dy={10} fontSize={12} />
+                                    <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} fontSize={12} />
+                                    <Tooltip
+                                        contentStyle={ChartTooltipStyle}
+                                        itemStyle={{ color: '#e2e8f0', fontSize: '13px' }}
+                                        labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '6px' }}
+                                        cursor={{ fill: 'rgba(99, 102, 241, 0.06)' }}
+                                    />
+                                    <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '13px' }} iconType="circle" iconSize={8} />
+                                    <Bar dataKey="inbound" stackId="a" fill="url(#inboundGrad)" name="รับเข้า (Inbound)" radius={[0, 0, 0, 0]} barSize={28} />
+                                    <Bar dataKey="outbound" stackId="a" fill="url(#outboundGrad)" name="เบิกจ่าย (Outbound)" radius={[6, 6, 0, 0]} barSize={28} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </motion.div>
 
                 {/* Category Distribution (Count) */}
                 <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="relative bg-white rounded-2xl p-6 shadow-lg border border-slate-100 overflow-hidden group hover:shadow-xl transition-shadow duration-300"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                    className="relative bg-white rounded-2xl p-6 shadow-lg border border-slate-100 overflow-hidden group hover:shadow-xl transition-shadow duration-300 min-w-0"
                 >
                     <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-purple-50 to-transparent rounded-bl-[60px] opacity-60 pointer-events-none" />
                     <h3 className="relative text-lg font-bold text-slate-800 mb-1">สัดส่วนอุปกรณ์</h3>
                     <p className="relative text-xs text-slate-400 mb-6">จำนวนรายการแยกตามหมวดหมู่</p>
-                    <div className="relative h-[250px] lg:h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                            <PieChart>
-                                <Pie
-                                    data={categoryData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={65}
-                                    outerRadius={90}
-                                    paddingAngle={4}
-                                    dataKey="value"
-                                    stroke="none"
-                                    label={({ name, value }) => `${name} (${value})`}
-                                >
-                                    {categoryData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} strokeWidth={0} />
-                                    ))}
-                                </Pie>
-                                <Tooltip contentStyle={ChartTooltipStyle} itemStyle={{ color: '#e2e8f0' }} />
-                                <Legend
-                                    verticalAlign="middle"
-                                    align="right"
-                                    layout="vertical"
-                                    iconType="circle"
-                                    iconSize={8}
-                                    wrapperStyle={{ fontSize: '13px' }}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
+                    <div className="w-full">
+                        {isAnimating ? (
+                            <div className="h-[300px] w-full bg-slate-50 rounded-xl animate-pulse" />
+                        ) : (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <PieChart>
+                                    <Pie
+                                        data={categoryData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={65}
+                                        outerRadius={90}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                        stroke="none"
+                                        label={({ name, value }) => `${name} (${value})`}
+                                    >
+                                        {categoryData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.fill} strokeWidth={0} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={ChartTooltipStyle} itemStyle={{ color: '#e2e8f0' }} />
+                                    <Legend
+                                        verticalAlign="middle"
+                                        align="right"
+                                        layout="vertical"
+                                        iconType="circle"
+                                        iconSize={8}
+                                        wrapperStyle={{ fontSize: '13px' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </motion.div>
 
                 {/* Stock Value Distribution */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="relative bg-white rounded-2xl p-6 shadow-lg border border-slate-100 overflow-hidden lg:col-span-2 group hover:shadow-xl transition-shadow duration-300"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                    className="relative bg-white rounded-2xl p-6 shadow-lg border border-slate-100 overflow-hidden lg:col-span-2 group hover:shadow-xl transition-shadow duration-300 min-w-0"
                 >
                     <div className="absolute top-0 right-0 w-60 h-40 bg-gradient-to-bl from-pink-50 to-transparent rounded-bl-[60px] opacity-60 pointer-events-none" />
                     <div className="relative flex justify-between items-center mb-6">
@@ -370,70 +413,40 @@ const DashboardPage = () => {
                             <p className="text-base font-black text-indigo-700 font-mono">฿{stats.totalValue.toLocaleString()}</p>
                         </div>
                     </div>
-                    <div className="relative h-[300px] w-full">
-                        <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                {(() => {
-                                    const stockValueData = categoryData.map(c => {
-                                        const categoryProducts = products.filter(p => p.DeviceType === c.name);
-                                        const dataObj = { name: c.name, fill: c.fill };
-                                        let totalValue = 0;
-                                        categoryProducts.forEach(p => {
-                                            const val = p.CurrentStock * p.LastPrice;
-                                            if (val > 0) {
-                                                const key = p.ProductName || `Product ID: ${p.ProductID}`;
-                                                dataObj[key] = (dataObj[key] || 0) + val;
-                                                totalValue += val;
-                                            }
-                                        });
-                                        dataObj.totalValue = totalValue;
-                                        return dataObj;
-                                    }).sort((a, b) => b.totalValue - a.totalValue);
-
-                                    const allKeys = Array.from(new Set(
-                                        stockValueData.flatMap(d => Object.keys(d).filter(k => k !== 'name' && k !== 'fill' && k !== 'totalValue'))
-                                    ));
-
-                                    const keyToColor = {};
-                                    allKeys.forEach(k => {
-                                        const cat = stockValueData.find(d => d[k] > 0);
-                                        if (cat) {
-                                            keyToColor[k] = cat.fill;
-                                        }
-                                    });
-
-                                    return (
-                                        <BarChart
-                                            data={stockValueData}
-                                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                            <XAxis dataKey="name" stroke="#94a3b8" tickLine={false} axisLine={false} fontSize={12} />
-                                            <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(value) => `฿${(value / 1000).toFixed(0)}k`} fontSize={12} />
-                                            <Tooltip
-                                                cursor={{ fill: 'rgba(99, 102, 241, 0.04)' }}
-                                                formatter={(value, name) => [`฿${value.toLocaleString()}`, name]}
-                                                contentStyle={ChartTooltipStyle}
-                                                itemStyle={{ color: '#e2e8f0', fontSize: '12px' }}
-                                                labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '6px' }}
-                                                itemSorter={(item) => -item.value}
-                                            />
-                                            {allKeys.map(key => (
-                                                <Bar
-                                                    key={key}
-                                                    dataKey={key}
-                                                    stackId="a"
-                                                    fill={keyToColor[key] || '#8884d8'}
-                                                    stroke="rgba(255,255,255,0.5)"
-                                                    strokeWidth={1}
-                                                    barSize={36}
-                                                />
-                                            ))}
-                                        </BarChart>
-                                    );
-                                })()}
+                    <div className="w-full">
+                        {isAnimating ? (
+                            <div className="h-[320px] w-full bg-slate-50 rounded-xl animate-pulse" />
+                        ) : (
+                            <ResponsiveContainer width="100%" height={320}>
+                                <BarChart
+                                    data={stockValueDistributionData.data}
+                                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                    <XAxis dataKey="name" stroke="#94a3b8" tickLine={false} axisLine={false} fontSize={12} />
+                                    <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(value) => `฿${(value / 1000).toFixed(0)}k`} fontSize={12} />
+                                    <Tooltip
+                                        cursor={{ fill: 'rgba(99, 102, 241, 0.04)' }}
+                                        formatter={(value, name) => [`฿${value.toLocaleString()}`, name]}
+                                        contentStyle={ChartTooltipStyle}
+                                        itemStyle={{ color: '#e2e8f0', fontSize: '12px' }}
+                                        labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '6px' }}
+                                        itemSorter={(item) => -item.value}
+                                    />
+                                    {stockValueDistributionData.allKeys.map(key => (
+                                        <Bar
+                                            key={key}
+                                            dataKey={key}
+                                            stackId="a"
+                                            fill={stockValueDistributionData.keyToColorMap[key] || '#8884d8'}
+                                            stroke="rgba(255,255,255,0.5)"
+                                            strokeWidth={1}
+                                            barSize={36}
+                                        />
+                                    ))}
+                                </BarChart>
                             </ResponsiveContainer>
-                        </div>
+                        )}
                     </div>
                 </motion.div>
             </div>

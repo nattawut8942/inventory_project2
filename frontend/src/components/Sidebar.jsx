@@ -173,6 +173,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                     </NavGroup>
 
                     <NavItem icon={FileKey} label="MA / LICENSE" to="/ma-license" onClose={onClose} />
+                    <NavItem icon={Shield} label="BITLOCKER KEY " to="/bitlocker" onClose={onClose} />
 
                     {user?.role === 'Staff' && (
                         <>
@@ -215,7 +216,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                             <LogOut size={18} />
                         </button>
                     </div>
-                    <p className="text-[9px] text-center mt-5 text-center text-[13px] text-gray-500">© 2026 by: Natthawut.Y <span className="font-bold text-indigo-400">All rights reserved. </span></p>
+                    <p className="text-[10px] text-center mt-5 text-slate-500">© 2026 by: Natthawut.Y <span className="font-bold text-indigo-400">All rights reserved. </span></p>
                 </div>
             </aside>
         </>

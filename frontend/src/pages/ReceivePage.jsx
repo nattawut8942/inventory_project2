@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileText, Search, Calendar, Eye, X, Package, Check, CircleArrowDown, ShoppingCart, Clock, Phone, RotateCcw } from 'lucide-react';
+import { FileText, Search, Calendar, Eye, X, Package, Check, CircleArrowDown, ShoppingCart, Clock, Phone, RotateCcw, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -47,6 +47,15 @@ const ReceivePage = () => {
     // Pagination State for Invoices
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
+    const [sortConfig, setSortConfig] = useState(null);
+
+    const handleSort = (key) => {
+        let direction = 'desc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = 'asc';
+        }
+        setSortConfig({ key, direction });
+    };
 
     // Selection state for Receive Modal
     const [selectedItems, setSelectedItems] = useState({});
@@ -210,8 +219,18 @@ const ReceivePage = () => {
     const { filteredPOs, filteredInvoices } = result;
 
     // Pagination Logic
-    const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
-    const currentInvoices = filteredInvoices.slice(
+    const sortedInvoices = [...filteredInvoices].sort((a, b) => {
+        if (!sortConfig) return 0;
+        let aVal = a[sortConfig.key] || '';
+        let bVal = b[sortConfig.key] || '';
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const totalPages = Math.ceil(sortedInvoices.length / itemsPerPage);
+    const currentInvoices = sortedInvoices.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
@@ -411,13 +430,27 @@ const ReceivePage = () => {
                         <thead className="bg-gradient-to-r from-slate-50 to-slate-100 text-xs text-slate-500 uppercase border-b border-slate-200">
                             <tr>
                                 {/* 3. เพิ่ม whitespace-nowrap ในคอลัมน์ที่ต้องการให้กว้างตามเนื้อหา */}
-                                <th className="p-4 pl-6 font-bold whitespace-nowrap">เลข INVOICE</th>
-                                <th className="p-4 font-bold whitespace-nowrap">PO REF.</th>
-                                <th className="p-4 font-bold whitespace-nowrap">VENDOR</th>
-                                <th className="p-4 font-bold whitespace-nowrap">BUDGET NO.</th>
-                                <th className="p-4 font-bold whitespace-nowrap">วัน-เวลา</th>
-                                <th className="p-4 font-bold text-center whitespace-nowrap">สถานะ</th>
-                                <th className="p-4 font-bold text-center whitespace-nowrap">User</th>
+                                <th className="p-4 pl-6 font-bold whitespace-nowrap cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('InvoiceNo')}>
+                                    <div className="flex items-center gap-1">เลข INVOICE {sortConfig?.key === 'InvoiceNo' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 font-bold whitespace-nowrap cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('PO_ID')}>
+                                    <div className="flex items-center gap-1">PO REF. {sortConfig?.key === 'PO_ID' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 font-bold whitespace-nowrap cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('VendorName')}>
+                                    <div className="flex items-center gap-1">VENDOR {sortConfig?.key === 'VendorName' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 font-bold whitespace-nowrap cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('BudgetNo')}>
+                                    <div className="flex items-center gap-1">BUDGET NO. {sortConfig?.key === 'BudgetNo' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 font-bold whitespace-nowrap cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('ReceiveDate')}>
+                                    <div className="flex items-center gap-1">วัน-เวลา {sortConfig?.key === 'ReceiveDate' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 font-bold text-center whitespace-nowrap cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('Status')}>
+                                    <div className="flex items-center justify-center gap-1">สถานะ {sortConfig?.key === 'Status' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 font-bold text-center whitespace-nowrap cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('ReceivedBy')}>
+                                    <div className="flex items-center justify-center gap-1">User {sortConfig?.key === 'ReceivedBy' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
                                 <th className="p-4 font-bold text-center whitespace-nowrap">ดำเนินการ</th>
                             </tr>
                         </thead>

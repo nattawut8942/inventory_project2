@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Printer, Package, AlertTriangle, List, LayoutGrid, TrendingDown, Truck, Droplet, RefreshCw } from 'lucide-react';
+import { Search, Printer, Package, AlertTriangle, List, LayoutGrid, TrendingDown, Truck, Droplet, RefreshCw, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { API_BASE } from '../config/api';
 import Pagination from '../components/Pagination';
@@ -31,6 +31,7 @@ const InkTonerStockPage = () => {
     const [viewMode, setViewMode] = useState('list');
     const [showLowStock, setShowLowStock] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [sortConfig, setSortConfig] = useState(null);
     const itemsPerPage = 10;
 
     const fetchData = async () => {
@@ -63,9 +64,34 @@ const InkTonerStockPage = () => {
         return matchesSearch && matchesLowStock;
     });
 
+    // Sorting Data
+    const sortedData = [...filteredData].sort((a, b) => {
+        if (!sortConfig) return 0;
+        let aVal = a[sortConfig.key] || '';
+        let bVal = b[sortConfig.key] || '';
+
+        // Handle numeric sorting for stock fields
+        if (['CurrentStock', 'SaftyStock', 'Minimum'].includes(sortConfig.key)) {
+            aVal = Number(aVal) || 0;
+            bVal = Number(bVal) || 0;
+        }
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const handleSort = (key) => {
+        let direction = 'desc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = 'asc';
+        }
+        setSortConfig({ key, direction });
+    };
+
     // Pagination
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-    const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+    const paginatedData = sortedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     // Reset page when filters change
     useEffect(() => {
@@ -267,15 +293,31 @@ const InkTonerStockPage = () => {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 uppercase text-[12px] tracking-widest border-b border-slate-200">
                             <tr>
-                                <th className="p-4 pl-6">รหัส</th>
-                                <th className="p-4">ชื่อรายการ</th>
-                                <th className="p-4">สเปค</th>
-                                <th className="p-4 text-center">คงเหลือ</th>
-                                <th className="p-4 text-center">Safety Stock</th>
-                                <th className="p-4 text-center">Minimum</th>
-                                <th className="p-4">หน่วย</th>
-                                <th className="p-4">ผู้จัดจำหน่าย</th>
-                                <th className="p-4">สถานะ</th>
+                                <th className="p-4 pl-6 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('Prt_Code')}>
+                                    <div className="flex items-center gap-1">รหัส {sortConfig?.key === 'Prt_Code' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('Prt_Name')}>
+                                    <div className="flex items-center gap-1">ชื่อรายการ {sortConfig?.key === 'Prt_Name' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('Spect')}>
+                                    <div className="flex items-center gap-1">สเปค {sortConfig?.key === 'Spect' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 text-center cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('CurrentStock')}>
+                                    <div className="flex items-center justify-center gap-1">คงเหลือ {sortConfig?.key === 'CurrentStock' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 text-center cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('SaftyStock')}>
+                                    <div className="flex items-center justify-center gap-1">Safety Stock {sortConfig?.key === 'SaftyStock' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 text-center cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('Minimum')}>
+                                    <div className="flex items-center justify-center gap-1">Minimum {sortConfig?.key === 'Minimum' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('Um')}>
+                                    <div className="flex items-center gap-1">หน่วย {sortConfig?.key === 'Um' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('Vender')}>
+                                    <div className="flex items-center gap-1">ผู้จัดจำหน่าย {sortConfig?.key === 'Vender' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                </th>
+                                <th className="p-4 text-center">สถานะ</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Plus, X, Eye, Search, Calendar, Filter, Check, Building2, Upload, FileText, Loader2, RefreshCw, AlertTriangle, Phone, Trash2, Pencil } from 'lucide-react';
+import { ShoppingCart, Plus, X, Eye, Search, Calendar, Filter, Check, Building2, Upload, FileText, Loader2, RefreshCw, AlertTriangle, Phone, Trash2, Pencil, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -56,6 +56,15 @@ const PurchaseOrdersPage = () => {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
+    const [sortConfig, setSortConfig] = useState(null);
+
+    const handleSort = (key) => {
+        let direction = 'desc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = 'asc';
+        }
+        setSortConfig({ key, direction });
+    };
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
@@ -195,8 +204,18 @@ const PurchaseOrdersPage = () => {
     });
 
     // Pagination Logic
-    const totalPages = Math.ceil(filteredPOs.length / itemsPerPage);
-    const currentTableData = filteredPOs.slice(
+    const sortedPOs = [...filteredPOs].sort((a, b) => {
+        if (!sortConfig) return 0;
+        let aVal = a[sortConfig.key] || '';
+        let bVal = b[sortConfig.key] || '';
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const totalPages = Math.ceil(sortedPOs.length / itemsPerPage);
+    const currentTableData = sortedPOs.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
@@ -399,13 +418,27 @@ const PurchaseOrdersPage = () => {
                                 <table className="w-full text-left text-sm">
                                     <thead className="bg-slate-50 text-slate-600 uppercase text-[11px] tracking-wider border-b border-slate-200 sticky top-0 z-10 shadow-sm">
                                         <tr>
-                                            <th className="p-2 pl-4 min-w-[120px] bg-slate-50">เลข PO</th>
-                                            <th className="p-2 min-w-[100px] bg-slate-50">วันที่บันทึก</th>
-                                            <th className="p-2 min-w-[150px] bg-slate-50">VENDOR</th>
-                                            <th className="p-2 min-w-[120px] bg-slate-50">DELIVERY TO</th>
-                                            <th className="p-2 min-w-[100px] bg-slate-50">DUE DATE</th>
-                                            <th className="p-2 min-w-[120px] bg-slate-50">ผู้ทำรายการ</th>
-                                            <th className="p-2 min-w-[100px] text-center bg-slate-50">สถานะ</th>
+                                            <th className="p-2 pl-4 min-w-[120px] bg-slate-50 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('PO_ID')}>
+                                                <div className="flex items-center gap-1">เลข PO {sortConfig?.key === 'PO_ID' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                            </th>
+                                            <th className="p-2 min-w-[100px] bg-slate-50 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('RequestDate')}>
+                                                <div className="flex items-center gap-1">วันที่บันทึก {sortConfig?.key === 'RequestDate' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                            </th>
+                                            <th className="p-2 min-w-[150px] bg-slate-50 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('VendorName')}>
+                                                <div className="flex items-center gap-1">VENDOR {sortConfig?.key === 'VendorName' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                            </th>
+                                            <th className="p-2 min-w-[120px] bg-slate-50 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('DeliveryTo')}>
+                                                <div className="flex items-center gap-1">DELIVERY TO {sortConfig?.key === 'DeliveryTo' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                            </th>
+                                            <th className="p-2 min-w-[100px] bg-slate-50 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('DueDate')}>
+                                                <div className="flex items-center gap-1">DUE DATE {sortConfig?.key === 'DueDate' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                            </th>
+                                            <th className="p-2 min-w-[120px] bg-slate-50 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('RequestedBy')}>
+                                                <div className="flex items-center gap-1">ผู้ทำรายการ {sortConfig?.key === 'RequestedBy' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                            </th>
+                                            <th className="p-2 min-w-[100px] text-center bg-slate-50 cursor-pointer hover:bg-slate-100 group transition-colors" onClick={() => handleSort('Status')}>
+                                                <div className="flex items-center justify-center gap-1">สถานะ {sortConfig?.key === 'Status' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />}</div>
+                                            </th>
                                             <th className="p-2 min-w-[60px] text-center bg-slate-50">จำนวน</th>
                                             <th className="p-2 min-w-[120px] text-right pr-4 bg-slate-50">จัดการ</th>
                                         </tr>
