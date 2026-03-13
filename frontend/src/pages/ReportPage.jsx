@@ -86,6 +86,12 @@ const ReportPage = () => {
     const [filterTransType, setFilterTransType] = useState('all');        // 'all','IN','OUT'
     const [clickedCategory, setClickedCategory] = useState(null);         // chart click-to-filter
     const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setIsMounted(true), 500);
+        return () => clearTimeout(timer);
+    }, []);
 
     const datePresets = [
         { id: 'all', label: 'ทั้งหมด' },
@@ -647,23 +653,27 @@ const ReportPage = () => {
                     className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
                 >
                     <h3 className="text-lg font-semibold text-slate-900 mb-4">การเคลื่อนไหวสต็อค (จำนวนชิ้น)</h3>
-                    <ResponsiveContainer width="100%" height={250} minWidth={1} minHeight={1}>
-                        <BarChart data={stockMovementData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                            <XAxis dataKey="month" stroke="#64748b" />
-                            <YAxis stroke="#64748b" />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: 'white',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                }}
-                            />
-                            <Legend />
-                            <Bar dataKey="inbound" fill="#3b82f6" name="อุปกรณ์เข้า" radius={[8, 8, 0, 0]} />
-                            <Bar dataKey="outbound" fill="#8b5cf6" name="อุปกรณ์ออก" radius={[8, 8, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    <div className="h-[250px] w-full">
+                        {isMounted && (
+                            <ResponsiveContainer width="100%" height={250} minWidth={0} minHeight={0} debounce={50}>
+                            <BarChart data={stockMovementData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                <XAxis dataKey="month" stroke="#64748b" />
+                                <YAxis stroke="#64748b" />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: 'white',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                    }}
+                                />
+                                <Legend />
+                                <Bar dataKey="inbound" fill="#3b82f6" name="อุปกรณ์เข้า" radius={[8, 8, 0, 0]} />
+                                <Bar dataKey="outbound" fill="#8b5cf6" name="อุปกรณ์ออก" radius={[8, 8, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
                 </motion.div>
 
                 {/* NEW: Cost & Usage Chart (Money) */}
@@ -676,7 +686,9 @@ const ReportPage = () => {
                         <DollarSign className="w-5 h-5 text-emerald-500" />
                         <h3 className="text-lg font-semibold text-slate-900">วิเคราะห์ค่าใช้จ่าย (บาท)</h3>
                     </div>
-                    <ResponsiveContainer width="100%" height={250} minWidth={1} minHeight={1}>
+                    <div className="h-[250px] w-full">
+                    {isMounted && (
+                        <ResponsiveContainer width="100%" height={250} minWidth={0} minHeight={0} debounce={50}>
                         <LineChart data={costAnalysisData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                             <XAxis dataKey="month" stroke="#64748b" />
@@ -694,6 +706,8 @@ const ReportPage = () => {
                             <Line type="monotone" dataKey="consumption" stroke="#f59e0b" strokeWidth={3} name="เบิกใช้ (Usage)" dot={{ fill: '#f59e0b' }} />
                         </LineChart>
                     </ResponsiveContainer>
+                    )}
+                    </div>
                 </motion.div>
             </div>
 
@@ -776,27 +790,31 @@ const ReportPage = () => {
                         <h3 className="text-lg font-semibold text-slate-900">แนวโน้มสต็อก (Net Movement)</h3>
                     </div>
                     <p className="text-xs text-slate-400 mb-4">Net = รับเข้า − เบิกออก (ค่า+ = สต็อกเพิ่ม, ค่า− = สต็อกลด)</p>
-                    <ResponsiveContainer width="100%" height={280} minWidth={1} minHeight={1}>
-                        <BarChart data={netMovementTrend}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                            <XAxis dataKey="month" stroke="#64748b" />
-                            <YAxis stroke="#64748b" />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px' }}
-                                formatter={(value, name) => {
-                                    const labels = { inbound: 'รับเข้า', outbound: 'เบิกออก', net: 'Net' };
-                                    return [`${value} ชิ้น`, labels[name] || name];
-                                }}
-                            />
-                            <Legend formatter={(value) => {
-                                const labels = { inbound: 'รับเข้า', outbound: 'เบิกออก', net: 'Net (สุทธิ)' };
-                                return labels[value] || value;
-                            }} />
-                            <Bar dataKey="inbound" fill="#3b82f6" radius={[4, 4, 0, 0]} opacity={0.35} barSize={20} />
-                            <Bar dataKey="outbound" fill="#8b5cf6" radius={[4, 4, 0, 0]} opacity={0.35} barSize={20} />
-                            <Line type="monotone" dataKey="net" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', r: 5 }} name="net" />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    <div className="h-[280px] w-full">
+                    {isMounted && (
+                        <ResponsiveContainer width="100%" height={280} minWidth={0} minHeight={0} debounce={50}>
+                            <BarChart data={netMovementTrend}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                <XAxis dataKey="month" stroke="#64748b" />
+                                <YAxis stroke="#64748b" />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+                                    formatter={(value, name) => {
+                                        const labels = { inbound: 'รับเข้า', outbound: 'เบิกออก', net: 'Net' };
+                                        return [`${value} ชิ้น`, labels[name] || name];
+                                    }}
+                                />
+                                <Legend formatter={(value) => {
+                                    const labels = { inbound: 'รับเข้า', outbound: 'เบิกออก', net: 'Net (สุทธิ)' };
+                                    return labels[value] || value;
+                                }} />
+                                <Bar dataKey="inbound" fill="#3b82f6" radius={[4, 4, 0, 0]} opacity={0.35} barSize={20} />
+                                <Bar dataKey="outbound" fill="#8b5cf6" radius={[4, 4, 0, 0]} opacity={0.35} barSize={20} />
+                                <Line type="monotone" dataKey="net" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', r: 5 }} name="net" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                    </div>
                 </motion.div>
             </div>
 
@@ -933,7 +951,7 @@ const ReportPage = () => {
                 )}
                 {/* Injected CSS for Pie focus effect - Color preserved, just blurred and faded */}
                 <style>{`
-                    .pie-focus-inactive { 
+                    .pie-focus-inactive {
                         filter: blur(3px) !important;
                         opacity: 0.3 !important;
                     }
@@ -944,80 +962,82 @@ const ReportPage = () => {
                 `}</style>
 
                 {categoryData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={1}>
-                        <RechartsPie>
-                            <Pie
-                                data={categoryData}
-                                cx="50%"
-                                cy="45%"
-                                innerRadius={50}
-                                outerRadius={90}
-                                paddingAngle={2}
-                                fill="#8884d8"
-                                dataKey="value"
-                                style={{ cursor: 'pointer', outline: 'none' }}
-                                onClick={(data) => {
-                                    // Robust ID/Name extraction from Recharts click event
-                                    const entry = data?.payload?.payload || data?.payload || data;
-                                    const categoryId = entry?.id || entry?.name;
-                                    if (categoryId) handleChartCategoryClick(categoryId);
-                                }}
-                            >
-                                {categoryData.map((entry, index) => {
-                                    // Compare against both ID and Name for robustness
-                                    const isActive = clickedCategory === entry.id || clickedCategory === entry.name;
-                                    const isInactive = clickedCategory && !isActive;
-                                    return (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={entry.color}
-                                            className={isInactive ? 'pie-focus-inactive' : ''}
-                                            stroke={isActive ? '#4f46e5' : 'white'}
-                                            strokeWidth={isActive ? 3 : 1}
-                                            style={{
-                                                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                cursor: 'pointer',
-                                                outline: 'none'
-                                            }}
-                                        />
-                                    );
-                                })}
-                            </Pie>
-                            <Tooltip
-                                contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                formatter={(val, name) => {
-                                    const total = categoryData.reduce((s, c) => s + c.value, 0);
-                                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                                    return [`${val} รายการ (${pct}%)`, name];
-                                }}
-                            />
-                            <Legend
-                                layout="horizontal"
-                                verticalAlign="bottom"
-                                align="center"
-                                iconType="circle"
-                                iconSize={8}
-                                wrapperStyle={{ fontSize: '11px', paddingTop: '15px' }}
-                                formatter={(value, entry) => {
-                                    const item = categoryData.find(c => c.name === value);
-                                    const isActive = clickedCategory === item?.id || clickedCategory === item?.name;
-                                    const isInactive = clickedCategory && !isActive;
-                                    return (
-                                        <span
-                                            className={isInactive ? 'legend-item-inactive' : ''}
-                                            style={{
-                                                transition: 'all 0.4s ease',
-                                                fontWeight: isActive ? 'bold' : 'normal',
-                                                color: isInactive ? '#94a3b8' : '#1e293b'
-                                            }}
-                                        >
-                                            {value} ({item?.value || 0})
-                                        </span>
-                                    );
-                                }}
-                            />
-                        </RechartsPie>
-                    </ResponsiveContainer>
+                    <div className="h-[300px] w-full">
+                        {isMounted && (
+                            <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={0} debounce={50}>
+                                <RechartsPie>
+                                    <Pie
+                                        data={categoryData}
+                                        cx="50%"
+                                        cy="45%"
+                                        innerRadius={50}
+                                        outerRadius={90}
+                                        paddingAngle={2}
+                                        fill="#8884d8"
+                                        dataKey="value"
+                                        style={{ cursor: 'pointer', outline: 'none' }}
+                                        onClick={(data) => {
+                                            const entry = data?.payload?.payload || data?.payload || data;
+                                            const categoryId = entry?.id || entry?.name;
+                                            if (categoryId) handleChartCategoryClick(categoryId);
+                                        }}
+                                    >
+                                        {categoryData.map((entry, index) => {
+                                            const isActive = clickedCategory === entry.id || clickedCategory === entry.name;
+                                            const isInactive = clickedCategory && !isActive;
+                                            return (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={entry.color}
+                                                    className={isInactive ? 'pie-focus-inactive' : ''}
+                                                    stroke={isActive ? '#4f46e5' : 'white'}
+                                                    strokeWidth={isActive ? 3 : 1}
+                                                    style={{
+                                                        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                        cursor: 'pointer',
+                                                        outline: 'none'
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                        formatter={(val, name) => {
+                                            const total = categoryData.reduce((s, c) => s + c.value, 0);
+                                            const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                                            return [`${val} รายการ (${pct}%)`, name];
+                                        }}
+                                    />
+                                    <Legend
+                                        layout="horizontal"
+                                        verticalAlign="bottom"
+                                        align="center"
+                                        iconType="circle"
+                                        iconSize={8}
+                                        wrapperStyle={{ fontSize: '11px', paddingTop: '15px' }}
+                                        formatter={(value, entry) => {
+                                            const item = categoryData.find(c => c.name === value);
+                                            const isActive = clickedCategory === item?.id || clickedCategory === item?.name;
+                                            const isInactive = clickedCategory && !isActive;
+                                            return (
+                                                <span
+                                                    className={isInactive ? 'legend-item-inactive' : ''}
+                                                    style={{
+                                                        transition: 'all 0.4s ease',
+                                                        fontWeight: isActive ? 'bold' : 'normal',
+                                                        color: isInactive ? '#94a3b8' : '#1e293b'
+                                                    }}
+                                                >
+                                                    {value} ({item?.value || 0})
+                                                </span>
+                                            );
+                                        }}
+                                    />
+                                </RechartsPie>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-[300px] text-slate-400">
                         <PieChart className="w-10 h-10 mb-2 opacity-20" />
@@ -1104,7 +1124,8 @@ const ReportPage = () => {
 
                     {withdrawalsByCategory.length > 0 ? (
                         <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                            {isMounted && (
+                                <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={0} debounce={50}>
                                 <BarChart
                                     layout="vertical"
                                     data={withdrawalsByCategory.slice(0, 10).map((item) => ({
@@ -1154,7 +1175,8 @@ const ReportPage = () => {
                                         <LabelList dataKey="value" position="right" style={{ fill: '#64748b', fontSize: 12, fontWeight: 'bold' }} formatter={(val) => `${val} ชิ้น`} />
                                     </Bar>
                                 </BarChart>
-                            </ResponsiveContainer>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     ) : (
                         <div className="text-center py-8 text-slate-400">

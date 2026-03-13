@@ -19,7 +19,7 @@ const DashboardPage = () => {
 
     React.useEffect(() => {
         // Let the route transition & Sidebar animation finish before rendering heavy charts
-        const timer = setTimeout(() => setIsAnimating(false), 500);
+        const timer = setTimeout(() => setIsAnimating(false), 800);
         return () => clearTimeout(timer);
     }, []);
 
@@ -319,7 +319,7 @@ const DashboardPage = () => {
                         {isAnimating ? (
                             <div className="h-[300px] w-full bg-slate-50 rounded-xl animate-pulse" />
                         ) : (
-                            <ResponsiveContainer width="100%" height={300}>
+                            <ResponsiveContainer width="100%" height={300} minWidth={0} debounce={50}>
                                 <BarChart data={stockData}>
                                     <defs>
                                         <linearGradient id="inboundGrad" x1="0" y1="0" x2="0" y2="1">
@@ -363,7 +363,7 @@ const DashboardPage = () => {
                         {isAnimating ? (
                             <div className="h-[300px] w-full bg-slate-50 rounded-xl animate-pulse" />
                         ) : (
-                            <ResponsiveContainer width="100%" height={300}>
+                            <ResponsiveContainer width="100%" height={300} minWidth={0} debounce={50}>
                                 <PieChart>
                                     <Pie
                                         data={categoryData}
@@ -417,7 +417,7 @@ const DashboardPage = () => {
                         {isAnimating ? (
                             <div className="h-[320px] w-full bg-slate-50 rounded-xl animate-pulse" />
                         ) : (
-                            <ResponsiveContainer width="100%" height={320}>
+                            <ResponsiveContainer width="100%" height={320} minWidth={0} debounce={50}>
                                 <BarChart
                                     data={stockValueDistributionData.data}
                                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}

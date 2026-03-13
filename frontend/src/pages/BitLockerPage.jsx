@@ -174,11 +174,45 @@ const BitLockerPage = () => {
     };
     const isVisible = (id, field) => visibleFields[`${id}-${field}`];
 
-    // Copy to clipboard
-    const copyToClipboard = (text, fieldKey) => {
-        navigator.clipboard.writeText(text);
-        setCopiedField(fieldKey);
-        setTimeout(() => setCopiedField(null), 2000);
+    // Copy to clipboard with fallback
+    const copyToClipboard = async (text, fieldKey) => {
+        try {
+            if (!text) {
+                setAlertModal({ 
+                    isOpen: true, 
+                    type: 'error', 
+                    title: 'ข้อผิดพลาด', 
+                    message: 'ไม่มีข้อมูลที่จะคัดลอก' 
+                });
+                return;
+            }
+
+            // Try modern Clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                // Fallback: use textarea + execCommand
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+
+            setCopiedField(fieldKey);
+            setTimeout(() => setCopiedField(null), 2000);
+        } catch (err) {
+            console.error('Copy failed:', err);
+            setAlertModal({ 
+                isOpen: true, 
+                type: 'error', 
+                title: 'ล้มเหลว', 
+                message: 'ไม่สามารถคัดลอกได้ - กรุณาลองใหม่' 
+            });
+        }
     };
 
     // Sort handler
@@ -323,165 +357,189 @@ const BitLockerPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden flex flex-col"
                 >
-                    <div className="overflow-x-auto max-h-[60vh] 2xl:max-h-[70vh] custom-scrollbar relative">
-                        <table className="w-full text-left text-sm whitespace-nowrap">
-                            <thead className="bg-slate-50 text-slate-600 uppercase text-[11px] tracking-wider border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-                                <tr>
-                                    <th className="p-3 pl-4 w-12 bg-slate-50 text-center cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('RecordID')}>
-                                        <div className="flex items-center justify-center gap-1">
-                                            #
-                                            {sortConfig.key === 'RecordID' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
-                                        </div>
-                                    </th>
-                                    <th className="p-3 bg-slate-50 min-w-[120px] cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('Hostname')}>
-                                        <div className="flex items-center gap-1">
-                                            Hostname
-                                            {sortConfig.key === 'Hostname' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
-                                        </div>
-                                    </th>
-                                    <th className="p-3 bg-slate-50 min-w-[140px] cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('UserName')}>
-                                        <div className="flex items-center gap-1">
+                    <div className="relative w-full rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        {/* Wrapper สำหรับ Scroll แนวนอน */}
+                        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                            <table className="w-full text-left text-sm border-collapse min-w-[1000px]">
+                                <thead className="bg-slate-50/80 backdrop-blur-md text-slate-800 uppercase text-[11px] font-bold tracking-widest sticky top-0 z-20 border-b border-slate-200">
+                                    <tr>
+                                        <th className="p-4 pl-6 w-16 text-center ">#</th>
+                                        <th className="p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('Hostname')}>
+                                            <div className="flex items-center gap-1.5">
+                                                Hostname {sortConfig.key === 'Hostname' && <ChevronDown size={14} className="text-indigo-500" />}
+                                            </div>
+                                        </th>
+                                        <th className="p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('UserName')}>
                                             User
-                                            {sortConfig.key === 'UserName' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
-                                        </div>
-                                    </th>
-                                    <th className="p-3 bg-slate-50 min-w-[200px]">Disk C</th>
-                                    <th className="p-3 bg-slate-50 min-w-[200px]">Disk D</th>
-                                    <th className="p-3 bg-slate-50 min-w-[120px]">PIN</th>
-                                    <th className="p-3 bg-slate-50 min-w-[100px] cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('RecordedBy')}>
-                                        <div className="flex items-center gap-1">
+                                        </th>
+                                        <th className="p-4 min-w-[380px]">
+                                            BitLocker Recovery (C/D)
+                                        </th>
+                                        <th className="p-4 w-32">
+                                            PIN
+                                        </th>
+                                        <th className="p-4 w-44 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('RecordedBy')}>
                                             Record By
-                                            {sortConfig.key === 'RecordedBy' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
-                                        </div>
-                                    </th>
-                                    <th className="p-3 bg-slate-50 min-w-[100px] cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('CreatedAt')}>
-                                        <div className="flex items-center gap-1">
-                                            เวลาบันทึก
-                                            {sortConfig.key === 'CreatedAt' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
-                                        </div>
-                                    </th>
-                                    <th className="p-3 bg-slate-50 min-w-[100px] text-center cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('Status')}>
-                                        <div className="flex items-center justify-center gap-1">
-                                            สถานะ
-                                            {sortConfig.key === 'Status' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
-                                        </div>
-                                    </th>
-                                    {isAdmin && (
-                                        <th className="p-3 bg-slate-50 w-24 text-center">จัดการ</th>
-                                    )}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {paginatedRecords.map((record, idx) => {
-                                    const globalIdx = (currentPage - 1) * itemsPerPage + idx;
-                                    return (
-                                        <motion.tr
-                                            key={record.RecordID}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            transition={{ delay: idx * 0.02 }}
-                                            className="hover:bg-slate-50/80 transition-colors"
-                                        >
-                                            <td className="py-1.5 px-3 pl-4 text-center text-slate-400 font-mono text-xs">{globalIdx + 1}</td>
-                                            <td className="py-1.5 px-3 font-bold text-slate-900 text-xs">
-                                                {record.Hostname}
-                                                {record.Remark && <div className="text-[10px] text-slate-400 font-normal truncate max-w-[140px]" title={record.Remark}>{record.Remark}</div>}
-                                            </td>
-                                            <td className="py-1.5 px-3 text-lm text-slate-700">
-                                                <div className="font-medium">{record.UserName || '-'}</div>
-                                                <div className="text-[12px] text-indigo-500">{record.EmployeeId ? `ID: ${record.EmployeeId}` : ''}</div>
-                                            </td>
+                                        </th>
+                                        <th className="p-4 w-28 text-center">
+                                            Status
+                                        </th>
+                                        {isAdmin && (
+                                            <th className="p-4 w-28 text-center sticky right-0 bg-slate-50/90 backdrop-blur-md z-30 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.05)] border-l border-slate-200">
+                                                Actions
+                                            </th>
+                                        )}
+                                    </tr>
+                                </thead>
 
-                                            {/* Disk C */}
-                                            <td className="py-1.5 px-3">
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className="font-mono text-xs font-semibold text-slate-700" title={record.DiskC_RecoveryKey || 'N/A'}>
-                                                        {isVisible(record.RecordID, 'diskC') ? (record.DiskC_RecoveryKey || 'N/A') : '••••••••••••••••••••••••'}
-                                                    </div>
-                                                    <div className="flex gap-0.5 shrink-0">
-                                                        {record.DiskC_RecoveryKey && isVisible(record.RecordID, 'diskC') && (
-                                                            <button onClick={() => copyToClipboard(record.DiskC_RecoveryKey, `${record.RecordID}-diskC`)} className="p-1 text-slate-400 hover:text-emerald-600 rounded bg-white border border-slate-100 shadow-sm" title="Copy">
-                                                                {copiedField === `${record.RecordID}-diskC` ? <Check size={12} /> : <Copy size={12} />}
-                                                            </button>
-                                                        )}
-                                                        <button onClick={() => toggleVisibility(record.RecordID, 'diskC')} className="p-1 text-slate-400 hover:text-indigo-600 rounded bg-slate-100">
-                                                            {isVisible(record.RecordID, 'diskC') ? <EyeOff size={12} /> : <Eye size={12} />}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </td>
+                                <tbody className="divide-y divide-slate-100 bg-white italic-none">
+                                    {paginatedRecords.map((record, idx) => {
+                                        const globalIdx = (currentPage - 1) * itemsPerPage + idx;
+                                        const isActive = record.Status !== false && record.Status !== 0;
 
-                                            {/* Disk D */}
-                                            <td className="py-1.5 px-3">
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className="font-mono text-xs font-semibold text-slate-700" title={record.DiskD_RecoveryKey || 'N/A'}>
-                                                        {isVisible(record.RecordID, 'diskD') ? (record.DiskD_RecoveryKey || 'N/A') : '••••••••••••••••••••••••'}
-                                                    </div>
-                                                    <div className="flex gap-0.5 shrink-0">
-                                                        {record.DiskD_RecoveryKey && isVisible(record.RecordID, 'diskD') && (
-                                                            <button onClick={() => copyToClipboard(record.DiskD_RecoveryKey, `${record.RecordID}-diskD`)} className="p-1 text-slate-400 hover:text-emerald-600 rounded bg-white border border-slate-100 shadow-sm" title="Copy">
-                                                                {copiedField === `${record.RecordID}-diskD` ? <Check size={12} /> : <Copy size={12} />}
-                                                            </button>
-                                                        )}
-                                                        <button onClick={() => toggleVisibility(record.RecordID, 'diskD')} className="p-1 text-slate-400 hover:text-indigo-600 rounded bg-slate-100">
-                                                            {isVisible(record.RecordID, 'diskD') ? <EyeOff size={12} /> : <Eye size={12} />}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </td>
+                                        return (
+                                            <motion.tr
+                                                key={record.RecordID}
+                                                initial={{ opacity: 0, y: 5 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: idx * 0.03 }}
+                                                className="group hover:bg-slate-50/50 transition-all duration-200"
+                                            >
+                                                {/* Index */}
+                                                <td className="py-3.5 px-3 pl-6 text-center">
+                                                    <span className="font-mono text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md group-hover:bg-white transition-all">
+                                                        {String(globalIdx + 1).padStart(2, '0')}
+                                                    </span>
+                                                </td>
 
-                                            {/* PIN */}
-                                            <td className="py-1.5 px-3">
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className="font-mono text-xs font-black text-amber-900">
-                                                        {isVisible(record.RecordID, 'pin') ? (record.SystemPIN || '---') : '••••••••'}
-                                                    </div>
-                                                    <div className="flex gap-0.5 shrink-0">
-                                                        {record.SystemPIN && isVisible(record.RecordID, 'pin') && (
-                                                            <button onClick={() => copyToClipboard(record.SystemPIN, `${record.RecordID}-pin`)} className="p-1 text-amber-500 hover:text-emerald-600 rounded bg-white border border-slate-100 shadow-sm" title="Copy">
-                                                                {copiedField === `${record.RecordID}-pin` ? <Check size={12} /> : <Copy size={12} />}
-                                                            </button>
+                                                {/* Hostname & Remark */}
+                                                <td className="py-3.5 px-4">
+                                                    <div className="flex flex-col truncate">
+                                                        <span className="font-bold text-slate-800 text-[12px] tracking-tight">{record.Hostname}</span>
+                                                        {record.Remark && (
+                                                            <span className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]" title={record.Remark}>
+                                                                {record.Remark}
+                                                            </span>
                                                         )}
-                                                        <button onClick={() => toggleVisibility(record.RecordID, 'pin')} className="p-1 text-amber-500 hover:text-amber-700 rounded bg-amber-50">
+                                                    </div>
+                                                </td>
+
+                                                {/* User & ID */}
+                                                <td className="py-3.5 px-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100 shrink-0 text-indigo-600 font-bold text-[10px]">
+                                                            {record.UserName?.charAt(0) || '?'}
+                                                        </div>
+                                                        <div className="flex flex-col leading-tight min-w-0">
+                                                            <span className="font-medium text-[13px] text-slate-700 mb-0.5">{record.UserName || 'Unassigned'}</span>
+                                                            <span className="text-[12px] font-bold text-indigo-500 tracking-wider">
+                                                                {record.EmployeeId ? `ID: ${record.EmployeeId}` : '---'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {/* Recovery Keys */}
+                                                <td className="py-3.5 px-4">
+                                                    <div className="flex flex-col gap-1.5">
+                                                        {['diskC', 'diskD'].map((diskType) => {
+                                                            const key = diskType === 'diskC' ? record.DiskC_RecoveryKey : record.DiskD_RecoveryKey;
+                                                            const visible = isVisible(record.RecordID, diskType);
+
+                                                            return (
+                                                                <div key={diskType} className="flex items-center gap-2 bg-slate-50/50 border border-slate-200/50 rounded-lg px-2 py-1 group/key hover:bg-white hover:border-indigo-200 transition-all shadow-sm">
+                                                                    {/* Badge บอก Drive */}
+                                                                    <span className={`text-[12px] font-black w-4 h-4 flex items-center justify-center rounded ${diskType === 'diskC' ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-600'}`}>
+                                                                        {diskType === 'diskC' ? 'C' : 'D'}
+                                                                    </span>
+
+                                                                    {/* แสดง Key หรือ Masking */}
+                                                                    <span className={`font-mono text-[13px] flex-1 truncate tracking-tighter transition-colors ${visible ? 'text-slate-900' : 'text-slate-400'}`}>
+                                                                        {visible ? (key || 'N/A') : '•••• •••• •••• ••••'}
+                                                                    </span>
+
+                                                                    {/* ปุ่มจัดการ */}
+                                                                    <div className="flex items-center gap-1 opacity-0 group-hover/key:opacity-100 transition-opacity">
+                                                                        {/* ปุ่มสลับเปิด/ปิดตา */}
+                                                                        <button
+                                                                            onClick={() => toggleVisibility(record.RecordID, diskType)}
+                                                                            className={`p-1 rounded-md transition-colors ${visible ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-100'}`}
+                                                                            title={visible ? "Hide Key" : "Show Key"}
+                                                                        >
+                                                                            {visible ? <EyeOff size={12} /> : <Eye size={12} />}
+                                                                        </button>
+
+                                                                        {/* ปุ่ม Copy (จะแสดงเฉพาะเมื่อเปิดตาอยู่) */}
+                                                                        {key && visible && (
+                                                                            <button
+                                                                                onClick={() => copyToClipboard(key, `${record.RecordID}-${diskType}`)}
+                                                                                className={`p-1 rounded-md transition-all duration-300 ${
+                                                                                    copiedField === `${record.RecordID}-${diskType}`
+                                                                                        ? 'text-emerald-500 bg-emerald-100 scale-110 shadow-md'
+                                                                                        : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                                                                }`}
+                                                                                title={copiedField === `${record.RecordID}-${diskType}` ? "✓ Copied!" : "Copy to Clipboard"}
+                                                                            >
+                                                                                {copiedField === `${record.RecordID}-${diskType}` ? <Check size={12} /> : <Copy size={12} />}
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </td>
+
+                                                {/* Security PIN */}
+                                                <td className="py-3.5 px-4">
+                                                    <div className="inline-flex items-center gap-2 bg-amber-50/50 border border-amber-100 px-2 py-1 rounded-lg">
+                                                        <span className="font-mono text-[13px] font-black text-amber-900">
+                                                            {isVisible(record.RecordID, 'pin') ? (record.SystemPIN || '---') : '••••'}
+                                                        </span>
+                                                        <button onClick={() => toggleVisibility(record.RecordID, 'pin')} className="text-amber-400 hover:text-amber-600 transition-colors">
                                                             {isVisible(record.RecordID, 'pin') ? <EyeOff size={12} /> : <Eye size={12} />}
                                                         </button>
                                                     </div>
-                                                </div>
-                                            </td>
+                                                </td>
 
-                                            <td className="py-1.5 px-3 text-[10px] text-indigo-600 font-bold">
-                                                {record.RecordedBy || '-'}
-                                            </td>
-
-                                            <td className="py-1.5 px-3 text-xs text-slate-500">
-                                                {record.CreatedAt ? formatThaiDate(record.CreatedAt) : '-'}
-                                            </td>
-
-                                            <td className="py-1.5 px-3 text-center">
-                                                <span
-                                                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${record.Status === false || record.Status === 0 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'}`}
-                                                >
-                                                    {record.Status === false || record.Status === 0 ? 'Cancelled' : 'Active'}
-                                                </span>
-                                            </td>
-
-                                            {isAdmin && (
-                                                <td className="py-1.5 px-3 text-center">
-                                                    <div className="flex items-center justify-center gap-1">
-                                                        <button onClick={() => openEditModal(record)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="แก้ไข">
-                                                            <Edit2 size={14} />
-                                                        </button>
-                                                        <button onClick={() => handleDelete(record.RecordID)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="ลบ">
-                                                            <Trash2 size={14} />
-                                                        </button>
+                                                {/* Time Log */}
+                                                <td className="py-3.5 px-4">
+                                                    <div className="flex flex-col text-[12px]">
+                                                        <span className="font-bold text-blue-800 flex items-center gap-1">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                                            {record.RecordedBy || 'System'}
+                                                        </span>
+                                                        <span className="text-slate-400 mt-0.5">{record.CreatedAt ? formatThaiDate(record.CreatedAt) : '-'}</span>
                                                     </div>
                                                 </td>
-                                            )}
-                                        </motion.tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+
+                                                {/* Status */}
+                                                <td className="py-3.5 px-4 text-center text-[10px]">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider border ${isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                                                        <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                                                        {isActive ? 'Active' : 'Off'}
+                                                    </span>
+                                                </td>
+
+                                                {/* Sticky Admin Actions */}
+                                                {isAdmin && (
+                                                    <td className="py-3.5 px-4 text-center sticky right-0 bg-white/95 group-hover:bg-slate-50 transition-colors border-l border-slate-100 z-10 shadow-[-5px_0_10px_-5px_rgba(0,0,0,0.03)]">
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <button onClick={() => openEditModal(record)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-md shadow-sm border border-transparent hover:border-slate-200 transition-all" title="Edit">
+                                                                <Edit2 size={14} />
+                                                            </button>
+                                                            <button onClick={() => handleDelete(record.RecordID)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-white rounded-md shadow-sm border border-transparent hover:border-slate-200 transition-all" title="Delete">
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                )}
+                                            </motion.tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </motion.div>
             )}
